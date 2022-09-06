@@ -32,8 +32,8 @@ class Instance:
         for arc in [(i, j) for i in self.locations for j in self.locations if i < j]:
             self.npp.add_edge(*arc, color='g', weight=np.random.uniform(*self.cr_locations))
 
-        for arc in [(i, j) for i in self.tolls for j in self.tolls if i < j]:
-            self.npp.add_edge(*arc, color='r')
+        for arc in [p for p in self.p]:
+            self.npp.add_edge(*arc, color='r', weight=0)
 
         for arc in [(i, j) for i in self.locations for j in self.tolls]:
             self.npp.add_edge(*arc, color='b', weight=np.random.uniform(*self.cr_transfer))

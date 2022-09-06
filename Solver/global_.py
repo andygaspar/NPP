@@ -13,6 +13,8 @@ class GlobalSolver:
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MAXIMIZE
 
+        self.eps = 1e-2
+
         self.p = self.m.addVars([(p, k) for p in self.instance.p for k in self.instance.commodities])
         self.x = self.m.addVars([(p, k) for p in self.instance.p for k in self.instance.commodities], vtype=GRB.BINARY)
         self.t = self.m.addVars([p for p in self.instance.p])
@@ -27,8 +29,8 @@ class GlobalSolver:
         for k in self.instance.commodities:
             for q in self.instance.p:
                 self.m.addConstr(
-                    quicksum([(k.c_p[p] - k.c_od) * self.x[p, k] for p in self.instance.p]) - self.t[q] <= k.c_p[
-                        q] - k.c_od
+                    quicksum([(k.c_p[p] - k.c_od) * self.x[p, k] + self.p[p, k] for p in self.instance.p]) - self.t[q]
+                    <= k.c_p[q] - k.c_od
                 )
 
         for k in self.instance.commodities:
@@ -51,6 +53,7 @@ class GlobalSolver:
                 self.m.addConstr(
                     self.p[p, k] <= self.t[p]
                 )
+        print(self.instance.commodities[8])
 
     def solve(self):
         self.set_obj()
@@ -59,9 +62,16 @@ class GlobalSolver:
         print(self.m.status)
 
         for p in self.instance.p:
-            print(p, self.t[p].x)
+            self.instance.npp.edges[p]["weight"] = self.t[p].x
+            print(p, self.instance.npp.edges[p]["weight"])
 
         for k in self.instance.commodities:
+            found = False
             for p in self.instance.p:
                 if self.x[p, k].x > 0.9:
-                    print(k, p)
+                    print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
+                    found = True
+            if not found:
+                print(k, 'c_od', k.c_od)
+
+
