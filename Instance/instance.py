@@ -8,7 +8,7 @@ from Instance.commodity import Commodity
 
 class Instance:
 
-    def __init__(self, n_locations, n_tolls, n_commodities, cr_locations=(10, 20), cr_transfer=(5, 10), nr_users=(1,5),
+    def __init__(self, n_locations, n_tolls, n_commodities, cr_locations=(10, 20), cr_transfer=(5, 10), nr_users=(1, 5),
                  seeds=False):
 
         if seeds:
