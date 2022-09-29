@@ -2,9 +2,11 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
-#include "Particle.cpp"
+#include "particle.cpp"
 #include <omp.h>
 
+
+//forse c'è da specificare il numero di cpu? omp.get_cpu_count()
 
 class Swarm {
     private:

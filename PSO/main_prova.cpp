@@ -1,4 +1,4 @@
-#include "Swarm.cpp"
+#include "swarm.cpp"
 #include <chrono>
 
 int main() {
