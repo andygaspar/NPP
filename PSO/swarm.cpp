@@ -26,6 +26,7 @@ class Swarm {
     Swarm(int n, int n_, float (*f)(Vector<float>), float ll, float lh);
     Swarm(int n, int n_, float (*f)(Vector<float>));
     Swarm() {n_particles=1; n_dim=2; particles=Vector<Particle>{n_particles}; p_best=particles[0].pos();}
+    ~Swarm() {}
     int size() {return n_particles;}
     Vector<float> position(int i) {return particles[i].pos();}
     void set_ndim(int n) {n_dim=n; *this=Swarm{n_particles,n,fp};}

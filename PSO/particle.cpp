@@ -16,10 +16,11 @@ class Particle {
     public:
     Particle(int n, Vector<float> pos, Vector<float> ve) {ndim = n; p=pos; v=ve; p_best=pos;}
     Particle(int n, Vector<float> pos, Vector<float> ve, float ll, float lh) {ndim = n; p=pos; v=ve; p_best=pos;}
-    Particle(int n,float ll, float lh) 
+    Particle(int n,float ll, float lh)
     {ndim=n; p =Vector<float>{ndim,ll,lh}; v=std::vector<float>(ndim); p_best=p;}
     Particle(int n) {ndim=n; p =Vector<float>{ndim}; v=std::vector<float>(ndim); p_best=p;}
     Particle() {ndim=2; p =Vector<float>{ndim}; v=std::vector<float>(ndim); p_best=p;}
+    ~Particle() {}
     void update_pos() {p = p + v;}
     void update_vel(float w, float c_soc, float c_cog, Vector<float> g);
     void update_best() {p_best=p;}
