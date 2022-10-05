@@ -4,7 +4,20 @@
 #include <algorithm>
 #include "utils.cpp"
 
+/*
+Particle class implements a particle object such that:
+- ndim: dimensionality of the space
+- p: coordinates of the particle's position in the space
+- v: particle's velocity vector
+- p_best: coordinates associated with the best position found so far
+          in the particle's history according to a given objective function
 
+The particle's position can be initialized by hand or randomly in the space,
+setting the limits.
+The methods implemented aim to:
+- update the position of the particle according PSO method
+- update the velocity of the particle according PSO method
+*/
 class Particle {
     private:
     int ndim;
@@ -15,12 +28,10 @@ class Particle {
 
     public:
     Particle(int n, Vector<float> pos, Vector<float> ve) {ndim = n; p=pos; v=ve; p_best=pos;}
-    Particle(int n, Vector<float> pos, Vector<float> ve, float ll, float lh) {ndim = n; p=pos; v=ve; p_best=pos;}
-    Particle(int n,float ll, float lh)
-    {ndim=n; p =Vector<float>{ndim,ll,lh}; v=std::vector<float>(ndim); p_best=p;}
-    Particle(int n) {ndim=n; p =Vector<float>{ndim}; v=std::vector<float>(ndim); p_best=p;}
-    Particle() {ndim=2; p =Vector<float>{ndim}; v=std::vector<float>(ndim); p_best=p;}
-    ~Particle() {}
+    Particle(int n,float ll, float lh) 
+    {ndim=n; p =Vector<float>{ndim,ll,lh}; v=Vector<float>{ndim}; p_best=p;}
+    Particle(int n) {ndim=n; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
+    Particle() {ndim=2; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
     void update_pos() {p = p + v;}
     void update_vel(float w, float c_soc, float c_cog, Vector<float> g);
     void update_best() {p_best=p;}

@@ -8,10 +8,18 @@ template <typename T> class Vector;
 template <typename T> Vector<T> operator+( Vector<T> lhs, Vector<T> rhs);
 template <typename T> Vector<T> operator-(Vector<T> lhs, Vector<T> rhs);
 template <typename T> Vector<T> operator*( Vector<T> lhs, Vector<T> rhs);
-template <typename T> Vector<T> operator*( Vector<T> lhs, float rhs);
-template <typename T> Vector<T> operator*( float rhs, Vector<T> lhs);
+template <typename T> Vector<T> operator*( Vector<T> lhs, T rhs);
+template <typename T> Vector<T> operator*( T rhs, Vector<T> lhs);
 template <typename T> std::ostream& operator<<( std::ostream &os, Vector<T>& v );
 
+/*
+Vector is a templated class implementing a vector object and allowing:
+- binary operators of sum, difference and Hadamard product
+- product with a scalar
+- push_back and pop_back methods
+- random values vector generation
+- output stream operator
+*/
 template<typename T>
 class Vector {
     private:
@@ -19,8 +27,8 @@ class Vector {
     friend Vector<T> operator +<T>( Vector<T> lhs, Vector<T> rhs);
     friend Vector<T> operator -<T>(Vector<T> lhs, Vector<T> rhs); 
     friend Vector<T> operator *<T>( Vector<T> lhs, Vector<T> rhs);
-    friend Vector<T> operator *<T>( Vector<T> lhs, float rhs);
-    friend Vector<T> operator *<T>( float rhs, Vector<T> lhs);
+    friend Vector<T> operator *<T>( Vector<T> lhs, T rhs);
+    friend Vector<T> operator *<T>( T rhs, Vector<T> lhs);
     friend std::ostream& operator<<<T>( std::ostream &os, Vector<T>& v );
 
     public:
@@ -40,10 +48,10 @@ class Vector {
     void random(int ndim, T i, T f);
 };
 
+//random vector initialization
 template<typename T>
 Vector<T>::Vector(int ndim, T i, T f) {
-    std::vector<T> tmp(ndim); 
-    v=tmp; 
+    v=std::vector<T>(ndim);
     std::default_random_engine generator(std::rand());
     std::uniform_real_distribution<T> distribution(i,f);
     for(int j=0;j<ndim;++j)
@@ -75,7 +83,7 @@ Vector<T> operator * ( Vector<T> lhs, Vector<T> rhs) {
 }
 
 template<typename T>
-Vector<T> operator * ( Vector<T> lhs, float rhs) {
+Vector<T> operator * ( Vector<T> lhs, T rhs) {
     Vector<T> c = lhs;
     for (int i=0; i<lhs.size(); ++i) 
         c.v[i] =lhs.v[i] * rhs;
@@ -83,7 +91,7 @@ Vector<T> operator * ( Vector<T> lhs, float rhs) {
 }
 
 template<typename T>
-Vector<T> operator * ( float rhs, Vector<T> lhs) {
+Vector<T> operator * ( T rhs, Vector<T> lhs) {
     Vector<T> c = lhs;
     for (int i=0; i<lhs.size(); ++i) 
         c.v[i] =lhs.v[i] * rhs;
@@ -105,14 +113,16 @@ std::ostream& operator<<( std::ostream &os, Vector<T>& v ) {
 
 template<typename T>
 void Vector<T>::random(int ndim, T i, T f) {
-    Vector<T> tmp{ndim};
+    *this = Vector<T>{ndim};
     std::default_random_engine generator(std::rand());
     std::uniform_real_distribution<T> distribution(i,f);
     for(int j=0;j<ndim;++j)
-        tmp.v[j] = distribution(generator);
-    *this = tmp;
+        this->v[j] = distribution(generator);
 }
 
+/*
+example of objective function
+*/
 float obj(Vector<float> v) {
     return -(v[0]*v[0])-(v[1]*v[1]);
 }
