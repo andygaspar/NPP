@@ -10,6 +10,7 @@ template <typename T> Vector<T> operator-(Vector<T> lhs, Vector<T> rhs);
 template <typename T> Vector<T> operator*( Vector<T> lhs, Vector<T> rhs);
 template <typename T> Vector<T> operator*( Vector<T> lhs, T rhs);
 template <typename T> Vector<T> operator*( T rhs, Vector<T> lhs);
+//template <typename T> bool operator >=( Vector<T> lhs, T val);
 template <typename T> std::ostream& operator<<( std::ostream &os, Vector<T>& v );
 
 /*
@@ -29,6 +30,7 @@ class Vector {
     friend Vector<T> operator *<T>( Vector<T> lhs, Vector<T> rhs);
     friend Vector<T> operator *<T>( Vector<T> lhs, T rhs);
     friend Vector<T> operator *<T>( T rhs, Vector<T> lhs);
+    //friend bool operator >=<T> (Vector<T> lhs, T val);
     friend std::ostream& operator<<<T>( std::ostream &os, Vector<T>& v );
 
     public:
@@ -36,9 +38,12 @@ class Vector {
     Vector(std::vector<T> vec) {v = vec;}
     Vector(int ndim) {v = std::vector<T>(ndim);}
     Vector(int ndim, T i, T f);
+
     Vector(const Vector<T>& vec) {v = vec.v;}
     Vector<T>& operator = (const Vector<T>& vec) {v = vec.v; return *this;}
     Vector<T>& operator = (const std::vector<T>& vec) {v = vec; return *this;}
+    bool operator >= (T val);
+    bool operator <= (T val);
     int size() const {return v.size();}
     T& operator [] (int n) {return v[n];}
     void push_back(T val) {v.push_back(val);}
@@ -56,6 +61,22 @@ Vector<T>::Vector(int ndim, T i, T f) {
     std::uniform_real_distribution<T> distribution(i,f);
     for(int j=0;j<ndim;++j)
         v[j] = distribution(generator);
+}
+
+template<typename T>
+bool Vector<T>::operator >= (T val) {
+    for(int i=0; i<v.size();++i)
+        if(v[i]<val)
+            return false;
+    return true;
+}
+
+template<typename T>
+bool Vector<T>::operator <= (T val) {
+    for(int i=0; i<v.size();++i)
+        if(v[i]>val)
+            return false;
+    return true;
 }
 
 template<typename T>

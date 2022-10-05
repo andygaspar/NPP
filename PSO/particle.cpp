@@ -18,6 +18,7 @@ The methods implemented aim to:
 - update the position of the particle according PSO method
 - update the velocity of the particle according PSO method
 */
+
 class Particle {
     private:
     int ndim;
@@ -32,12 +33,31 @@ class Particle {
     {ndim=n; p =Vector<float>{ndim,ll,lh}; v=Vector<float>{ndim}; p_best=p;}
     Particle(int n) {ndim=n; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
     Particle() {ndim=2; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
-    void update_pos() {p = p + v;}
+    void update_pos();
+    void reflection();
     void update_vel(float w, float c_soc, float c_cog, Vector<float> g);
     void update_best() {p_best=p;}
     Vector<float> p_b() {return p_best;}
     Vector<float> pos() {return p;}
 };
+
+void Particle::update_pos() {
+    p = p + v;
+    if (p >= 1. or p <= 0.)
+        this->reflection();
+}
+
+void Particle::reflection() {
+    for(int i=0;i<ndim;++i) {
+        if(p[i]<=0)
+            p[i]=0;
+            v[i]=-v[i];
+        if(p[i]>=1)
+            p[i]=1;
+            v[i]=-v[i];
+    }
+
+}
 
 void Particle::update_vel(float w, float c_soc, float c_cog, Vector<float> g) {
     Vector<float> r1{p.size(), 0.0, 1.0};
