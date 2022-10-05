@@ -21,28 +21,36 @@ The methods implemented aim to:
 class Particle {
     private:
     int ndim;
-    Vector<float> p;
-    Vector<float> v;
-    Vector<float> p_best;
+    Vector<double> p;
+    Vector<double> v;
+    Vector<double> personal_best;
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
 
     public:
-    Particle(int n, Vector<float> pos, Vector<float> ve) {ndim = n; p=pos; v=ve; p_best=pos;}
-    Particle(int n,float ll, float lh) 
-    {ndim=n; p =Vector<float>{ndim,ll,lh}; v=Vector<float>{ndim}; p_best=p;}
-    Particle(int n) {ndim=n; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
-    Particle() {ndim=2; p =Vector<float>{ndim}; v=Vector<float>{ndim}; p_best=p;}
-    void update_pos() {p = p + v;}
-    void update_vel(float w, float c_soc, float c_cog, Vector<float> g);
-    void update_best() {p_best=p;}
-    Vector<float> p_b() {return p_best;}
-    Vector<float> pos() {return p;}
+    Particle(int n, Vector<double> pos, Vector<double> ve) {ndim = n; p=pos; v=ve; personal_best=pos;}
+    Particle(int n)
+    {ndim=n; p =Vector<double>{ndim,0,1}; v=Vector<double>{ndim}; personal_best=p;}
+    Particle(double* array, int n) {
+        std::vector<double> array_(array, array + sizeof(array)/sizeof(array[0]));
+        p = Vector<double> {array_};
+        v= Vector<double> {n};
+        personal_best = p;
+        }
+    Particle() {ndim=2; p =Vector<double>{ndim}; v=Vector<double>{ndim}; personal_best=p;}
+
+    void update_pos() {
+        p = p + v;
+        }
+    void update_vel(double w, double c_soc, double c_cog, Vector<double> g);
+    void update_best() {personal_best=p;}
+    Vector<double> p_b() {return personal_best;}
+    Vector<double> pos() {return p;}
 };
 
-void Particle::update_vel(float w, float c_soc, float c_cog, Vector<float> g) {
-    Vector<float> r1{p.size(), 0.0, 1.0};
-    Vector<float> r2{p.size(), 0.0, 1.0};
-    v = w*v + c_soc*(r1*(g - p)) + c_cog*(r2*(p_best - p));
+void Particle::update_vel(double w, double c_soc, double c_cog, Vector<double> g) {
+    Vector<double> r1{p.size(), 0.0, 1.0};
+    Vector<double> r2{p.size(), 0.0, 1.0};
+    v = w*v + c_soc*(r1*(g - p)) + c_cog*(r2*(personal_best - p));
 }
 
 std::ostream& operator<<( std::ostream &os, Particle& v ) {

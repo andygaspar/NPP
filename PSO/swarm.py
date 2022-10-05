@@ -7,17 +7,18 @@ from numpy.ctypeslib import ndpointer
 
 class Swarm:
 
-    def __init__(self, n, n_):
+    def __init__(self, cost_array: np.array, n, n_):
 
         self.n, self.n_ = n, n_
         self.lib = ctypes.CDLL('PSO/bridge.so')
-        self.lib.Swarm_.argtypes = [ctypes.c_int, ctypes.c_int]
+        self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int]
         self.lib.update_.argtypes = [ctypes.c_int]
         self.lib.test_io.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
         self.lib.print_s.argtypes = []
         self.lib.Swarm_.restype = ctypes.c_void_p
 
-        self.swarm = self.lib.Swarm_(ctypes.c_int(self.n), ctypes.c_int(self.n_))
+        self.swarm = self.lib.Swarm_(cost_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                                               ctypes.c_int(self.n), ctypes.c_int(self.n_))
 
     def test_io(self, n):
         self.lib.test_io.restype = ndpointer(dtype=ctypes.c_double, shape=(n,))
@@ -32,8 +33,10 @@ class Swarm:
         self.lib.print_s(self.swarm)
 
 os.system("PSO/install.sh")
-
-s = Swarm(10, 2)
+n_particles = 5
+n_nodes = 2
+cost_array = np.random.uniform(0, 1, 10)
+s = Swarm(cost_array, 10, 2)
 s.update(100)
 s.print_swarm()
 

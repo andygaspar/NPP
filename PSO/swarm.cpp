@@ -27,58 +27,53 @@ class Swarm {
     Vector<Particle> particles;
     int n_particles;
     int n_dim;
-    float lim_l=0.0;
-    float lim_h=100.0;
-    float w=0.9;
-    float c_soc=1.49445;
-    float c_cog=1.49445;
-    Vector<float> p_best;
-    float (*fp)(Vector<float>);
+    double lim_l=0.0;
+    double lim_h=1.0;
+    double w=0.9;
+    double c_soc=1.49445;
+    double c_cog=1.49445;
+    Vector<double> p_best;
+    double (*fp)(Vector<double>);
+
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
 
     public:
-    Swarm(int n, int n_, float (*f)(Vector<float>), float ll, float lh);
-    Swarm(int n, int n_, float (*f)(Vector<float>));
+    Swarm(int n, int n_, double (*f)(Vector<double>), double ll, double lh);
+    Swarm(int n, int n_, double (*f)(Vector<double>));
+    Swarm(double* cost_array, int n, int n_, double (*f)(Vector<double>));
     Swarm() {n_particles=1; n_dim=2; particles=Vector<Particle>{n_particles}; p_best=particles[0].pos();}
     void set_ndim(int n) {n_dim=n; *this=Swarm{n_particles,n,fp};}
     void set_nparticles(int n) {n_particles=n; *this=Swarm{n,n_dim,fp};}
-    void set_lim(float ll, float lh) {lim_l=ll; lim_h=lh; *this=Swarm{n_particles,n_dim,fp,ll,lh};}
-    void set_w(float val) {w=val;}
-    void set_objective_function(float (*f)(Vector<float>)) {fp = f;}
+    void set_lim(double ll, double lh) {lim_l=ll; lim_h=lh; *this=Swarm{n_particles,n_dim,fp,ll,lh};}
+    void set_w(double val) {w=val;}
+    void set_objective_function(double (*f)(Vector<double>)) {fp = f;}
     //void test(Particle p);
-    void update_best(Vector<float> pb) {p_best=pb;}
+    void update_best(Vector<double> pb) {p_best=pb;}
     void update_w(int n_iter) {w = w - 0.5/n_iter;}
     void update_swarm();
     void update(int num);
     int size() {return n_particles;}
-    Vector<float> position(int i) {return particles[i].pos();}
+    Vector<double> position(int i) {return particles[i].pos();}
     void print();
 };
 
-Swarm::Swarm(int n, int n_, float (*f)(Vector<float>), float ll, float lh) {
-    n_particles=n; 
-    n_dim=n_; 
-    particles=Vector<Particle>{n_particles};
-    lim_l=ll;
-    lim_h=lh;
-    for(int i=0;i<n_particles;++i)
-        particles[i] = Particle{n_dim,ll,lh};
-    p_best=particles[0].pos(); 
-    fp = f;
-}
+Swarm::Swarm(int n, int n_, double (*f)(Vector<double>)){}
 
-Swarm::Swarm(int n, int n_, float (*f)(Vector<float>)) {
+Swarm::Swarm(double* cost_array, int n, int n_, double (*f)(Vector<double>)) {
     n_particles=n; 
-    n_dim=n_; 
+    n_dim=n_;
+
+
     particles=Vector<Particle>{n_particles}; 
-    for(int i=0;i<n_particles;++i)
-        particles[i] = Particle{n_dim,lim_l,lim_h};
+    for(int i=0;i<n_particles;++i){
+        particles[i] = Particle{&cost_array[n_dim*i], n_dim};
     p_best=particles[0].pos(); 
     fp = f;
+    }
 }
 
 void Swarm::update_swarm() {
-    #pragma omp parallel for  
+    #pragma omp parallel for
     for(int i=0;i<n_particles;++i) {
         particles[i].update_pos();
         particles[i].update_vel(w,c_soc,c_cog,p_best);
@@ -87,6 +82,7 @@ void Swarm::update_swarm() {
         if (fp(particles[i].pos()) > fp(p_best))
             this->update_best(particles[i].pos());
     }
+
 }
 
 void Swarm::update(int num) {

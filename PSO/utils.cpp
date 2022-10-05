@@ -43,8 +43,8 @@ class Vector {
     T& operator [] (int n) {return v[n];}
     void push_back(T val) {v.push_back(val);}
     void pop_back() {v.pop_back();}
-    std::vector<float>::iterator begin() {return v.begin();}
-    std::vector<float>::iterator end() {return v.end();}
+    std::vector<double>::iterator begin() {return v.begin();}
+    std::vector<double>::iterator end() {return v.end();}
     void random(int ndim, T i, T f);
 };
 
@@ -123,6 +123,6 @@ void Vector<T>::random(int ndim, T i, T f) {
 /*
 example of objective function
 */
-float obj(Vector<float> v) {
+double obj(Vector<double> v) {
     return -(v[0]*v[0])-(v[1]*v[1]);
 }
