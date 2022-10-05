@@ -12,10 +12,15 @@ class Swarm:
         self.n, self.n_ = n, n_
         self.lib = ctypes.CDLL('PSO/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int]
-        self.lib.update_.argtypes = [ctypes.c_int]
+        # self.lib.update_.argtypes = [ctypes.c_int]
+        # self.lib.update_.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_double]
+        self.lib.update_swarm_.argtypes = [ctypes.c_void_p,ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
         self.lib.test_io.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
         self.lib.print_s.argtypes = []
         self.lib.Swarm_.restype = ctypes.c_void_p
+        self.lib.get_best_val_.argtypes = [ctypes.c_void_p]
+        self.lib.get_best_val_.restype = ctypes.c_double
+        self.lib.update_best_.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_double]
 
         self.swarm = self.lib.Swarm_(cost_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                                                ctypes.c_int(self.n), ctypes.c_int(self.n_))
@@ -26,19 +31,18 @@ class Swarm:
         output_vect = self.lib.test_io(input_vect.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), n)
         print(output_vect)
 
-    def update(self, k):
-        self.lib.update_(self.swarm, k)
+    def get_best(self):
+        return self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
+
+    def update_best(self, best_particle_idx, new_best_val):
+        return self.lib.update_best_(ctypes.c_void_p(self.swarm), best_particle_idx, new_best_val)
+
+    def update_swarm(self, iteration, run_values: np.array):
+        self.lib.update_swarm_(ctypes.c_void_p(self.swarm), iteration,
+                               run_values.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
     def print_swarm(self):
         self.lib.print_s(self.swarm)
 
-os.system("PSO/install.sh")
-n_particles = 5
-n_nodes = 2
-cost_array = np.random.uniform(0, 1, 10)
-s = Swarm(cost_array, 10, 2)
-s.update(100)
-s.print_swarm()
 
-s.test_io(10)
 
