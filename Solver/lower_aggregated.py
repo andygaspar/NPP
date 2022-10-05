@@ -2,7 +2,7 @@ import numpy as np
 
 from Instance.instance import Instance, Commodity
 from gurobipy import Model, GRB, quicksum, Env
-
+import scipy
 
 class LowerSolverAggregated:
 
@@ -28,11 +28,11 @@ class LowerSolverAggregated:
         )
 
     def set_constraint_1(self):
-
-        for k in self.instance.commodities:
-            self.m.addConstr(
-                quicksum(self.x[p, k] for p in self.instance.p) + self.x_od[k] == 1
-            )
+        for n in range(self.n_particles):
+            for k in range(len(self.instance.commodities)):
+                self.m.addConstr(
+                    self.x[n, :, k] + self.x_od[n, k] == 1
+                )
 
     def set_constraint_particle(self, path_costs):
 
