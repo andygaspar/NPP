@@ -1,4 +1,4 @@
-import os
+import os as os
 
 import numpy as np
 
@@ -21,14 +21,14 @@ npp.show()
 # global_solver = GlobalSolver(npp)
 # global_solver.solve()
 
-max_total_val = max([com.c_od for com in npp.commodities] + [com.c_p[val] for com in npp.commodities for val in com.c_p.keys()])
+max_total_val = max([max(list(com.M_p.values())) for com in npp.commodities])
 
 path_costs = np.array(n_particles*[npp.npp.edges[p]['weight'] for p in npp.p])/max_total_val
 lower_solver = LowerSolverAggregated(npp, n_particles)
 lower_solver.set_up()
 
 s = Swarm(path_costs, n_particles, n_tolls)
-for iteration in range(100):
+for iteration in range(10):
     personal_run_results = lower_solver.solve(path_costs)
     run_best = max(personal_run_results)
     if run_best > s.get_best():
@@ -37,6 +37,6 @@ for iteration in range(100):
         print(s.get_best())
 
     s.update_swarm(iteration, personal_run_results)
-# s.print_swarm()
+s.print_swarm()
 
 # s.test_io(10)
