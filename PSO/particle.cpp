@@ -22,26 +22,30 @@ The methods implemented aim to:
 class Particle {
     private:
     int ndim;
+    int idx;
     Vector<double> p;
     Vector<double> v;
+    Vector<double> scale_factor_array;
     Vector<double> personal_best;
+    Vector<double> actual_costs;
     double personal_best_val;
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
 
     public:
-    Particle(double* array, int n) {
+    Particle(double* array, double* ac, double* sfa, int n, int i) {
+        idx = i;
         std::vector<double> array_(array, array + n*sizeof(array)/sizeof(array[0]));
         p = Vector<double> {array_};
+        std::vector<double> array_1(sfa, sfa + n*sizeof(sfa)/sizeof(sfa[0]));
+        scale_factor_array = Vector<double> {array_1};
+        std::vector<double> array_2(ac, ac + n*sizeof(ac)/sizeof(ac[0]));
+        actual_costs = Vector<double> {array_2};
+
         v= Vector<double> {n};
         personal_best = p;
         ndim = n;
         personal_best_val = 0;
         }
-    Particle(int n, Vector<double> pos, Vector<double> ve)
-    {ndim = n; p=pos; v=ve; personal_best=pos; personal_best_val = 0;}
-    Particle(int n,double ll, double lh)
-    {ndim=n; p =Vector<double>{ndim,ll,lh}; v=Vector<double>{ndim}; personal_best=p;}
-    Particle(int n) {ndim=n; p =Vector<double>{ndim}; v=Vector<double>{ndim}; personal_best=p;}
     Particle() {ndim=2; p =Vector<double>{ndim}; v=Vector<double>{ndim}; personal_best=p;}
     ~Particle() {}
     double get_personal_best_val() {return personal_best_val;}
@@ -55,10 +59,33 @@ class Particle {
 
 void Particle::update_pos() {
     //    p = p + v;
-    for (int i=0; i < p.size(); i ++) p[i] = p[i] + v[i];
-    if (p >= 1. or p <= 0.){
-        this->reflection();
+    for (int i=0; i < p.size(); i ++) {
+        p[i] = p[i] + v[i];
+        if (p[i] >= 1) {
+        std::cout<<"ééé"<<std::endl;
+            p[i]= 1.;
+            v[i] -= v[i];
+            }
+        if (p[i] <= 0) {
+            p[i]= 0.;
+            v[i] -= v[i];
+            }
+
     }
+
+    actual_costs = p * scale_factor_array;
+    std::cout<<actual_costs<< "  rrrrrrr  "<<std::endl;
+//    {
+//    if(idx == 2) std::cout<<p<<std::endl;
+//
+//     this->reflection();
+//
+//
+//     if(idx == 2)   std::cout<<p<<"after"<<std::endl;
+//
+//
+//
+//    }
 
 }
 
@@ -78,7 +105,10 @@ void Particle::reflection() {
 void Particle::update_vel(double w, double c_soc, double c_cog, Vector<double> g) {
     Vector<double> r1{p.size(), 0.0, 1.0};
     Vector<double> r2{p.size(), 0.0, 1.0};
+//    std::cout<<w<<" "<<r1<<" "<<r2<<" "<<g<<std::endl;
+    std::cout<<v<<"   bef "<<g<<"  "<<p<<"  "<<personal_best<<std::endl;
     v = w*v + c_soc*(r1*(g - p)) + c_cog*(r2*(personal_best - p));
+    std::cout<<v<<"   after"<<std::endl;
 }
 
 std::ostream& operator<<( std::ostream &os, Particle& v ) {

@@ -15,35 +15,35 @@ class GlobalSolver:
 
         self.eps = 1e-2
 
-        self.p = self.m.addVars([(p, k) for p in self.instance.p for k in self.instance.commodities])
-        self.x = self.m.addVars([(p, k) for p in self.instance.p for k in self.instance.commodities], vtype=GRB.BINARY)
-        self.t = self.m.addVars([p for p in self.instance.p])
+        self.p = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities])
+        self.x = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities], vtype=GRB.BINARY)
+        self.t = self.m.addVars([p for p in self.instance.toll_paths])
 
     def set_obj(self):
         k: Commodity
         self.m.setObjective(quicksum(k.n_users * self.p[(p, k)]
-                                     for p in self.instance.p for k in self.instance.commodities))
+                                     for p in self.instance.toll_paths for k in self.instance.commodities))
 
     def set_constraints(self):
 
         for k in self.instance.commodities:
-            for q in self.instance.p:
+            for q in self.instance.toll_paths:
                 self.m.addConstr(
-                    quicksum([(k.c_p[p] - k.c_od) * self.x[p, k] + self.p[p, k] for p in self.instance.p]) - self.t[q]
-                    <= k.c_p[q] - k.c_od
+                    quicksum([(k.transfer_cost[p] - k.cost_free) * self.x[p, k] + self.p[p, k] for p in self.instance.toll_paths]) - self.t[q]
+                    <= k.transfer_cost[q] - k.cost_free
                 )
 
         for k in self.instance.commodities:
             self.m.addConstr(
-                quicksum([(k.c_p[p] - k.c_od) * self.x[p, k] for p in self.instance.p]) <= 0
+                quicksum([(k.transfer_cost[p] - k.cost_free) * self.x[p, k] for p in self.instance.toll_paths]) <= 0
             )
 
             self.m.addConstr(
-                quicksum(self.x[p, k] for p in self.instance.p) <= 1
+                quicksum(self.x[p, k] for p in self.instance.toll_paths) <= 1
             )
 
         for k in self.instance.commodities:
-            for p in self.instance.p:
+            for p in self.instance.toll_paths:
                 self.m.addConstr(
                     self.p[p, k] <= k.M_p[p] * self.x[p, k]
                 )
@@ -61,17 +61,17 @@ class GlobalSolver:
         self.m.optimize()
         print(self.m.status)
 
-        for p in self.instance.p:
+        for p in self.instance.toll_paths:
             self.instance.npp.edges[p]["weight"] = self.t[p].x
             print(p, self.instance.npp.edges[p]["weight"])
 
         for k in self.instance.commodities:
             found = False
-            for p in self.instance.p:
+            for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
-                    print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
+                    print(k, p, k.transfer_cost[p] + self.instance.npp.edges[p]["weight"])
                     found = True
             if not found:
-                print(k, 'c_od', k.c_od)
+                print(k, 'c_od', k.cost_free)
 
 

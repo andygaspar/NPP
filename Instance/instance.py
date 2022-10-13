@@ -1,3 +1,5 @@
+from typing import List
+
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +17,8 @@ class Instance:
             np.random.seed(0)
         self.n_locations = n_locations
         self.n_tolls = n_tolls
-        self.n_commodities, self.commodities = n_commodities, []
+        self.n_commodities = n_commodities
+        self.commodities: List[Commodity] = []
         self.users = []
         self.cr_locations = cr_locations
         self.cr_transfer = cr_transfer
@@ -23,7 +26,7 @@ class Instance:
 
         self.locations = ['u ' + str(i) for i in range(self.n_locations)]
         self.tolls = ['T ' + str(i) for i in range(self.n_tolls)]
-        self.p = list(combinations(self.tolls, r=2))
+        self.toll_paths = list(combinations(self.tolls, r=2))
 
         self.npp = nx.Graph()
         self.npp.add_nodes_from([(u, {'color': 'g'}) for u in self.locations])
@@ -32,20 +35,24 @@ class Instance:
         for arc in [(i, j) for i in self.locations for j in self.locations if i < j]:
             self.npp.add_edge(*arc, color='g', weight=np.random.uniform(*self.cr_locations))
 
-        for arc in [p for p in self.p]:
-            self.npp.add_edge(*arc, color='r', weight=0)
+        for arc in [p for p in self.toll_paths]:
+            self.npp.add_edge(*arc, color='r', weight=np.random.uniform(*self.cr_transfer))
 
         for arc in [(i, j) for i in self.locations for j in self.tolls]:
             self.npp.add_edge(*arc, color='b', weight=np.random.uniform(*self.cr_transfer))
+
+
 
         origin_destination = list(combinations(self.locations, r=2))
 
         for i in range(self.n_commodities):
             o_d = origin_destination.pop(np.random.choice(range(len(origin_destination))))
             n_users = np.random.choice(range(*self.nr_users))
-            self.commodities.append(Commodity(*o_d, n_users, self.npp, self.p))
+            self.commodities.append(Commodity(*o_d, n_users, self.npp, self.toll_paths))
 
-        self.N_p = {p: max([k.M_p[p] for k in self.commodities]) for p in self.p}
+        self.N_p = {p: max([k.M_p[p] for k in self.commodities]) for p in self.toll_paths}
+
+
 
     def show(self):
 

@@ -3,8 +3,8 @@
 
 extern "C" {
 
-    Swarm* Swarm_(double* cost_array, int n, int n_) // float (*f)(Vector<float>))
-    {return new Swarm(cost_array, n, n_, &obj);}
+    Swarm* Swarm_(double* cost_array, double* actual_costs, double* scale_factor_array, int n, int n_, int n_iter) // float (*f)(Vector<float>))
+    {return new Swarm(cost_array,actual_costs, scale_factor_array, n, n_, n_iter, &obj);}
 
 //    void update_(Swarm* swarm, int n){ swarm -> update(n); }
     void update_swarm_(Swarm* swarm, int iteration, double* run_results){ swarm -> update_swarm(iteration, run_results); }

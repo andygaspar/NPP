@@ -9,7 +9,7 @@ class LowerSolverAggregated:
     def __init__(self, instance: Instance, n_particles):
         self.n_particles = n_particles
         self.instance = instance
-        self.n_paths = len(self.instance.p)
+        self.n_paths = len(self.instance.toll_paths)
         self.first_run = True
 
         self.m = Model('CVRP')
@@ -17,7 +17,7 @@ class LowerSolverAggregated:
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MINIMIZE
 
-        self.x = self.m.addVars([(n, p, k) for n in range(self.n_particles) for p in self.instance.p
+        self.x = self.m.addVars([(n, p, k) for n in range(self.n_particles) for p in self.instance.toll_paths
                                  for k in self.instance.commodities], vtype=GRB.BINARY)
         self.x_od = self.m.addVars([(n, k) for n in range(self.n_particles) for k in self.instance.commodities],
                                    vtype=GRB.BINARY)
@@ -35,18 +35,19 @@ class LowerSolverAggregated:
         for n in range(self.n_particles):
             for k in self.instance.commodities:
                 self.m.addConstr(
-                    quicksum(self.x[n, p, k] + self.x_od[n, k] for p in self.instance.p) == 1
+                    quicksum(self.x[n, p, k] + self.x_od[n, k] for p in self.instance.toll_paths) == 1
                 )
 
     def set_particle_constraint(self, path_costs):
-        path_dict = dict(zip(self.instance.p, range(self.n_paths)))
+        path_dict = dict(zip(self.instance.toll_paths, range(self.n_paths)))
         path_costs = path_costs.reshape(self.n_particles, self.n_paths)
         for n in range(self.n_particles):
             self.m.addConstr(
                 self.particle_minimum_cost[n] == quicksum(k.n_users *
-                                                          (quicksum((k.c_p[p] + path_costs[n, path_dict[p]]) *
+                                                          (quicksum((k.transfer_cost[p] + path_costs[n, path_dict[p]]) *
                                                                     self.x[n, p, k] for p in
-                                                                    self.instance.p) + k.c_od * self.x_od[n, k]) for k in
+                                                                    self.instance.toll_paths)
+                                                           + k.cost_free * self.x_od[n, k]) for k in
                                                           self.instance.commodities),
                 name=str(n)
             )
@@ -68,9 +69,9 @@ class LowerSolverAggregated:
 
         for k in self.instance.commodities:
             found = False
-            for p in self.instance.p:
+            for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
                     print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
                     found = True
             if not found:
-                print(k, 'c_od', k.c_od)
+                print(k, 'c_od', k.cost_free)

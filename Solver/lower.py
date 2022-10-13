@@ -13,21 +13,21 @@ class LowerSolver:
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MINIMIZE
 
-        self.x = self.m.addVars([(p, k) for p in self.instance.p for k in self.instance.commodities], vtype=GRB.BINARY)
+        self.x = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities], vtype=GRB.BINARY)
         self.x_od = self.m.addVars([k for k in self.instance.commodities], vtype=GRB.BINARY)
 
     def set_obj(self):
         self.m.setObjective(
             quicksum(
                 k.n_users * (quicksum((k.c_p[p] + self.instance.npp.edges[p]['weight']) * self.x[p, k] for p in
-                                      self.instance.p) + k.c_od * self.x_od[k]) for k in self.instance.commodities)
+                                      self.instance.toll_paths) + k.cost_free * self.x_od[k]) for k in self.instance.commodities)
         )
 
     def set_constraints(self):
 
         for k in self.instance.commodities:
             self.m.addConstr(
-                quicksum(self.x[p, k] for p in self.instance.p) + self.x_od[k] == 1
+                quicksum(self.x[p, k] for p in self.instance.toll_paths) + self.x_od[k] == 1
             )
 
     def solve(self):
@@ -38,9 +38,9 @@ class LowerSolver:
 
         for k in self.instance.commodities:
             found = False
-            for p in self.instance.p:
+            for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
                     print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
                     found = True
             if not found:
-                print(k, 'c_od', k.c_od)
+                print(k, 'c_od', k.cost_free)
