@@ -48,6 +48,7 @@ class Vector {
     T& operator [] (int n) {return v[n];}
     void push_back(T val) {v.push_back(val);}
     void pop_back() {v.pop_back();}
+    Vector<T> get_vect() {return v;}
     std::vector<double>::iterator begin() {return v.begin();}
     std::vector<double>::iterator end() {return v.end();}
     void random(int ndim, T i, T f);

@@ -9,7 +9,7 @@ class Swarm:
 
     def __init__(self, init_norm_array: np.array, cost_array: np.array, scale_factor_array: np.array, n, n_, n_iterations):
         self.n, self.n_, self.n_iterations = n, n_, n_iterations
-        self.scale_factor_array = np.array(scale_factor_array)
+        self.scale_factor_array = np.array(list(scale_factor_array))
         self.lib = ctypes.CDLL('PSO/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
@@ -40,11 +40,14 @@ class Swarm:
         return self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
     def update_best(self, best_particle_idx, new_best_val):
+
         return self.lib.update_best_(ctypes.c_void_p(self.swarm), best_particle_idx, new_best_val)
 
     def update_swarm(self, iteration, run_values: np.array):
-        self.lib.update_swarm_(ctypes.c_void_p(self.swarm), iteration,
+        self.lib.update_swarm_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n*self.n_,))
+        path_costs = self.lib.update_swarm_(ctypes.c_void_p(self.swarm), iteration,
                                run_values.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+        return path_costs
 
     def print_swarm(self):
         self.lib.print_s(self.swarm)

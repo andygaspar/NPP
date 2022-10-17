@@ -35,6 +35,7 @@ class Swarm {
     double c_cog=1.49445;
     double best_val;
     Vector<double> p_best;
+    double* actual_costs;
     double (*fp)(Vector<double>);
 
     int num_threads;
@@ -42,7 +43,7 @@ class Swarm {
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
 
     public:
-    Swarm(double* cost_array, double* actual_costs, double* sfa, int n, int n_, int n_iter, double (*f)(Vector<double>));
+    Swarm(double* cost_array, double* ac, double* sfa, int n, int n_, int n_iter, double (*f)(Vector<double>));
     Swarm() {n_particles=1; n_dim=2; particles=Vector<Particle>{n_particles}; p_best=particles[0].pos(); num_threads=2;}
 
     double get_best_val() {return best_val;}
@@ -52,19 +53,21 @@ class Swarm {
     //void test(Particle p);
 
     void update_w() {w = w - 0.5/(n_iterations);}
-    void update_swarm(int iteration, double* run_results);
+    double* update_swarm(int iteration, double* run_results);
     int size() {return n_particles;}
     Vector<double> position(int i) {return particles[i].pos();}
     void print();
 };
 
 
-Swarm::Swarm(double* cost_array, double* actual_costs, double* sfa, int n, int n_, int n_iter, double (*f)(Vector<double>)) {
+Swarm::Swarm(double* cost_array, double* ac, double* sfa, int n, int n_, int n_iter, double (*f)(Vector<double>)) {
     n_iterations = n_iter;
     n_particles=n; 
     n_dim=n_;
     best_val = 0;
+    actual_costs = ac;
     particles=Vector<Particle>{n_particles};
+
     for(int i=0;i<n_particles;++i){
         particles[i] = Particle{&cost_array[n_dim*i],&actual_costs[n_dim*i], sfa, n_dim, i};
     p_best=particles[0].pos();
@@ -74,9 +77,9 @@ Swarm::Swarm(double* cost_array, double* actual_costs, double* sfa, int n, int n
     num_threads=1;
 }
 
-void Swarm::update_swarm(int iteration, double* run_results) {
-    Vector<double> ress = particles[2].pos();
-    std::cout<<"iteration"<<iteration<<" "<<ress<<std::endl;
+double* Swarm::update_swarm(int iteration, double* run_results) {
+//    Vector<double> ress = particles[2].pos();
+//    std::cout<<"iteration"<<iteration<<" "<<ress<<std::endl;
     #pragma omp parallel for num_threads(this->num_threads)
     for(int i=0;i<n_particles;++i) {
         if(run_results[i] > particles[i].get_personal_best_val()) {
@@ -85,9 +88,12 @@ void Swarm::update_swarm(int iteration, double* run_results) {
         particles[i].update_pos();
         particles[i].update_vel(w,c_soc,c_cog,p_best);
     }
-    Vector<double> res = particles[2].pos();
-    std::cout<<"iteration"<<iteration<<" "<<res<<std::endl;
+//    std::cout<<" actual ";
+//    for(int i=0; i<n_particles*n_dim; i++) std::cout<<actual_costs[i]<<" ";
+//    std::cout<<std::endl;
     this->update_w();
+
+    return actual_costs;
 }
 
 

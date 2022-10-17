@@ -65,13 +65,13 @@ class GlobalSolver:
             self.instance.npp.edges[p]["weight"] = self.t[p].x
             print(p, self.instance.npp.edges[p]["weight"])
 
-        for k in self.instance.commodities:
-            found = False
-            for p in self.instance.toll_paths:
-                if self.x[p, k].x > 0.9:
-                    print(k, p, k.transfer_cost[p] + self.instance.npp.edges[p]["weight"])
-                    found = True
-            if not found:
-                print(k, 'c_od', k.cost_free)
+        # for k in self.instance.commodities:
+        #     found = False
+        #     for p in self.instance.toll_paths:
+        #         if self.x[p, k].x > 0.9:
+        #             print(k, p, k.transfer_cost[p] + self.instance.npp.edges[p]["weight"])
+        #             found = True
+        #     if not found:
+        #         print(k, 'c_od', k.cost_free)
 
 

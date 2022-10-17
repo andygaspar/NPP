@@ -27,7 +27,8 @@ class Particle {
     Vector<double> v;
     Vector<double> scale_factor_array;
     Vector<double> personal_best;
-    Vector<double> actual_costs;
+//    Vector<double> actual_costs;
+    double* actual_costs;
     double personal_best_val;
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
 
@@ -38,8 +39,10 @@ class Particle {
         p = Vector<double> {array_};
         std::vector<double> array_1(sfa, sfa + n*sizeof(sfa)/sizeof(sfa[0]));
         scale_factor_array = Vector<double> {array_1};
-        std::vector<double> array_2(ac, ac + n*sizeof(ac)/sizeof(ac[0]));
-        actual_costs = Vector<double> {array_2};
+//        std::vector<double> array_2(ac, ac + n*sizeof(ac)/sizeof(ac[0]));
+//        actual_costs = Vector<double> {array_2};
+//        std::cout<<actual_costs<<std::endl;
+        actual_costs = ac;
 
         v= Vector<double> {n};
         personal_best = p;
@@ -58,11 +61,9 @@ class Particle {
 };
 
 void Particle::update_pos() {
-    //    p = p + v;
     for (int i=0; i < p.size(); i ++) {
         p[i] = p[i] + v[i];
         if (p[i] >= 1) {
-        std::cout<<"ééé"<<std::endl;
             p[i]= 1.;
             v[i] -= v[i];
             }
@@ -70,45 +71,17 @@ void Particle::update_pos() {
             p[i]= 0.;
             v[i] -= v[i];
             }
-
     }
-
-    actual_costs = p * scale_factor_array;
-    std::cout<<actual_costs<< "  rrrrrrr  "<<std::endl;
-//    {
-//    if(idx == 2) std::cout<<p<<std::endl;
-//
-//     this->reflection();
-//
-//
-//     if(idx == 2)   std::cout<<p<<"after"<<std::endl;
-//
-//
-//
-//    }
-
-}
-
-void Particle::reflection() {
-    for(int i=0;i<ndim;++i) {
-        if(p[i]<=0) {
-            p[i]=0;
-            v[i]=-v[i];
-            }
-        if(p[i]>=1) {
-            p[i]=1;
-            v[i]=-v[i];
-        }
-    }
+    for(int i=0; i<p.size(); i++) actual_costs[i] = p[i] * scale_factor_array[i];
+//    std::cout<<" actual ";
+//    for(int i=0; i<p.size(); i++) std::cout<<actual_costs[i]<<" ";
+//    std::cout<<std::endl;
 }
 
 void Particle::update_vel(double w, double c_soc, double c_cog, Vector<double> g) {
     Vector<double> r1{p.size(), 0.0, 1.0};
     Vector<double> r2{p.size(), 0.0, 1.0};
-//    std::cout<<w<<" "<<r1<<" "<<r2<<" "<<g<<std::endl;
-    std::cout<<v<<"   bef "<<g<<"  "<<p<<"  "<<personal_best<<std::endl;
     v = w*v + c_soc*(r1*(g - p)) + c_cog*(r2*(personal_best - p));
-    std::cout<<v<<"   after"<<std::endl;
 }
 
 std::ostream& operator<<( std::ostream &os, Particle& v ) {

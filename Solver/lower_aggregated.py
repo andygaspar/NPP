@@ -22,6 +22,7 @@ class LowerSolverAggregated:
         self.x_od = self.m.addVars([(n, k) for n in range(self.n_particles) for k in self.instance.commodities],
                                    vtype=GRB.BINARY)
 
+        self.path_dict = dict(zip(self.instance.toll_paths, range(self.n_paths)))
         self.particle_minimum_cost = self.m.addVars([n for n in range(self.n_particles)])
 
     def set_obj(self):
@@ -35,21 +36,20 @@ class LowerSolverAggregated:
         for n in range(self.n_particles):
             for k in self.instance.commodities:
                 self.m.addConstr(
-                    quicksum(self.x[n, p, k] + self.x_od[n, k] for p in self.instance.toll_paths) == 1
+                    quicksum(self.x[n, p, k] for p in self.instance.toll_paths) + self.x_od[n, k] == 1
                 )
 
     def set_particle_constraint(self, path_costs):
-        path_dict = dict(zip(self.instance.toll_paths, range(self.n_paths)))
         path_costs = path_costs.reshape(self.n_particles, self.n_paths)
         for n in range(self.n_particles):
             self.m.addConstr(
                 self.particle_minimum_cost[n] == quicksum(k.n_users *
-                                                          (quicksum((k.transfer_cost[p] + path_costs[n, path_dict[p]]) *
-                                                                    self.x[n, p, k] for p in
-                                                                    self.instance.toll_paths)
+                                                          (quicksum((k.transfer_cost[p] +
+                                                                     path_costs[n, self.path_dict[p]]) *
+                                                                    self.x[n, p, k] for p in self.instance.toll_paths)
                                                            + k.cost_free * self.x_od[n, k]) for k in
                                                           self.instance.commodities),
-                name=str(n)
+                name="new_path_"+str(n)
             )
 
     def set_up(self):
@@ -58,12 +58,17 @@ class LowerSolverAggregated:
 
     def solve(self, path_costs):
         if not self.first_run:
+            self.m.reset()
             for n in range(self.n_particles):
-                self.m.remove(self.m.getConstrByName(str(n)))
-            self.first_run = False
+                self.m.remove(self.m.getConstrByName("new_path_"+str(n)))
+        self.first_run = False
         self.set_particle_constraint(path_costs)
         self.m.optimize()
-        return np.array([self.particle_minimum_cost[n].x for n in range(self.n_particles)])
+        p_costs = path_costs.reshape(self.n_particles, self.n_paths)
+        upper_obj = np.array([sum([k.n_users * p_costs[n, self.path_dict[p]] * self.x[n, p, k].x
+                             for p in self.instance.toll_paths for k in self.instance.commodities])
+                              for n in range(self.n_particles)])
+        return upper_obj
 
     def print_stuff(self):
 
@@ -71,7 +76,7 @@ class LowerSolverAggregated:
             found = False
             for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
-                    print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
+                    print(k, p, k.transfer_cost[p] + self.instance.npp.edges[p]["weight"])
                     found = True
             if not found:
                 print(k, 'c_od', k.cost_free)

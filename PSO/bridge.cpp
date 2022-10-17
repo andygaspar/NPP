@@ -7,11 +7,11 @@ extern "C" {
     {return new Swarm(cost_array,actual_costs, scale_factor_array, n, n_, n_iter, &obj);}
 
 //    void update_(Swarm* swarm, int n){ swarm -> update(n); }
-    void update_swarm_(Swarm* swarm, int iteration, double* run_results){ swarm -> update_swarm(iteration, run_results); }
+    double* update_swarm_(Swarm* swarm, int iteration, double* run_results){
+    return swarm -> update_swarm(iteration, run_results); }
 
     double* test_io(double* input, int n) {
-        for(int i=0; i< n; i++) std::cout<<input[i]<<" ";
-        std::cout<<std::endl;
+
         double* output = new double[n];
         for (int i=0; i<n; i++) output[i] = i/2.0;
         return output;
