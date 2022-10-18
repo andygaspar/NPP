@@ -18,9 +18,9 @@ class LowerSolverAggregated:
         self.m.modelSense = GRB.MINIMIZE
 
         self.x = self.m.addVars([(n, p, k) for n in range(self.n_particles) for p in self.instance.toll_paths
-                                 for k in self.instance.commodities], vtype=GRB.BINARY)
+                                 for k in self.instance.commodities], lb=0, ub=1, vtype=GRB.CONTINUOUS)
         self.x_od = self.m.addVars([(n, k) for n in range(self.n_particles) for k in self.instance.commodities],
-                                   vtype=GRB.BINARY)
+                                   lb=0, ub=1, vtype=GRB.CONTINUOUS)
 
         self.path_dict = dict(zip(self.instance.toll_paths, range(self.n_paths)))
         self.particle_minimum_cost = self.m.addVars([n for n in range(self.n_particles)])

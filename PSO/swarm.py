@@ -7,8 +7,9 @@ from numpy.ctypeslib import ndpointer
 
 class Swarm:
 
-    def __init__(self, init_norm_array: np.array, cost_array: np.array, scale_factor_array: np.array, n, n_, n_iterations):
-        self.n, self.n_, self.n_iterations = n, n_, n_iterations
+    def __init__(self, init_norm_array: np.array, cost_array: np.array, scale_factor_array: np.array,
+                 n_particles, n_toll_paths, n_iterations):
+        self.n_particles, self.n_toll_paths, self.n_iterations = n_particles, n_toll_paths, n_iterations
         self.scale_factor_array = np.array(list(scale_factor_array))
         self.lib = ctypes.CDLL('PSO/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double),
@@ -27,7 +28,7 @@ class Swarm:
         self.swarm = self.lib.Swarm_(init_norm_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      cost_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      self.scale_factor_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     ctypes.c_int(self.n), ctypes.c_int(self.n_),
+                                     ctypes.c_int(self.n_particles), ctypes.c_int(self.n_toll_paths),
                                      self.n_iterations)
 
     def test_io(self, n):
@@ -44,7 +45,7 @@ class Swarm:
         return self.lib.update_best_(ctypes.c_void_p(self.swarm), best_particle_idx, new_best_val)
 
     def update_swarm(self, iteration, run_values: np.array):
-        self.lib.update_swarm_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n*self.n_,))
+        self.lib.update_swarm_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_particles*self.n_toll_paths,))
         path_costs = self.lib.update_swarm_(ctypes.c_void_p(self.swarm), iteration,
                                run_values.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
         return path_costs

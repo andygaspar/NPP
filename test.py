@@ -1,4 +1,5 @@
 import os as os
+import time
 
 import numpy as np
 
@@ -18,28 +19,40 @@ IMPLEMENTARE BOUND PARTICLE
 """
 os.system("PSO/install.sh")
 
-n_tolls = 3
-n_particles = 200
+# n_locations = 10
+# n_commodities = 10
+# n_tolls = 3
 
-npp = Instance(n_locations=5, n_tolls=n_tolls, n_commodities=10, seeds=True)
+n_locations = 10
+n_commodities = 15
+n_tolls = 8
+
+
+
+npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
 
 npp.show()
 
+t = time.time()
 global_solver = GlobalSolver(npp)
 global_solver.solve()
 
+print('time global ', time.time() - t)
+
 print("obj val global", global_solver.m.objVal)
 
-pippo = [npp.npp.edges[p]['weight'] for p in npp.toll_paths]
-max_total_val = max([max(list(com.M_p.values())) for com in npp.commodities])
-n_iterations = 100
+n_iterations = 30
+n_particles = 500
 
-path_costs = np.random.uniform(size=n_tolls*n_particles)
-init_norm_costs = np.random.uniform(size=n_tolls*n_particles)
+path_costs = np.random.uniform(size=npp.n_paths*n_particles)
+init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
 
 
 s = PsoSolver(npp, init_norm_costs, path_costs, n_particles, n_tolls, n_iterations)
+t = time.time()
 s.run()
+t = time.time() - t
+print('time ', t)
 # s.print_swarm()
 
 # s.test_io(10)

@@ -27,6 +27,7 @@ class Instance:
         self.locations = ['u ' + str(i) for i in range(self.n_locations)]
         self.tolls = ['T ' + str(i) for i in range(self.n_tolls)]
         self.toll_paths = list(combinations(self.tolls, r=2))
+        self.n_paths = len(self.toll_paths)
 
         self.npp = nx.Graph()
         self.npp.add_nodes_from([(u, {'color': 'g'}) for u in self.locations])
