@@ -4,6 +4,7 @@ from Instance.instance import Instance, Commodity
 from gurobipy import Model, GRB, quicksum, Env
 
 
+
 class LowerSolver:
 
     def __init__(self, instance: Instance):

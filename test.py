@@ -9,7 +9,7 @@ from Solver.global_ import GlobalSolver
 from Solver.lower import LowerSolver
 from Solver.lower_aggregated import LowerSolverAggregated
 from Solver.pso_solver import PsoSolver
-
+from Solver.pso_solver_parallel import PsoSolverParallel
 
 """
 
@@ -41,14 +41,14 @@ print('time global ', time.time() - t)
 
 print("obj val global", global_solver.m.objVal)
 
-n_iterations = 30
-n_particles = 500
+n_iterations = 100
+n_particles = 100
 
 path_costs = np.random.uniform(size=npp.n_paths*n_particles)
 init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
 
 
-s = PsoSolver(npp, init_norm_costs, path_costs, n_particles, n_tolls, n_iterations)
+s = PsoSolverParallel(npp, init_norm_costs, path_costs, n_particles, n_tolls, n_iterations)
 t = time.time()
 s.run()
 t = time.time() - t
