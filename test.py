@@ -15,13 +15,13 @@ IMPLEMENTARE BOUND PARTICLE
 """
 os.system("PSO/install.sh")
 
-n_locations = 10
-n_commodities = 10
-n_tolls = 3
-
 # n_locations = 10
-# n_commodities = 15
-# n_tolls = 8
+# n_commodities = 10
+# n_tolls = 3
+
+n_locations = 10
+n_commodities = 15
+n_tolls = 8
 
 
 

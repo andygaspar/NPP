@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import networkx as nx
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 
 from Instance.commodity import Commodity
+import pandas as pd
 
 
 class Instance:
@@ -62,9 +64,8 @@ class Instance:
                 if (comm.destination, toll) in transfers:
                     transfers.remove((comm.destination, toll))
 
-
-
         self.npp.remove_edges_from(edges + transfers)
+        self.npp.remove_nodes_from(list(nx.isolates(self.npp)))
 
     def show(self):
 
@@ -74,9 +75,20 @@ class Instance:
         plt.show()
 
     def save_problem(self):
-        # comm: Commodity
-        # commodities_tax_free = [comm.cost_free for comm in self.commodities]
-        # transfer_costs = np.array([[self.npp[comm.origin][tall]['weight'] for tall in self.toll]
-        #                            for comm in self.commodities])
-        # upper_bounds = np.max(transfer_costs, axis=0)
-        print("ll")
+        comm: Commodity
+        commodities_tax_free = np.array([comm.cost_free for comm in self.commodities])
+        transfer_costs = np.array([[comm.transfer_cost[path] for comm in self.commodities]
+                                   for path in self.toll_paths])
+        upper_bounds = np.array(list(self.N_p.values()))
+        folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
+        try:
+            os.mkdir(folder_name)
+            pd.DataFrame(commodities_tax_free).to_csv(folder_name + '/commodities_tax_free.csv',
+                                                      index=False, index_label=False, header=False)
+            pd.DataFrame(transfer_costs).to_csv(folder_name + '/transfer_costs.csv',
+                                                index=False, index_label=False, header=False)
+            pd.DataFrame(upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
+                                              index=False, index_label=False, header=False)
+
+        except:
+            pass
