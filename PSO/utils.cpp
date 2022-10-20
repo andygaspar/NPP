@@ -56,10 +56,10 @@ class Vector {
 
 //random vector initialization
 template<typename T>
-Vector<T>::Vector(int ndim, T i, T f) {
+Vector<T>::Vector(int ndim, T start, T end) {
     v=std::vector<T>(ndim);
     std::default_random_engine generator(std::rand());
-    std::uniform_real_distribution<T> distribution(i,f);
+    std::uniform_real_distribution<T> distribution(start,end);
     for(int j=0;j<ndim;++j)
         v[j] = distribution(generator);
 }

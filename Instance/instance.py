@@ -77,9 +77,10 @@ class Instance:
     def save_problem(self):
         comm: Commodity
         commodities_tax_free = np.array([comm.cost_free for comm in self.commodities])
-        transfer_costs = np.array([[comm.transfer_cost[path] for comm in self.commodities]
-                                   for path in self.toll_paths])
+        transfer_costs = np.array([[comm.transfer_cost[path] for path in self.toll_paths]
+                                   for comm in self.commodities])
         upper_bounds = np.array(list(self.N_p.values()))
+        n_users = [comm.n_users for comm in self.commodities]
         folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
         try:
             os.mkdir(folder_name)
@@ -89,6 +90,8 @@ class Instance:
                                                 index=False, index_label=False, header=False)
             pd.DataFrame(upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
                                               index=False, index_label=False, header=False)
+            pd.DataFrame(n_users).to_csv(folder_name + '/n_users.csv',
+                                         index=False, index_label=False, header=False)
 
         except:
             pass
