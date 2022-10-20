@@ -28,27 +28,27 @@ class FileReader{
 
     FileReader(string folder_name){
         comm_t_free_dims = get_dims(folder_name + "/commodities_tax_free.csv");
-        std::cout<<comm_t_free_dims.rows<<' '<<comm_t_free_dims.cols<<std::endl;
+        //std::cout<<comm_t_free_dims.rows<<' '<<comm_t_free_dims.cols<<std::endl;
         commodities_tax_free = fill_array(folder_name + "/commodities_tax_free.csv", comm_t_free_dims);
-        print_array(commodities_tax_free, comm_t_free_dims);
+        //print_array(commodities_tax_free, comm_t_free_dims);
 
         n_commodities=comm_t_free_dims.rows;
 
         ub_dims = get_dims(folder_name + "/upper_bounds.csv");
-        std::cout<<ub_dims.rows<<' '<<ub_dims.cols<<std::endl;
+        //std::cout<<ub_dims.rows<<' '<<ub_dims.cols<<std::endl;
         upper_bounds = fill_array(folder_name + "/upper_bounds.csv", ub_dims);
-        print_array(upper_bounds, ub_dims);
+        //print_array(upper_bounds, ub_dims);
         n_tolls = ub_dims.rows;
 
         n_users_dims = get_dims(folder_name + "/n_users.csv");
-        std::cout<<n_users_dims.rows<<' '<<n_users_dims.cols<<std::endl;
+        //std::cout<<n_users_dims.rows<<' '<<n_users_dims.cols<<std::endl;
         n_users = fill_array_int(folder_name + "/n_users.csv", n_users_dims);
-        print_array(n_users, n_users_dims);
+        //print_array(n_users, n_users_dims);
 
         tra__dims = get_dims(folder_name + "/transfer_costs.csv");
-        std::cout<<tra__dims.rows<<' '<<tra__dims.cols<<std::endl;
+        //std::cout<<tra__dims.rows<<' '<<tra__dims.cols<<std::endl;
         transfer_costs = fill_mat(folder_name + "/transfer_costs.csv", tra__dims);
-        print_mat(transfer_costs, tra__dims);
+        //print_mat(transfer_costs, tra__dims);
     }
 
     ~FileReader(){

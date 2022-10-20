@@ -20,8 +20,8 @@ IMPLEMENTARE BOUND PARTICLE
 # n_tolls = 3
 
 n_locations = 50
-n_commodities = 20
-n_tolls = 10
+n_commodities = 15
+n_tolls = 8
 
 
 

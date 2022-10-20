@@ -2,7 +2,8 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
-#include "utils.cpp"
+#include <random>
+//#include "utils.cpp"
 
 /*
 Particle class implements a particle object such that:
@@ -20,18 +21,17 @@ The methods implemented aim to:
 */
 
 class Particle {
-    private:
+    public:
     short n_commodities;
     short n_tolls;
     int idx;
     double** transfer_costs;
-    Vector<double> upper_bounds;
-    Vector<double> commodities_tax_free;
-    Vector<int> n_users;
-    Vector<double> p;
-    Vector<double> v;
-    Vector<double> personal_best;
-//    Vector<double> actual_costs;
+    double* upper_bounds;
+    double* commodities_tax_free;
+    int* n_users;
+    double* p;
+    double* v;
+    double* personal_best;
     double personal_best_val;
     double run_cost;
     double commodity_cost;
@@ -39,7 +39,6 @@ class Particle {
     double toll_cost;
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
 
-    public:
     Particle() {}
 
     Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* u_bounds, short n_comm, short n_to, int i) {
@@ -47,21 +46,20 @@ class Particle {
         n_commodities=n_comm;
         n_tolls=n_to;
 
-        std::vector<double> vect_com(comm_tax_free, comm_tax_free + n_commodities);
-        commodities_tax_free = Vector<double> {vect_com};
-        int size = sizeof(n_users[0]);
+        commodities_tax_free = comm_tax_free;
+
         transfer_costs = new double*[n_comm];
         for(int i =0; i<n_commodities; i++) transfer_costs[i]=&trans_costs[i*n_tolls];
+        n_users = n_usr;        
 
-        std::vector<int> vect_n_usr(n_usr, n_usr + n_commodities);
-        n_users = Vector<int> {vect_n_usr};        
+        upper_bounds = u_bounds;
 
-        std::vector<double> vect_up(u_bounds, u_bounds + n_tolls);
-        upper_bounds = Vector<double> {vect_up};
+        p = new double[n_tolls];
+        for(int i=0; i< n_tolls; i++) p[i] = get_rand(0, 1) * upper_bounds[i];
 
-        p = Vector<double>(n_tolls, 0, 1);
-        p = p * upper_bounds;
-        v= Vector<double> {n_commodities};
+        v= new double[n_commodities];
+        for(int i=0; i< n_commodities; i++) v[i] = 0;
+
         personal_best = p;
         personal_best_val = pow(10, 6);
         init_commodity_cost = pow(10, 5);
@@ -71,38 +69,22 @@ class Particle {
     double get_personal_best_val() {return personal_best_val;}
     void update_pos();
     void reflection();
-    void update_vel(double w, double c_soc, double c_cog, Vector<double> g);
+    void update_vel(double w, double c_soc, double c_cog, double* g);
     void update_best(double new_personal_best_val) {personal_best_val = new_personal_best_val; personal_best=p;}
-    void set_pos(Vector<double> new_pos) {p=new_pos;}
-    void set_vel(Vector<double> new_vel) {v=new_vel;}
-    Particle(const Particle& new_particle) {
-        n_commodities = new_particle.n_commodities;
-        n_tolls = new_particle.n_tolls;
-        idx = new_particle.idx;
-        transfer_costs = new_particle.transfer_costs;
-        upper_bounds = new_particle.upper_bounds;
-        commodities_tax_free = new_particle.commodities_tax_free;
-        n_users = new_particle.n_users;
-        p = new_particle.p;
-        v = new_particle.v;
-        personal_best = new_particle.personal_best;
-    //    Vector<double> actual_costs = new_particle.n_tolls;
-        personal_best_val = new_particle.personal_best_val;
-        run_cost = new_particle.run_cost;
-        commodity_cost = new_particle.commodity_cost;
-        init_commodity_cost = new_particle.init_commodity_cost;
-        toll_cost = new_particle.toll_cost;
-    }
-    Vector<double> p_b() {return personal_best;}
-    Vector<double> pos() {return p;}
-    Vector<double> vel() {return v;}
+
+    double get_rand(double start, double end) {
+        std::default_random_engine generator(std::rand());
+        std::uniform_real_distribution<double> distribution(start, end);
+        return distribution(generator);
+        }
+
     double compute_obj_and_update_best();
     void print();
 };
 
 void Particle::update_pos() {
 
-    for (int i=0; i < p.size(); i ++) {
+    for (int i=0; i < n_tolls; i ++) {
         p[i] = p[i] + v[i];
         if (p[i] >= upper_bounds[i]) {
             std::default_random_engine generator(std::rand());
@@ -119,28 +101,19 @@ void Particle::update_pos() {
     }
 }
 
-void Particle::update_vel(double w, double c_soc, double c_cog, Vector<double> g) {
+void Particle::update_vel(double w, double c_soc, double c_cog, double* g) {
 
-    Vector<double> r1{p.size(), 0.0, 1.0};
-    Vector<double> r2{p.size(), 0.0, 1.0};
-    for(int i=0; i<n_tolls; i++) v[i] = w*v[i] + c_soc*(r1[i]*(g[i] - p[i])) + c_cog*(r2[i]*(personal_best[i] - p[i]));
+    for(int i=0; i<n_tolls; i++) v[i] = w*v[i] + c_soc*((g[i] - p[i])) + c_cog*((personal_best[i] - p[i]));
 }
 
 double Particle::compute_obj_and_update_best(){
     run_cost=0;
     int i,j,cheapest_path_idx;
-    std::cout<<"started "<<init_commodity_cost<<std::endl;
     for(i=0; i<n_commodities; i++) {
-                    std::cout<< "jjjj"<<std::endl;
 
         commodity_cost=init_commodity_cost;
-                    std::cout<< "kkkk"<<p<<std::endl;
 
         for(j=0; j< n_tolls; j++) {
-            std::cout<< "tr"<<std::endl;
-
-            std::cout<<transfer_costs[i][j] << std::endl;
-            std::cout<< p[j]<<std::endl;
             toll_cost = p[j] + transfer_costs[i][j];
             if(toll_cost < commodity_cost) {
                 commodity_cost = toll_cost;
