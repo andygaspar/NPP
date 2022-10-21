@@ -25,13 +25,13 @@ class Particle {
     short n_commodities;
     short n_tolls;
     int idx;
-    double** transfer_costs;
-    double* upper_bounds;
-    double* commodities_tax_free;
-    int* n_users;
-    double* p;
-    double* v;
-    double* personal_best;
+    std::vector<std::vector<double>> transfer_costs;
+    std::vector<double> upper_bounds;
+    std::vector<double> commodities_tax_free;
+    std::vector<int> n_users;
+    std::vector<double> p;
+    std::vector<double> v;
+    std::vector<double> personal_best;
     double personal_best_val;
     double run_cost;
     double commodity_cost;
@@ -46,19 +46,26 @@ class Particle {
         n_commodities=n_comm;
         n_tolls=n_to;
 
-        commodities_tax_free = comm_tax_free;
+        commodities_tax_free = std::vector<double> (n_commodities);
+        for(int i=0; i< n_commodities; i++) commodities_tax_free[i] = comm_tax_free[i];
 
-        transfer_costs = new double*[n_comm];
-        for(int i =0; i<n_commodities; i++) transfer_costs[i]=&trans_costs[i*n_tolls];
-        n_users = n_usr;        
+        transfer_costs = std::vector<std::vector<double>>(n_commodities);
+        for(int i =0; i<n_commodities; i++)  {
+            transfer_costs[i] = std::vector<double>(n_tolls);
+            for(int j=0; j< n_tolls; j++) transfer_costs[i][j]=trans_costs[i*n_tolls + j];
+        }
 
-        upper_bounds = u_bounds;
+        n_users = std::vector<int> (n_commodities);
+        for(int i=0; i< n_commodities; i++) n_users[i] = n_usr[i];
 
-        p = new double[n_tolls];
-        for(int i=0; i< n_tolls; i++) p[i] = get_rand(0, 1) * upper_bounds[i];
+        upper_bounds = std::vector<double> (n_tolls);
+        for(int j=0; j< n_tolls; j++) upper_bounds[j] = u_bounds[j];
 
-        v= new double[n_commodities];
-        for(int i=0; i< n_commodities; i++) v[i] = 0;
+        p = std::vector<double> (n_tolls);
+        for(int j=0; j< n_tolls; j++) p[j] = get_rand(0, 1) * upper_bounds[j];
+
+        v= std::vector<double> (n_tolls);
+        for(int j=0; j< n_tolls; j++) v[j] = 0;
 
         personal_best = p;
         personal_best_val = pow(10, 6);
@@ -137,14 +144,14 @@ void Particle::print() {
         for(int j=0; j<n_tolls; j++) std::cout<<transfer_costs[i][j]<<' ';
         std::cout<<std::endl;
     }
-    std::cout<<std::endl<<"upper bounds"<<std::endl<<upper_bounds<<std::endl;
-    std::cout<<std::endl<<"n users"<<std::endl<<n_users<<std::endl;
-    std::cout<<std::endl<<"p"<<std::endl<<p<<std::endl;
+    std::cout<<std::endl<<"upper bounds"<<std::endl<<upper_bounds[0]<<std::endl;
+    std::cout<<std::endl<<"n users"<<std::endl<<n_users[0]<<std::endl;
+    std::cout<<std::endl<<"p"<<std::endl<<p[0]<<std::endl;
     
 }
 
 std::ostream& operator<<( std::ostream &os, Particle& v ) {
-    std::cout<<"pos -> "<<v.p<<" vel -> "<<v.v;
+    std::cout<<"pos -> "<<v.p[0]<<" vel -> "<<v.v[0];
     return os;
 }
 

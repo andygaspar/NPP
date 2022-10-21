@@ -67,6 +67,12 @@ class Instance:
         self.npp.remove_edges_from(edges + transfers)
         self.npp.remove_nodes_from(list(nx.isolates(self.npp)))
 
+        self.commodities_tax_free = np.array([comm.cost_free for comm in self.commodities])
+        self.transfer_costs = np.array([comm.transfer_cost[path] for path in self.toll_paths
+                                        for comm in self.commodities])
+        self.upper_bounds = np.array(list(self.N_p.values()))
+        self.n_users = np.array([comm.n_users for comm in self.commodities])
+
     def show(self):
 
         nx.draw(self.npp, node_color=[self.npp.nodes[n]['color'] for n in self.npp.nodes],
@@ -76,22 +82,18 @@ class Instance:
 
     def save_problem(self):
         comm: Commodity
-        commodities_tax_free = np.array([comm.cost_free for comm in self.commodities])
-        transfer_costs = np.array([[comm.transfer_cost[path] for path in self.toll_paths]
-                                   for comm in self.commodities])
-        upper_bounds = np.array(list(self.N_p.values()))
-        n_users = [comm.n_users for comm in self.commodities]
+        transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_tolls))
         folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
         try:
             os.mkdir(folder_name)
-            pd.DataFrame(commodities_tax_free).to_csv(folder_name + '/commodities_tax_free.csv',
-                                                      index=False, index_label=False, header=False)
+            pd.DataFrame(self.commodities_tax_free).to_csv(folder_name + '/commodities_tax_free.csv',
+                                                           index=False, index_label=False, header=False)
             pd.DataFrame(transfer_costs).to_csv(folder_name + '/transfer_costs.csv',
                                                 index=False, index_label=False, header=False)
-            pd.DataFrame(upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
+            pd.DataFrame(self.upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
+                                                   index=False, index_label=False, header=False)
+            pd.DataFrame(self.n_users).to_csv(folder_name + '/n_users.csv',
                                               index=False, index_label=False, header=False)
-            pd.DataFrame(n_users).to_csv(folder_name + '/n_users.csv',
-                                         index=False, index_label=False, header=False)
 
         except:
             pass

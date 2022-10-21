@@ -29,10 +29,6 @@ class Swarm {
     int n_iterations;
     short n_commodities;
     short n_tolls;
-    int* n_users;
-    double* transfer_costs;
-    double* upper_bounds;
-    double* commodities_tax_free;
     double lim_l=0.0;
     double lim_h=1.0;
     double w=0.9;
@@ -41,9 +37,6 @@ class Swarm {
     double best_val;
     short best_particle_idx;
     double* p_best;
-
-    //double (*fp)(Vector<double>);
-
     short num_threads;
 
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
@@ -51,7 +44,8 @@ class Swarm {
     public:
     Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* u_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th);
     //Swarm() {n_particles=1; n_dim=2; particles=Vector<Particle>{n_particles}; p_best=particles[0].pos(); num_threads=2;}
-
+    double get_best_val() {return best_val;}
+    double * get_best() {return p_best;}
     void run();
 
     void update_w() {w = w - 0.5/(n_iterations);}
@@ -71,32 +65,10 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr,double* transf_costs, double* u_b
     best_val = 0;
 
     p_best = new double[n_tolls];
-
-    commodities_tax_free = new double[n_commodities*n_particles];
-    for(int i=0; i<n_particles;i++) {
-        for(int j=0; j<n_commodities; j++) commodities_tax_free[i*n_commodities + j] = comm_tax_free[j];
-    } 
-
-
-    n_users = new int[n_commodities*n_particles];
-    for(int i=0; i<n_particles;i++) {
-        for(int j=0; j<n_commodities; j++) n_users[i*n_commodities + j] = n_usr[j];
-    } 
-
-    transfer_costs = new double[n_commodities*n_tolls*n_particles];
-    for(int i=0; i<n_particles;i++) {
-        for(int j=0; j<n_tolls * n_commodities; j++)transfer_costs[i*n_tolls*n_commodities + j] = transf_costs[j];
-        
-    } 
-    upper_bounds=new double[n_tolls*n_particles];
-    for(int i=0; i<n_particles;i++) {
-        for(int j=0; j<n_tolls; j++) upper_bounds[i*n_tolls + j] = u_bounds[j];
-    } ;
     particles=std::vector<Particle>(n_particles);
 
     for(int i=0;i<n_particles;++i){
-        particles[i] = Particle{&commodities_tax_free[n_commodities*i], &n_users[n_commodities*i] ,&transfer_costs[n_tolls*n_commodities*i], 
-        &upper_bounds[n_tolls*i], n_commodities, n_tolls, i};
+        particles[i] = Particle{comm_tax_free, n_usr ,transf_costs, u_bounds, n_commodities, n_tolls, i};
     
     for(int i=0; i< n_tolls; i++) p_best[i]=particles[0].p[i];
     //fp = f;
@@ -113,13 +85,11 @@ void Swarm::run(){
 
     for(int iter=0; iter< n_iterations; iter++) {
 
-        std::cout<< " here" << std::endl;
 
         #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_particles, particles)
         for(i=0;i<n_particles;++i) {
             run_results[i] = particles[i].compute_obj_and_update_best();
         }
-        std::cout<< "now here" << std::endl;
 
         for(i=0;i<n_particles;++i){
             if(run_results[i] > best_val) {
@@ -132,23 +102,15 @@ void Swarm::run(){
             for(int i=0; i< n_tolls; i++) p_best[i]=particles[best_particle_idx].p[i];
             new_best = false;
         }
-        
-        
-        
         #pragma omp parallel for num_threads(this->num_threads) shared(w, c_soc, c_cog, p_best)
         for(i=0;i<n_particles;++i) {
-            std::cout<<"here"<<std::endl;
             particles[i].update_pos();
             particles[i].update_vel(w,c_soc,c_cog, p_best);
-            std::cout<<"and here"<<std::endl;
         }
-        std::cout<< "got here" << std::endl;
         this->update_w();
 
-        if(iter%1000==0) std::cout<<best_val<<std::endl;
+        if(iter%1000==0) std::cout<<best_val<<"  iter"<< iter<< std::endl;
     }
-    std::cout<<p_best<<std::endl;
-    std::cout<<"best val "<<best_val<<std::endl;
 }
 
 

@@ -1,4 +1,5 @@
 import ctypes
+import multiprocessing
 import os
 
 import numpy as np
@@ -7,48 +8,36 @@ from numpy.ctypeslib import ndpointer
 
 class Swarm:
 
-    def __init__(self, init_norm_array: np.array, cost_array: np.array, scale_factor_array: np.array,
-                 n_particles, n_toll_paths, n_iterations):
-        self.n_particles, self.n_toll_paths, self.n_iterations = n_particles, n_toll_paths, n_iterations
-        self.scale_factor_array = np.array(list(scale_factor_array))
+    def __init__(self, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
+                 upper_bounds: np.array,
+                 n_commodities, n_toll_paths, n_particles, n_iterations):
+        num_threads = multiprocessing.cpu_count()
+
         self.lib = ctypes.CDLL('PSO/bridge.so')
-        self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double),
+        self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
-                                    ctypes.c_int, ctypes.c_int, ctypes.c_int]
-        # self.lib.update_.argtypes = [ctypes.c_int]
-        # self.lib.update_.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_double]
-        self.lib.update_swarm_.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
-        self.lib.test_io.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
-        self.lib.print_s.argtypes = []
+                                    ctypes.c_short, ctypes.c_short, ctypes.c_short, ctypes.c_int, ctypes.c_short]
         self.lib.Swarm_.restype = ctypes.c_void_p
+
+        self.lib.run_.argtypes = [ctypes.c_void_p]
+
         self.lib.get_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_val_.restype = ctypes.c_double
-        self.lib.update_best_.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_double]
 
-        self.swarm = self.lib.Swarm_(init_norm_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     cost_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     self.scale_factor_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     ctypes.c_int(self.n_particles), ctypes.c_int(self.n_toll_paths),
-                                     self.n_iterations)
+        self.lib.get_best_.argtypes = [ctypes.c_void_p]
+        self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
 
-    def test_io(self, n):
-        self.lib.test_io.restype = ndpointer(dtype=ctypes.c_double, shape=(n,))
-        input_vect = np.random.uniform(size=n)
-        output_vect = self.lib.test_io(input_vect.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), n)
-        print(output_vect)
+        self.swarm = self.lib.Swarm_(commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                     n_users.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+                                     transfer_costs.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                     upper_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                     ctypes.c_short(n_commodities), ctypes.c_short(n_toll_paths),
+                                     ctypes.c_short(n_particles), ctypes.c_int(n_iterations),
+                                     ctypes.c_short(num_threads))
 
     def get_best(self):
-        return self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
+        return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def update_best(self, best_particle_idx, new_best_val):
-
-        return self.lib.update_best_(ctypes.c_void_p(self.swarm), best_particle_idx, new_best_val)
-
-    def update_swarm(self, iteration, run_values: np.array):
-        self.lib.update_swarm_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_particles*self.n_toll_paths,))
-        path_costs = self.lib.update_swarm_(ctypes.c_void_p(self.swarm), iteration,
-                               run_values.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
-        return path_costs
-
-    def print_swarm(self):
-        self.lib.print_s(self.swarm)
+    def run(self):
+        self.lib.run_(ctypes.c_void_p(self.swarm))
+        return True

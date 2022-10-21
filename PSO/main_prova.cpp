@@ -21,12 +21,12 @@ int main() {
     std::cout<<"time: "<<((float) end - start)/CLOCKS_PER_SEC<<" s"<<std::endl;
     */
 
-    string file_name = "../TestCases/comm_40_tolls_20";
+    string file_name = "../TestCases/comm_15_tolls_8";
     FileReader file_reader{file_name};
     std::cout<<std::endl<<std::endl;
-    short n_particles = 64;
-    int n_iterations = 40000;
-    short num_th = 1;
+    short n_particles = 128;
+    int n_iterations = 100000;
+    short num_th = 16;
 
     Swarm s{file_reader.commodities_tax_free, file_reader.n_users,file_reader.transfer_costs, file_reader.upper_bounds, 
                   file_reader.n_commodities, file_reader.n_tolls, n_particles, n_iterations, num_th};
