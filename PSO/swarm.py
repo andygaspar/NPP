@@ -12,7 +12,6 @@ class Swarm:
                  upper_bounds: np.array,
                  n_commodities, n_toll_paths, n_particles, n_iterations):
         num_threads = multiprocessing.cpu_count()
-
         self.lib = ctypes.CDLL('PSO/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
@@ -29,6 +28,8 @@ class Swarm:
 
         self.lib.set_init_sols_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double),
                                             ctypes.c_int]
+
+        n_users = np.array(n_users, dtype=np.intc)
 
         self.swarm = self.lib.Swarm_(commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      n_users.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),

@@ -93,21 +93,22 @@ class GlobalSolver:
         print(self.m.status)
 
     def print_model(self):
-        for p in self.instance.toll_paths:
-            self.instance.npp.edges[p]["weight"] = self.t[p].x
-            print(p, self.instance.npp.edges[p]["weight"])
+        # for p in self.instance.toll_paths:
+            # self.instance.npp.edges[p]["weight"] = self.t[p].x
+            # print(p, self.instance.npp.edges[p]["weight"])
 
         best_val = 0
-        for k in self.instance.commodities:
+        for i, k in enumerate(self.instance.commodities):
             found = False
             for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
                     gain = self.t[p].x * k.n_users * self.x[p, k].x
                     best_val += gain
-                    print(k, p, (self.t[p].x + k.transfer_cost[p]) * self.x[p, k].x < k.cost_free)
+
+                    print(i, k, k.n_users, k.transfer_cost[p], self.t[p].x, self.t[p].x + k.transfer_cost[p], k.cost_free)
                     found = True
-            if not found:
-                print(k, 'c_od', k.cost_free)
+            # if not found:
+            #     print(k, 'c_od', k.cost_free)
 
         print('actual best_val', best_val)
 

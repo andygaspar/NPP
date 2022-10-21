@@ -20,8 +20,8 @@ os.system("PSO/install.sh")
 # n_tolls = 3
 
 n_locations = 50
-n_commodities = 15
-n_tolls = 8
+n_commodities = 20
+n_tolls = 10
 
 npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
 npp.save_problem()
@@ -35,15 +35,17 @@ print('time global ', time.time() - t)
 
 print("obj val global", global_solver.m.objVal)
 
-n_iterations = 100000
+n_iterations = 10000
 n_particles = 128
 #
 # path_costs = np.random.uniform(size=npp.n_paths*n_particles)
 # init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
 #
 #
-s = PsoSolver(npp, None, n_particles, n_iterations, time_limit=1, init_sol_num=3)
+t = time.time()
+s = PsoSolver(npp, None, n_particles, n_iterations, time_limit=2, init_sol_num=5)
 s.run()
+print('time pso ', time.time() - t)
 print(s.best_val)
 
 

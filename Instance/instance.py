@@ -68,10 +68,12 @@ class Instance:
         self.npp.remove_nodes_from(list(nx.isolates(self.npp)))
 
         self.commodities_tax_free = np.array([comm.cost_free for comm in self.commodities])
-        self.transfer_costs = np.array([comm.transfer_cost[path] for path in self.toll_paths
-                                        for comm in self.commodities])
+        self.transfer_costs = np.array([comm.transfer_cost[path]
+                                        for comm in self.commodities for path in self.toll_paths])
         self.upper_bounds = np.array(list(self.N_p.values()))
         self.n_users = np.array([comm.n_users for comm in self.commodities])
+        print("users python")
+        print(self.n_users)
 
     def show(self):
 

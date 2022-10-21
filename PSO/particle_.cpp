@@ -119,15 +119,23 @@ double Particle::compute_obj_and_update_best(){
     for(i=0; i<n_commodities; i++) {
 
         commodity_cost=init_commodity_cost;
-
+        bool found = false;
+        //std::cout<<i<<"   "<<commodities_tax_free[i]<<std::endl;
         for(j=0; j< n_tolls; j++) {
+            
             toll_cost = p[j] + transfer_costs[i][j];
             if(toll_cost < commodity_cost) {
                 commodity_cost = toll_cost;
                 cheapest_path_idx = j;
                 }
         }
-        if(commodities_tax_free[i] >= commodity_cost) run_cost += p[cheapest_path_idx]*n_users[i];
+        if(commodities_tax_free[i] >= commodity_cost- 0.1) {
+            found = true;
+            run_cost += p[cheapest_path_idx]*n_users[i];
+        }
+       // std::cout<<i<<"  "<<found<<"   "<<p[cheapest_path_idx]<<"   users "<<n_users[i] <<"   p "
+         //   <<p[cheapest_path_idx]*n_users[i] << "   transf "<< transfer_costs[i][cheapest_path_idx]<<std::endl;
+
     }
 
 
