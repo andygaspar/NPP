@@ -44,6 +44,7 @@ class Swarm {
     public:
     Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* u_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th);
     //Swarm() {n_particles=1; n_dim=2; particles=Vector<Particle>{n_particles}; p_best=particles[0].pos(); num_threads=2;}
+    void set_init_sols(double* solutions, int n_solutions);
     double get_best_val() {return best_val;}
     double * get_best() {return p_best;}
     void run();
@@ -112,6 +113,26 @@ void Swarm::run(){
         if(iter%1000==0) std::cout<<best_val<<"  iter"<< iter<< std::endl;
     }
 }
+
+
+void Swarm::set_init_sols(double* solutions, int n_solutions) {
+    std::cout<<"   init solutions "<< n_solutions<<"  tolls"<<n_tolls<< std::endl;
+    int n_sols = n_solutions;
+    if(n_sols > n_particles) n_sols = n_particles;
+
+    for(int i=0; i< n_sols; i ++) {
+        for(int j=0; j< n_tolls; j++) particles[i].p[j] = solutions[i*n_tolls + j];
+    }
+
+    for(int j=0; j< n_tolls; j++) std::cout<<particles[0].p[j]<< " ";
+    std::cout<< std::endl; 
+    std::cout<<particles[0].compute_obj_and_update_best()<<std::endl;
+    std::cout<< "  ++++++  " <<particles[0].personal_best_val<< std::endl;
+    for(int i=0; i< n_tolls; i++) p_best[i]=solutions[i];
+}
+
+
+
 
 
 std::ostream& operator<<( std::ostream &os, Swarm& s ) {

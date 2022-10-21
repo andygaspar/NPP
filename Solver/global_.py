@@ -4,12 +4,25 @@ from Instance.instance import Instance, Commodity
 from gurobipy import Model, GRB, quicksum, Env
 
 
+def stop(model, where):
+
+    if where == GRB.Callback.MIP:
+        num_current_solutions = model.cbGet(GRB.Callback.MIP_SOLCNT)
+        run_time = model.cbGet(GRB.Callback.RUNTIME)
+
+        if run_time > model._time_limit or num_current_solutions >= model._min_sol_num:
+            print("stop at", run_time)
+            model.terminate()
+
 class GlobalSolver:
 
-    def __init__(self, instance: Instance):
+    def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False):
         self.instance = instance
         self.m = Model('CVRP')
-        #self.m.setParam("OutputFlag", 0)
+        self.m._time_limit = time_limit
+        self.m._min_sol_num = min_sol_num
+        if not verbose:
+            self.m.setParam("OutputFlag", 0)
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MAXIMIZE
 
@@ -19,6 +32,11 @@ class GlobalSolver:
         self.x = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities],
                                 vtype=GRB.BINARY)
         self.t = self.m.addVars([p for p in self.instance.toll_paths])
+        self.current_solution = None
+        self.current_val = None
+
+        self.solution = None
+        self.best_val = None
 
     def set_obj(self):
         k: Commodity
@@ -59,9 +77,22 @@ class GlobalSolver:
     def solve(self):
         self.set_obj()
         self.set_constraints()
-        self.m.optimize()
+        if self.m._time_limit is not None and self.m._min_sol_num is not None:
+            self.m.optimize(stop)
+            self.current_solution = np.zeros(len(self.instance.toll_paths))
+            for i, p in enumerate(self.instance.toll_paths):
+                self.current_solution[i] = self.t[p].x
+            self.best_val = self.m.objVal
+        else:
+            self.m.optimize()
+            self.solution = np.zeros(len(self.instance.toll_paths))
+            for p in self.instance.toll_paths:
+                self.solution = self.t[p].x
+            self.obj = self.m.objVal
+
         print(self.m.status)
 
+    def print_model(self):
         for p in self.instance.toll_paths:
             self.instance.npp.edges[p]["weight"] = self.t[p].x
             print(p, self.instance.npp.edges[p]["weight"])
@@ -71,13 +102,14 @@ class GlobalSolver:
             found = False
             for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
-                    gain = self.p[p, k].x*k.n_users
+                    gain = self.t[p].x * k.n_users * self.x[p, k].x
                     best_val += gain
-                    print(k, p, gain)
+                    print(k, p, (self.t[p].x + k.transfer_cost[p]) * self.x[p, k].x < k.cost_free)
                     found = True
             if not found:
                 print(k, 'c_od', k.cost_free)
 
         print('actual best_val', best_val)
+
 
 

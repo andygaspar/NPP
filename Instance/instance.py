@@ -29,7 +29,7 @@ class Instance:
         self.locations = ['u ' + str(i) for i in range(self.n_locations)]
         self.tolls = ['T ' + str(i) for i in range(self.n_tolls)]
         self.toll_paths = list(combinations(self.tolls, r=2))
-        self.n_paths = len(self.toll_paths)
+        self.n_toll_paths = len(self.toll_paths)
 
         self.npp = nx.Graph()
         self.npp.add_nodes_from([(u, {'color': 'g'}) for u in self.locations])
@@ -82,7 +82,7 @@ class Instance:
 
     def save_problem(self):
         comm: Commodity
-        transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_tolls))
+        transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_toll_paths))
         folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
         try:
             os.mkdir(folder_name)

@@ -8,6 +8,8 @@ extern "C" {
 
     void run_(Swarm* swarm){ swarm -> run(); }
 
+    void set_init_sols_(Swarm* swarm, double* solutions, int n_solutions) { std::cout<< "mandi" << n_solutions<<std::endl; swarm -> set_init_sols(solutions, n_solutions); }
+
     double get_best_val_ (Swarm* swarm) {return swarm -> get_best_val();}
 
     double* get_best_ (Swarm* swarm) {return swarm -> get_best();}

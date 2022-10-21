@@ -17,7 +17,7 @@ class LowerSolverAggregated2:
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MINIMIZE
 
-        self.x = self.m.addMVar((self.n_particles, self.instance.n_paths, self.instance.n_commodities),
+        self.x = self.m.addMVar((self.n_particles, self.instance.n_toll_paths, self.instance.n_commodities),
                                 lb=0, ub=1, vtype=GRB.CONTINUOUS)
         self.x_od = self.m.addMVar((self.n_particles, self.instance.n_commodities), lb=0, ub=1, vtype=GRB.CONTINUOUS)
 

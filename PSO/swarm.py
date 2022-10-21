@@ -27,6 +27,9 @@ class Swarm:
         self.lib.get_best_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
 
+        self.lib.set_init_sols_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double),
+                                            ctypes.c_int]
+
         self.swarm = self.lib.Swarm_(commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      n_users.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
                                      transfer_costs.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -35,9 +38,18 @@ class Swarm:
                                      ctypes.c_short(n_particles), ctypes.c_int(n_iterations),
                                      ctypes.c_short(num_threads))
 
+    def set_init_sols(self, solutions):
+        n_solutions = 1
+        # solutions = np.ascontiguousarray(solutions, dtype=np.float)
+        self.lib.set_init_sols_(ctypes.c_void_p(self.swarm), solutions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                ctypes.c_int(n_solutions))
+        print('c')
+
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def run(self):
+    def run(self, init_sols=None):
+        if init_sols is not None:
+            self.set_init_sols(init_sols)
         self.lib.run_(ctypes.c_void_p(self.swarm))
         return True

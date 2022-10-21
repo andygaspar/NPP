@@ -129,7 +129,7 @@ double Particle::compute_obj_and_update_best(){
         }
         if(commodities_tax_free[i] >= commodity_cost) run_cost += p[cheapest_path_idx]*n_users[i];
     }
-    
+
 
     if(run_cost< personal_best_val){
         for(int i=0; i<n_tolls; i++) personal_best[i] = p[i];
