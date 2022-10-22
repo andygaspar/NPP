@@ -26,7 +26,7 @@ class GlobalSolver:
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MAXIMIZE
 
-        self.eps = 1e-2
+        self.eps = 1e-4
 
         self.p = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities])
         self.x = self.m.addVars([(p, k) for p in self.instance.toll_paths for k in self.instance.commodities],
@@ -65,7 +65,7 @@ class GlobalSolver:
         for k in self.instance.commodities:
             for p in self.instance.toll_paths:
                 self.m.addConstr(
-                    self.p[p, k] <= k.M_p[p] * self.x[p, k]
+                    self.p[p, k] <= (k.M_p[p] - self.eps*0) * self.x[p, k]
                 )
                 self.m.addConstr(
                     self.t[p] - self.p[p, k] <= self.instance.N_p[p] * (1 - self.x[p, k])
@@ -85,12 +85,13 @@ class GlobalSolver:
             self.best_val = self.m.objVal
         else:
             self.m.optimize()
+            print(self.m.status)
             self.solution = np.zeros(len(self.instance.toll_paths))
             for p in self.instance.toll_paths:
                 self.solution = self.t[p].x
             self.obj = self.m.objVal
 
-        print(self.m.status)
+
 
     def print_model(self):
         # for p in self.instance.toll_paths:
@@ -100,12 +101,16 @@ class GlobalSolver:
         best_val = 0
         for i, k in enumerate(self.instance.commodities):
             found = False
-            for p in self.instance.toll_paths:
+            for j, p in enumerate(self.instance.toll_paths):
+                if i == 6 and j == 23:
+                    print(k.transfer_cost[p], self.t[p].x, k.transfer_cost[p] + self.t[p].x)
                 if self.x[p, k].x > 0.9:
                     gain = self.t[p].x * k.n_users * self.x[p, k].x
                     best_val += gain
 
-                    print(i, k, k.n_users, k.transfer_cost[p], self.t[p].x, self.t[p].x + k.transfer_cost[p], k.cost_free)
+                    print(i, j, k.n_users, "transf ",k.transfer_cost[p],
+                          "p", self.t[p].x, "cost ",self.t[p].x + k.transfer_cost[p],
+                          "free ", k.cost_free,"gain ", gain)
                     found = True
             # if not found:
             #     print(k, 'c_od', k.cost_free)

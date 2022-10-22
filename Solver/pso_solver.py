@@ -33,6 +33,7 @@ class PsoSolver:
             init_sol = global_solver.current_solution
             print('init sol val', global_solver.best_val)
             print('init sol', init_sol)
+            global_solver.print_model()
         self.swarm.run(init_sol)
 
         self.best, self.best_val = self.swarm.get_best()
