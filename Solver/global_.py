@@ -55,7 +55,8 @@ class GlobalSolver:
 
         for k in self.instance.commodities:
             self.m.addConstr(
-                quicksum([(k.transfer_cost[p] - k.cost_free) * self.x[p, k] for p in self.instance.toll_paths]) <= 0
+                quicksum([(k.transfer_cost[p] - k.cost_free) * self.x[p, k] + self.p[p, k]
+                          for p in self.instance.toll_paths]) <= 0
             )
 
             self.m.addConstr(
@@ -65,7 +66,7 @@ class GlobalSolver:
         for k in self.instance.commodities:
             for p in self.instance.toll_paths:
                 self.m.addConstr(
-                    self.p[p, k] <= (k.M_p[p] - self.eps*0) * self.x[p, k]
+                    self.p[p, k] <= (k.M_p[p] - self.eps) * self.x[p, k]
                 )
                 self.m.addConstr(
                     self.t[p] - self.p[p, k] <= self.instance.N_p[p] * (1 - self.x[p, k])
@@ -102,15 +103,15 @@ class GlobalSolver:
         for i, k in enumerate(self.instance.commodities):
             found = False
             for j, p in enumerate(self.instance.toll_paths):
-                if i == 6 and j == 23:
+                if i == 2 and j == 1:
                     print(k.transfer_cost[p], self.t[p].x, k.transfer_cost[p] + self.t[p].x)
                 if self.x[p, k].x > 0.9:
                     gain = self.t[p].x * k.n_users * self.x[p, k].x
                     best_val += gain
 
-                    print(i, j, k.n_users, "transf ",k.transfer_cost[p],
-                          "p", self.t[p].x, "cost ",self.t[p].x + k.transfer_cost[p],
-                          "free ", k.cost_free,"gain ", gain)
+                    print('comm', i, '  p', j, ' n users', k.n_users, "  transf", k.transfer_cost[p],
+                          "  p", self.t[p].x, "  cost ", self.t[p].x + k.transfer_cost[p],
+                          "  free", k.cost_free, "   gain", gain)
                     found = True
             # if not found:
             #     print(k, 'c_od', k.cost_free)

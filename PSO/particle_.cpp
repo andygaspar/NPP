@@ -124,17 +124,32 @@ double Particle::compute_obj_and_update_best(){
         for(j=0; j< n_tolls; j++) {
             
             toll_cost = p[j] + transfer_costs[i][j];
-            if(toll_cost < commodity_cost) {
-                commodity_cost = toll_cost;
-                cheapest_path_idx = j;
+            if(toll_cost <= commodity_cost) {
+                if (toll_cost < commodity_cost) {
+                    commodity_cost = toll_cost;
+                    cheapest_path_idx = j;
                 }
+                else {
+                    if ( p[j] > p[cheapest_path_idx]) {
+                        commodity_cost = toll_cost;
+                        cheapest_path_idx = j;
+                    }
+                }
+            }
         }
-        if(commodities_tax_free[i] > commodity_cost) {
+        if(commodities_tax_free[i] >= commodity_cost) {
             found = true;
             run_cost += p[cheapest_path_idx]*n_users[i];
         }
-        std::cout<<i<<"  "<<cheapest_path_idx<<"   sol"<<found<<"   p"<<p[cheapest_path_idx]<<"   users "<<n_users[i] <<"   cost "
-           <<p[cheapest_path_idx]*n_users[i] << "   transf "<< transfer_costs[i][cheapest_path_idx]<<"   free "<< commodities_tax_free[i]<<std::endl;
+        /*
+        std::string not_free;
+        if(found) not_free = "  True ";
+        else  not_free = " False ";
+        std::cout.precision(17);
+        std::cout<<"comm " <<i<<"   p "<<cheapest_path_idx<<"   not free "<<not_free<<"   n users "<<n_users[i] <<"   transf "<< transfer_costs[i][cheapest_path_idx]<<
+        "   p "<<p[cheapest_path_idx]<<"   cost "
+           <<p[cheapest_path_idx] + transfer_costs[i][cheapest_path_idx] << "   free "<< commodities_tax_free[i]<<"   gain "
+           <<p[cheapest_path_idx]*n_users[i]<<std::endl; */
 
     }
 

@@ -9,6 +9,7 @@
 
 using string=std::string;
 
+
 int main() {
     /*
     
@@ -20,7 +21,6 @@ int main() {
     std::cout<<s<<std::endl<<std::endl;
     std::cout<<"time: "<<((float) end - start)/CLOCKS_PER_SEC<<" s"<<std::endl;
     */
-
     string file_name = "../TestCases/comm_15_tolls_8";
     FileReader file_reader{file_name};
     std::cout<<std::endl<<std::endl;

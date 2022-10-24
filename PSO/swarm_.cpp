@@ -110,7 +110,7 @@ void Swarm::run(){
         }
         this->update_w();
 
-        if(iter%1000==0) std::cout<<best_val<<"  iter"<< iter<< std::endl;
+        if(iter%1000==0) std::cout<<best_val<<"  iter "<< iter<< std::endl;
     }
 }
 
@@ -128,7 +128,7 @@ void Swarm::set_init_sols(double* solutions, int n_solutions) {
     std::cout<< std::endl; 
     std::cout<<particles[0].compute_obj_and_update_best()<<std::endl;
     std::cout<< "  ++++++  " <<particles[0].personal_best_val<< std::endl;
-    for(int i=0; i< n_tolls; i++) p_best[i]=solutions[i];
+    for(int i=0; i< n_tolls; i++) p_best[i]=particles[0].p[i];
 }
 
 
