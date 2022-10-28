@@ -40,7 +40,7 @@ print('time global ', time.time() - t)
 
 print("obj val global", global_solver.m.objVal)
 
-n_iterations = 1000000
+n_iterations = 1_000_000
 n_particles = 96
 #
 # path_costs = np.random.uniform(size=npp.n_paths*n_particles)
