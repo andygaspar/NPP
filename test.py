@@ -24,9 +24,9 @@ os.system("PSO/install.sh")
 # n_tolls = 8
 
 
-n_locations = 50
+n_locations = 15
 n_commodities = 8
-n_tolls = 3
+n_tolls = 4
 
 npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
 npp.save_problem()
