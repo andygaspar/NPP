@@ -2,8 +2,9 @@ import os as os
 import time
 
 import numpy as np
-
+from importlib.metadata import version
 from Instance.instance import Instance
+from Net.network_manager import NetworkManager
 from Solver.global_ import GlobalSolver
 from Solver.pso_solver import PsoSolver
 
@@ -29,8 +30,18 @@ n_commodities = 8
 n_tolls = 4
 
 npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
-npp.save_problem()
+# npp.save_problem()
 npp.show()
+
+
+a100 = True if version('torch') == '1.9.0+cu111' else False
+edge = False
+
+folder = 'GAT'
+net_manager = NetworkManager(folder)
+gat = net_manager.make_network()
+
+input_tens = gat.get_net_input(npp)
 
 t = time.time()
 global_solver = GlobalSolver(npp)

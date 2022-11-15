@@ -1,69 +1,34 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.autograd as autograd
 import torch.nn.functional as F
 
+from Instance.commodity import Commodity
+from Instance.instance import Instance
 from Net.network import Network
 
 
-class NodeEncoder(nn.Module):
-    def __init__(self, dim_in, h_dimension, device=None):
-        super(NodeEncoder, self).__init__()
+def init_w(w):
+    if type(w) == nn.Linear:
+        nn.init.xavier_uniform_(w.weight)
+
+
+class Encoder(nn.Module):
+    def __init__(self, din, embedding_dimension, hidden_dim, device=None):
+        super(Encoder, self).__init__()
         self.device = device
-        self.fc = nn.Linear(dim_in, h_dimension).to(self.device)
+        self.fc = nn.Sequential(
+            nn.Linear(din, hidden_dim),
+            nn.LeakyReLU(),
+            nn.Linear(hidden_dim, embedding_dimension),
+            nn.LeakyReLU(),
+        ).to(self.device)
+
+        self.fc.apply(init_w)
 
     def forward(self, x):
-        embedding = nn.LeakyReLU(self.fc(x))
-        return embedding
-
-
-class Message(nn.Module):
-    def __init__(self, h_dimension, hidden_dim, device):
-        self.device = device
-        super(Message, self).__init__()
-        self.f_alpha = nn.Linear(h_dimension * 2, hidden_dim).to(self.device)
-        self.v = nn.Linear(hidden_dim, 1).to(self.device)
-        # self.v = nn.Sequential(
-        #     nn.Linear(hidden_dim, hidden_dim),
-        #     nn.LeakyReLU(),
-        #     nn.Linear(hidden_dim, hidden_dim),
-        #     nn.LeakyReLU(),
-        #     nn.Linear(hidden_dim, 1)).to(self.device)
-
-    def forward(self, hi, hj, mat, mat_mask):
-        a = nn.LeakyReLU(self.f_alpha(torch.cat([hi, hj], dim=-1)))  # messo lrelu
-        a = nn.LeakyReLU(self.v(a).view(mat.shape))  # messo lrelu
-        alpha = F.softmax(torch.mul(a, mat) - 9e15 * (1 - mat_mask), dim=-1)
-        return alpha
-
-
-class FD(nn.Module):
-    def __init__(self, h_dimension, hidden_dim, device):
-        self.device = device
-        super(FD, self).__init__()
-        self.fe = nn.Linear(h_dimension * 2 + hidden_dim, hidden_dim).to(self.device)
-        self.fd = nn.Linear(1, hidden_dim).to(self.device)
-
-    def forward(self, hi, hj, d):
-        dd = d.view(d.shape[0], d.shape[1] ** 2, 1)
-        d_ij = nn.LeakyReLU(self.fd(dd))  # messo lrelu
-        out = nn.LeakyReLU(self.fe(torch.cat([hi, hj, d_ij], dim=-1)))
-        return out
-
-
-class MessageNode(nn.Module):
-    def __init__(self, h_dimension, hidden_dim, drop_out, device):
-        self.device = device
-        super(MessageNode, self).__init__()
-        self.fmn1 = nn.Linear(h_dimension + hidden_dim, h_dimension).to(self.device)
-        self.fmn2 = nn.Linear(h_dimension, hidden_dim).to(self.device)
-        self.drop_out = drop_out
-
-    def forward(self, h, m1):
-        h = nn.LeakyReLU(self.fmn1(torch.cat([h, m1], dim=-1)))
-        h = nn.functional.dropout(h, p=self.drop_out)
-        h = nn.LeakyReLU(self.fmn2(h))
-        return h
+        return self.fc(x)
 
 
 class FA(nn.Module):
@@ -75,85 +40,85 @@ class FA(nn.Module):
         self.drop_out = drop_out
 
     def forward(self, x):
-        x = nn.LeakyReLU(self.fc1(x))
+        x = torch.tanh(self.fc1(x))
         # x = nn.functional.dropout(x, p=self.drop_out)
         q = self.fc2(x)
         return q
 
 
-class GNN_TAU(Network):
+class EGAT(Network):
     def __init__(self, net_params, network=None):
-        super().__init__(net_params["normalisation factor"])
-        num_inputs, h_dimension, hidden_dim, num_messages = net_params["num_inputs"], net_params["h_dimension"], \
-                                                            net_params["hidden_dim"], net_params["num_messages"]
+        super().__init__()
+        self.taxa_inputs, self.internal_inputs, self.edge_inputs = \
+            net_params["taxa_inputs"], net_params["internal_inputs"], net_params["edge_inputs"]
+        self.embedding_dim, self.hidden_dim = net_params["embedding_dim"], net_params["hidden_dim"]
+        self.rounds, self.num_heads = net_params["num_messages"], net_params["num_heads"]
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.mask = torch.ones((10, 10)).to(self.device)
 
-        self.rounds = num_messages
+        self.taxa_encoder = Encoder(self.taxa_inputs, self.embedding_dim, self.hidden_dim, self.device)
+        self.internal_encoder = Encoder(self.internal_inputs, self.embedding_dim, self.hidden_dim, self.device)
+        self.edge_encoder = Encoder(self.edge_inputs, self.embedding_dim, self.hidden_dim, self.device)
 
-        self.encoder = NodeEncoder(num_inputs, h_dimension, self.device)
+        self.attention_dims = [self.embedding_dim]
+        for i in range(self.rounds):
+            self.attention_dims.append(self.attention_dims[-1] * self.num_heads)
 
-        self.fd = nn.ModuleList([FD(h_dimension, hidden_dim, self.device) for _ in range(self.rounds)])
-        self.ft = nn.ModuleList([FD(h_dimension, hidden_dim, self.device) for _ in range(self.rounds)])
+        self.W = nn.ModuleList(
+            [nn.Linear(self.attention_dims[i], self.attention_dims[i + 1], bias=False).to(self.device)
+             for i in range(self.rounds)])
+        self.W_m = nn.ModuleList(
+            [nn.Linear(self.attention_dims[i], self.attention_dims[i + 1], bias=False).to(self.device)
+             for i in range(self.rounds)])
+        self.a = [nn.Parameter(torch.Tensor(1, 1, self.attention_dims[i + 1] * 3)).to(self.device)
+                  for i in range(self.rounds)]
 
-        self.alpha_d = nn.ModuleList([Message(h_dimension, hidden_dim, self.device) for _ in range(self.rounds)])
-        self.alpha_t = nn.ModuleList([Message(h_dimension, hidden_dim, self.device) for _ in range(self.rounds)])
+        # self.drop_out = net_params['drop out']
+        self.drop_out = None
+        self.leakyReLU = nn.LeakyReLU(0.2)
 
-        self.drop_out = net_params['drop out']
-
-        self.fm1 = MessageNode(h_dimension, hidden_dim, self.drop_out, self.device)
-        self.fm2 = MessageNode(h_dimension, hidden_dim, self.drop_out, self.device)
-        self.fa = FA(h_dimension, hidden_dim, self.drop_out, self.device)
+        self.fa = FA(self.attention_dims[-1], self.attention_dims[-1], self.drop_out, self.device)
 
         if network is not None:
             self.load_weights(network)
 
-    def forward(self, data):
-        adj_mats, ad_masks, d_mats, d_masks, size_masks, initial_masks, masks, taus, tau_masks, y = data
-        d_mats_ = d_mats / self.normalisation_factor
-        h = self.encoder(initial_masks)
-        taus[taus > 0] = 1 / taus[taus > 0]
-        h = self.context_message(h, d_mats_, d_masks, initial_masks, 3)
-        h = self.tau_message(h, taus, tau_masks, ad_masks, 3)
-        h = self.fa(h)
+        self.init_params()
 
-        y_h = torch.matmul(h, h.permute(0, 2, 1)) * masks - 9e15 * (1 - masks)
+    def init_params(self):
+        for i in range(self.rounds):
+            nn.init.xavier_uniform_(self.W[i].weight)
+            nn.init.xavier_uniform_(self.W_m[i].weight)
+            nn.init.xavier_uniform_(self.a[i])
+
+    def forward(self, data):
+        taxa, internal, messages, curr_mask, size_mask, action_mask = data
+
+        a = self.taxa_encoder(taxa) * size_mask[:, :, 0].unsqueeze(-1).expand(-1, -1, self.embedding_dim)
+        b = self.internal_encoder(internal) * size_mask[:, :, 1].unsqueeze(-1).expand(-1, -1, self.embedding_dim)
+
+        h = a + b
+        m_z = self.edge_encoder(messages)
+        batch_size = h.shape[0]
+
+        for i in range(self.rounds):
+            z = self.W[i](h).view(batch_size, -1, self.num_heads * self.attention_dims[i])
+            m_z = self.W_m[i](m_z).view(batch_size, -1, self.num_heads * self.attention_dims[i])
+            e_i = z.repeat_interleave(z.shape[1], 1)
+            e_j = z.repeat(1, z.shape[1], 1)
+            e = self.leakyReLU((self.a[i] * torch.cat([e_i, e_j, m_z], dim=-1)).sum(dim=-1))
+            alpha = nn.functional.softmax(e.view(-1, z.shape[1], z.shape[1]) * curr_mask - 9e15 * (1 - curr_mask),
+                                          dim=-1)
+            h = torch.tanh(torch.matmul(alpha, z))
+
+        y_h = torch.matmul(h, h.permute(0, 2, 1)) * action_mask - 9e15 * (1 - action_mask)
         mat_size = y_h.shape
         y_hat = F.softmax(y_h.view(mat_size[0], -1), dim=-1)
 
         return y_hat, F.log_softmax(y_h.view(mat_size[0], -1), dim=-1)
 
-    def context_message(self, h, d, d_mask, initial_mask, rounds):
-        for i in range(rounds):
-            hi, hj = self.i_j(h)
-            alpha_d = self.alpha_d[i](hi, hj, d, d_mask).unsqueeze(-1)
-            e_d = self.fd[i](hi, hj, d).view(d.shape[0], d.shape[1], d.shape[2], -1)
-            m_1 = (alpha_d * e_d).sum(dim=-2)
-            hd = initial_mask[:, :, 0].unsqueeze(-1).expand(-1, -1, h.shape[-1])
-            h_not_d = initial_mask[:, :, 1].unsqueeze(-1).expand(-1, -1, h.shape[-1])
-            h = self.fm1(h, m_1) * hd + h * h_not_d
-
-        return h
-
-    def tau_message(self, h, taus, tau_masks, ad_masks, rounds):
-        for i in range(rounds):
-            hi, hj = self.i_j(h)
-            alpha_t = self.alpha_t[i](hi, hj, taus, tau_masks).unsqueeze(-1)
-            e_d = self.ft[i](hi, hj, taus).view(taus.shape[0], taus.shape[1], taus.shape[2], -1)
-            m_2 = (alpha_t * e_d).sum(dim=-2)
-            h_adj = ad_masks[:, :, 0].unsqueeze(-1).expand(-1, -1, h.shape[-1])
-            h_not_adj = ad_masks[:, :, 1].unsqueeze(-1).expand(-1, -1, h.shape[-1])
-            h = self.fm2(h, m_2) * h_adj + h * h_not_adj
-        return h
-
-    @staticmethod
-    def i_j(h):
-        idx = torch.tensor(range(h.shape[1]))
-        idxs = torch.cartesian_prod(idx, idx)
-        idxs = idxs[[i for i in range(idxs.shape[0])]]
-        # hi = h[:, idxs[:, 0]].view((h.shape[0], e_shape[1], e_shape[2], -1))
-        # hj = h[:, idxs[:, 1]].view((h.shape[0], e_shape[1], e_shape[2], -1))
-        hi = h[:, idxs[:, 0]]
-        hj = h[:, idxs[:, 1]]
-
-        return hi, hj
+    def get_net_input(self, instance: Instance):
+        comm: Commodity
+        commodities_input = torch.tensor([[comm.n_users, comm.cost_free, comm.M_p[toll], comm.transfer_cost[toll]]
+                                          for toll in instance.toll_paths for comm in instance.commodities]).to(
+            torch.float).to(self.device)
+        toll_input = torch.tensor(instance.upper_bounds).to(torch.float).to(self.device)
+        return commodities_input, toll_input

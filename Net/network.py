@@ -8,9 +8,8 @@ import torch
 
 
 class Network(nn.Module):
-    def __init__(self, normalisation_factor):
+    def __init__(self):
         super(Network, self).__init__()
-        self.normalisation_factor = normalisation_factor
         self.loss = 0
 
     def get_action(self, state):

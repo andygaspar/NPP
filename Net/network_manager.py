@@ -3,7 +3,7 @@ import json
 import torch
 from torch import nn
 
-from Net.GAT import GNN_TAU
+from Net.GAT.gnn_tau import EGAT
 
 
 def cross_entropy(output, data):
@@ -14,7 +14,7 @@ def cross_entropy(output, data):
 
 nets_dict = {
 
-    'GNN_TAU': GNN_TAU,
+    'GAT': EGAT,
 }
 
 criterion_dict = {
@@ -24,11 +24,10 @@ criterion_dict = {
 
 class NetworkManager:
 
-    def __init__(self, folder, file=None, supervised=None, training=False):
+    def __init__(self, folder, file=None, training=False):
         self.folder = folder
         self.file = file
-        algorithm = 'Supervised/' if supervised else ('RlNets/' if not supervised else None)
-        self.path = 'Net/Nets/' + algorithm + folder + '/'
+        self.path = 'Net/' + folder + '/'
         if self.file is not None:
             self.path += self.file + '/'
         self.standings = []
@@ -41,9 +40,8 @@ class NetworkManager:
 
         self.train_params, self.net_params = self.params["train"], self.params["net"]
 
-    def make_network(self, normalisation_factor):
+    def make_network(self):
         self.print_info()
-        self.net_params["normalisation factor"] = normalisation_factor
         dgn = nets_dict[self.folder](net_params=self.net_params)
 
         return dgn
