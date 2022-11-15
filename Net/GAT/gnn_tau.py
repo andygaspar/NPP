@@ -30,13 +30,29 @@ class Encoder(nn.Module):
     def forward(self, x):
         return self.fc(x)
 
-
-class FA(nn.Module):
-    def __init__(self, h_dimension, hidden_dim, drop_out, device):
+class Message(nn.Module):
+    def __init__(self, embedding_dimension, hidden_dim, device=None):
+        super(Message, self).__init__()
         self.device = device
-        super(FA, self).__init__()
-        self.fc1 = nn.Linear(h_dimension, hidden_dim).to(self.device)
-        self.fc2 = nn.Linear(hidden_dim, h_dimension).to(self.device)
+        self.fc = nn.Sequential(
+            nn.Linear(embedding_dimension * 2, hidden_dim),
+            nn.LeakyReLU(),
+            nn.Linear(hidden_dim, embedding_dimension),
+            nn.LeakyReLU(),
+        ).to(self.device)
+
+        self.fc.apply(init_w)
+
+    def forward(self, x):
+        return self.fc(x)
+
+
+class NormalParams(nn.Module):
+    def __init__(self, embedding_dimension, hidden_dim, out_dim, drop_out, device):
+        self.device = device
+        super(NormalParams, self).__init__()
+        self.fc1 = nn.Linear(embedding_dimension, hidden_dim).to(self.device)
+        self.fc2 = nn.Linear(hidden_dim, out_dim).to(self.device)
         self.drop_out = drop_out
 
     def forward(self, x):
@@ -49,34 +65,45 @@ class FA(nn.Module):
 class EGAT(Network):
     def __init__(self, net_params, network=None):
         super().__init__()
-        self.taxa_inputs, self.internal_inputs, self.edge_inputs = \
-            net_params["taxa_inputs"], net_params["internal_inputs"], net_params["edge_inputs"]
+        self.commodities_input = 4
+        self.toll_inputs = 1
         self.embedding_dim, self.hidden_dim = net_params["embedding_dim"], net_params["hidden_dim"]
-        self.rounds, self.num_heads = net_params["num_messages"], net_params["num_heads"]
+        self.commodities_rounds = net_params["commodities_messages"]
+        self.toll_rounds = net_params["toll_messages"]
+        self.num_heads = net_params["num_heads"]
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.taxa_encoder = Encoder(self.taxa_inputs, self.embedding_dim, self.hidden_dim, self.device)
-        self.internal_encoder = Encoder(self.internal_inputs, self.embedding_dim, self.hidden_dim, self.device)
-        self.edge_encoder = Encoder(self.edge_inputs, self.embedding_dim, self.hidden_dim, self.device)
+        self.commodity_message_encoder = Encoder(self.commodities_input, self.embedding_dim, self.hidden_dim,
+                                                 self.device)
+        self.toll_encoder = Encoder(self.toll_inputs, self.embedding_dim, self.hidden_dim, self.device)
 
-        self.attention_dims = [self.embedding_dim]
-        for i in range(self.rounds):
-            self.attention_dims.append(self.attention_dims[-1] * self.num_heads)
+        self.comm_toll_attention_dims = [self.embedding_dim]
+        for i in range(self.commodities_rounds):
+            self.comm_toll_attention_dims.append(self.comm_toll_attention_dims[-1] * self.num_heads)
 
-        self.W = nn.ModuleList(
-            [nn.Linear(self.attention_dims[i], self.attention_dims[i + 1], bias=False).to(self.device)
-             for i in range(self.rounds)])
-        self.W_m = nn.ModuleList(
-            [nn.Linear(self.attention_dims[i], self.attention_dims[i + 1], bias=False).to(self.device)
-             for i in range(self.rounds)])
-        self.a = [nn.Parameter(torch.Tensor(1, 1, self.attention_dims[i + 1] * 3)).to(self.device)
-                  for i in range(self.rounds)]
+        self.W_comm_toll = nn.ModuleList(
+            [nn.Linear(self.comm_toll_attention_dims[i], self.comm_toll_attention_dims[i + 1], bias=False).to(self.device)
+             for i in range(self.commodities_rounds)])
+        self.a_comm_tolls = [nn.Parameter(torch.Tensor(1, 1, self.comm_toll_attention_dims[i + 1] * 2)).to(self.device)
+                  for i in range(self.commodities_rounds)]
+
+        self.tolls_attention_dims = [self.embedding_dim]
+        for i in range(self.toll_rounds):
+            self.tolls_attention_dims.append(self.tolls_attention_dims[-1] * self.num_heads)
+        self.W_toll = nn.ModuleList(
+            [nn.Linear(self.tolls_attention_dims[i], self.tolls_attention_dims[i + 1], bias=False).to(self.device)
+             for i in range(self.toll_rounds)])
+
+        self.a_tolls = [nn.Parameter(torch.Tensor(1, 1, self.tolls_attention_dims[i + 1] * 2)).to(self.device)
+                  for i in range(self.toll_rounds)]
 
         # self.drop_out = net_params['drop out']
         self.drop_out = None
         self.leakyReLU = nn.LeakyReLU(0.2)
 
-        self.fa = FA(self.attention_dims[-1], self.attention_dims[-1], self.drop_out, self.device)
+        self.message_merge = Message(self.embedding_dim, self.hidden_dim, self.device)
+
+        self.normal_params = NormalParams(self.tolls_attention_dims[-1], self.hidden_dim, 2, self.drop_out, self.device)
 
         if network is not None:
             self.load_weights(network)
@@ -84,41 +111,51 @@ class EGAT(Network):
         self.init_params()
 
     def init_params(self):
-        for i in range(self.rounds):
-            nn.init.xavier_uniform_(self.W[i].weight)
-            nn.init.xavier_uniform_(self.W_m[i].weight)
-            nn.init.xavier_uniform_(self.a[i])
+        for i in range(self.commodities_rounds):
+            nn.init.xavier_uniform_(self.W_comm_toll[i].weight)
+            nn.init.xavier_uniform_(self.a_comm_tolls[i])
+
+        for i in range(self.toll_rounds):
+            nn.init.xavier_uniform_(self.W_toll[i].weight)
+            nn.init.xavier_uniform_(self.a_tolls[i])
 
     def forward(self, data):
-        taxa, internal, messages, curr_mask, size_mask, action_mask = data
+        commodity_message, toll_input, n_commodities = data
+        n_tolls = toll_input.shape[1]
+        commodities = self.commodity_message_encoder(commodity_message)
+        tolls = self.toll_encoder(toll_input)
+        batch_size = 1
 
-        a = self.taxa_encoder(taxa) * size_mask[:, :, 0].unsqueeze(-1).expand(-1, -1, self.embedding_dim)
-        b = self.internal_encoder(internal) * size_mask[:, :, 1].unsqueeze(-1).expand(-1, -1, self.embedding_dim)
+        for i in range(self.commodities_rounds):
+            commodities = self.W_comm_toll[i](commodities)\
+                .view(batch_size, -1, self.num_heads * self.comm_toll_attention_dims[i])
+            # tolls_repeated = tolls.repeat_interleave(commodities.shape[1], 1)
+            tolls_repeated = tolls.repeat(1, n_commodities, 1)
+            e = self.leakyReLU((self.a_comm_tolls[i] * torch.cat([commodities, tolls_repeated], dim=-1)).sum(dim=-1))
+            alpha = nn.functional.softmax(e.view(-1, n_tolls, n_commodities), dim=-1).view(1, n_tolls*n_commodities, 1).repeat(1, 1, self.embedding_dim)
+            m = (alpha * commodities).view(-1, n_tolls, n_commodities, self.embedding_dim)
+            m = torch.sum(m, dim=-2)
+            tolls = self.message_merge(torch.cat([tolls, m], dim=-1))
 
-        h = a + b
-        m_z = self.edge_encoder(messages)
-        batch_size = h.shape[0]
+        for i in range(self.toll_rounds):
+            z = self.W_toll[i](tolls).view(batch_size, -1, self.num_heads * self.tolls_attention_dims[i])
+            tolls_i = tolls.repeat_interleave(n_tolls, 1)
+            tolls_j = tolls.repeat(1, n_tolls, 1)
+            e = self.leakyReLU((self.a_tolls[i] * torch.cat([tolls_i, tolls_j], dim=-1)).sum(dim=-1))
+            alpha = nn.functional.softmax(e.view(-1, n_tolls, n_tolls), dim=-1)
+            tolls = torch.tanh(torch.matmul(alpha, z))
 
-        for i in range(self.rounds):
-            z = self.W[i](h).view(batch_size, -1, self.num_heads * self.attention_dims[i])
-            m_z = self.W_m[i](m_z).view(batch_size, -1, self.num_heads * self.attention_dims[i])
-            e_i = z.repeat_interleave(z.shape[1], 1)
-            e_j = z.repeat(1, z.shape[1], 1)
-            e = self.leakyReLU((self.a[i] * torch.cat([e_i, e_j, m_z], dim=-1)).sum(dim=-1))
-            alpha = nn.functional.softmax(e.view(-1, z.shape[1], z.shape[1]) * curr_mask - 9e15 * (1 - curr_mask),
-                                          dim=-1)
-            h = torch.tanh(torch.matmul(alpha, z))
+        mu_sigma = self.normal_params(tolls)
 
-        y_h = torch.matmul(h, h.permute(0, 2, 1)) * action_mask - 9e15 * (1 - action_mask)
-        mat_size = y_h.shape
-        y_hat = F.softmax(y_h.view(mat_size[0], -1), dim=-1)
-
-        return y_hat, F.log_softmax(y_h.view(mat_size[0], -1), dim=-1)
+        prices_distribution = torch.distributions.Normal(mu_sigma[:, :, 0], torch.abs(mu_sigma[:, :, 1]))
+        prices = prices_distribution.sample((tolls.shape[0],))
+        return prices
 
     def get_net_input(self, instance: Instance):
         comm: Commodity
         commodities_input = torch.tensor([[comm.n_users, comm.cost_free, comm.M_p[toll], comm.transfer_cost[toll]]
                                           for toll in instance.toll_paths for comm in instance.commodities]).to(
-            torch.float).to(self.device)
-        toll_input = torch.tensor(instance.upper_bounds).to(torch.float).to(self.device)
-        return commodities_input, toll_input
+            torch.float).unsqueeze(0).to(self.device)
+        toll_input = torch.tensor(instance.upper_bounds).to(torch.float).to(self.device).unsqueeze(0).unsqueeze(-1)
+        return commodities_input, toll_input, instance.n_commodities
+

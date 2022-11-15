@@ -13,14 +13,12 @@
         },
     "net": {
       "scale_d": 1,
-      "name": "GNN_TAU",
+      "name": "EGAT",
       "hidden_dim": 128,
-      "num_messages": 1,
+      "commodities_messages": 3,
+      "toll_messages": 3,
       "num_heads": 1,
       "best_loss": "",
-      "taxa_inputs":  8,
-      "internal_inputs": 8,
-      "edge_inputs": 4,
       "embedding_dim": 256,
       "normalisation factor": "",
       "drop out": 0.05

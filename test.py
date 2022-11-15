@@ -8,12 +8,6 @@ from Net.network_manager import NetworkManager
 from Solver.global_ import GlobalSolver
 from Solver.pso_solver import PsoSolver
 
-"""
-
-IMPLEMENTARE BOUND PARTICLE
-
-
-"""
 os.system("PSO/install.sh")
 
 # n_locations = 10
@@ -31,7 +25,7 @@ n_tolls = 4
 
 npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
 # npp.save_problem()
-npp.show()
+# npp.show()
 
 
 a100 = True if version('torch') == '1.9.0+cu111' else False
@@ -42,6 +36,7 @@ net_manager = NetworkManager(folder)
 gat = net_manager.make_network()
 
 input_tens = gat.get_net_input(npp)
+price_guess = gat(input_tens)
 
 t = time.time()
 global_solver = GlobalSolver(npp)
