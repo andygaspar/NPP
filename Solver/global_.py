@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 from Instance.instance import Instance, Commodity
@@ -10,7 +12,7 @@ def stop(model, where):
         num_current_solutions = model.cbGet(GRB.Callback.MIP_SOLCNT)
         run_time = model.cbGet(GRB.Callback.RUNTIME)
 
-        if run_time > model._time_limit or num_current_solutions >= model._min_sol_num:
+        if run_time > model._time_limit: #or num_current_solutions >= model._min_sol_num:
             print("stop at", run_time)
             model.terminate()
 
@@ -78,19 +80,25 @@ class GlobalSolver:
     def solve(self):
         self.set_obj()
         self.set_constraints()
-        if self.m._time_limit is not None and self.m._min_sol_num is not None:
+        if self.m._time_limit is not None: #and self.m._min_sol_num is not None:
+            tic = time.time()
             self.m.optimize(stop)
+            toc = time.time()
             self.current_solution = np.zeros(len(self.instance.toll_paths))
             for i, p in enumerate(self.instance.toll_paths):
                 self.current_solution[i] = self.t[p].x
             self.best_val = self.m.objVal
         else:
+            tic = time.time()
             self.m.optimize()
+            toc = time.time()
             print(self.m.status)
             self.solution = np.zeros(len(self.instance.toll_paths))
             for p in self.instance.toll_paths:
                 self.solution = self.t[p].x
             self.obj = self.m.objVal
+
+        return toc - tic, self.m.objVal, self.m.ObjBound
 
 
 

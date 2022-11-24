@@ -82,10 +82,11 @@ class Instance:
                 with_labels=True, font_size=7)
         plt.show()
 
-    def save_problem(self):
+    def save_problem(self, folder_name=None):
         comm: Commodity
         transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_toll_paths))
-        folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
+        if folder_name is None:
+            folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
         try:
             os.mkdir(folder_name)
             pd.DataFrame(self.commodities_tax_free).to_csv(folder_name + '/commodities_tax_free.csv',
