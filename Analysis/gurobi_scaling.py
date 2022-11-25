@@ -6,10 +6,6 @@ from pathlib import Path
 from Instance.instance import Instance
 from Solver.global_ import GlobalSolver
 
-#comm_size = [8, 20, 56]
-#toll_size = [8, 20, 56]
-#loc_size = [5, 20, 60]
-
 loc_size = [7, 20, 56]
 comm_size = [8, 20, 56, 90]
 toll_size = [8, 20, 56, 90]
