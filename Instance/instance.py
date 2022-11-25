@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import List
 
 import networkx as nx
@@ -99,4 +100,4 @@ class Instance:
                                               index=False, index_label=False, header=False)
 
         except:
-            pass
+            print(sys.exc_info())
