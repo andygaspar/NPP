@@ -23,7 +23,6 @@ int main() {
     if (ff != -1) {
         int res = 0;
         while (res != -1) {
-            std::cout<<data.name<<std::endl;
             files.push_back(data.name);
             res = _findnext(ff, &data);
         }
