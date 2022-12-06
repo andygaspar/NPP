@@ -84,4 +84,5 @@ int main() {
 
     /*--- close file ---*/
     outfile.close();
+    outfile_sol.close();
 };
