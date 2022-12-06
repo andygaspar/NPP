@@ -68,7 +68,7 @@ class Particle {
         for(int j=0; j< n_tolls; j++) v[j] = 0;
 
         personal_best = p;
-        personal_best_val = pow(10, 6);
+        personal_best_val = 0;
         init_commodity_cost = pow(10, 5);
 
     }
@@ -154,7 +154,7 @@ double Particle::compute_obj_and_update_best(){
     }
 
 
-    if(run_cost< personal_best_val){
+    if(run_cost> personal_best_val){
         for(int i=0; i<n_tolls; i++) personal_best[i] = p[i];
         personal_best_val = run_cost;
     }
