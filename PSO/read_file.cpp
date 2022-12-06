@@ -52,10 +52,10 @@ class FileReader{
     }
 
     ~FileReader(){
-        delete [] commodities_tax_free;
-        delete [] upper_bounds;
-        delete [] transfer_costs;
-        delete [] n_users;
+        //delete [] commodities_tax_free;
+        //delete [] upper_bounds;
+        //delete [] transfer_costs;
+        //delete [] n_users;
     }
             
     dimensions get_dims(string file_name){
@@ -65,6 +65,7 @@ class FileReader{
         int cols=0;
         std::fstream file(file_name);
         std::string line;
+        //getline(file, line);
         while (getline(file, line)){
             std::stringstream ss( line );                     
             std::string data;
