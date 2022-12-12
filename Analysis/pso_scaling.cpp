@@ -27,7 +27,7 @@ int main() {
 
      /*--- set PSO parameters ---*/
     short n_particles = 128;
-    int n_iterations = 100000;
+    int n_iterations = 5000;
     short num_th = 16;
     
     /*--- path test cases directory ---*/

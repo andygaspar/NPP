@@ -1,6 +1,5 @@
 #include <iostream>
 #include <chrono>
-#include <io.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,7 +10,6 @@
 #include <algorithm>
 #include "particle_.cpp"
 #include <omp.h>
-#include <conio.h>
 //#include <Python.h>
 
 /*
@@ -131,7 +129,7 @@ void Swarm::run(){
 
     for(int iter=0; iter< n_iterations; iter++) {
 
-        if(iter%1==0) {
+        if(iter%100000==0) {
 
             //this->save_particles();
 
