@@ -110,7 +110,7 @@ void Swarm::run(){
         }
         this->update_w();
 
-        if(iter%1000==0) std::cout<<best_val<<"  iter "<< iter<< std::endl;
+        //if(iter%1000==0) std::cout<<best_val<<"  iter "<< iter<< std::endl;
     }
 }
 
