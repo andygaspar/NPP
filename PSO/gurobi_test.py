@@ -8,9 +8,9 @@ import numpy as np
 from Instance.instance import Instance
 from Solver.global_ import GlobalSolver
 
-#loc_size = [7, 20, 56]
-#comm_size = [8, 20, 56, 90]
-#toll_size = [8, 20, 56, 90]
+#loc_size = [8, 20, 56, 90, 120]
+#comm_size = [8, 20, 56, 90, 120]
+#toll_size = [8, 20, 56, 90, 110]
 
 loc_size = [12,15]
 comm_size = [15, 20]
