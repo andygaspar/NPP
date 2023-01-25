@@ -1,6 +1,6 @@
 #include <iostream>
 #include <chrono>
-#include <io.h>
+//#include <io.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,7 +11,7 @@
 #include <algorithm>
 #include "particle_.cpp"
 #include <omp.h>
-#include <conio.h>
+//#include <conio.h>
 //#include <Python.h>
 
 /*
