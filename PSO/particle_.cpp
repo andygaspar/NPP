@@ -31,7 +31,7 @@ struct MagicNumbers{
 
     MagicNumbers(double ww1 = 0.1, 
     double ww2 = 0.5,
-    double ww3 = 1.1,
+    double ww3 = 0.9,
     double cc_soc1 = 0.2,
     double cc_soc2 = 0.3,
     double cc_soc3 =1.5,

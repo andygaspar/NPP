@@ -63,5 +63,6 @@ std::vector<double> recurrent_run_PSO_on_smaller_domain(FileReader file_reader,s
             for (int k=0;k<file_reader.n_tolls;k++) solution[k]=s_.cube_p_best[s_.best_idx][k];
         }       
     }
+    std::cout<<"------------------------------ MAX FOUND: "<<solution_val<<"------------------------------"<<std::endl;
     return solution;
 }

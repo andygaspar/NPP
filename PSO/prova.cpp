@@ -22,7 +22,7 @@ int main() {
     files.push_back("loc_50_comm_50_toll_10");
   
     /*--- set PSO parameters ---*/
-    short n_particles = 8000;
+    short n_particles = 15000;
     short N_PARTICLES = 128;
     int n_iterations = 10000;
     int n_first_iterations=100;
@@ -31,7 +31,7 @@ int main() {
     int N=10;
     short num_th = 1;
     double tmp_delta;
-    int no_update_lim=1000;
+    int no_update_lim=2000;
     double restriction_rate=0.6;
 
     /*--- iterate over all the files collected ---*/
