@@ -20,6 +20,7 @@ class FileReader{
 
     dimensions comm_t_free_dims;
     double* upper_bounds;
+    double* lower_bounds;
     dimensions ub_dims;
     double* transfer_costs;
     dimensions tra__dims;
@@ -37,6 +38,7 @@ class FileReader{
         ub_dims = get_dims(folder_name + "/upper_bounds.csv");
         //std::cout<<ub_dims.rows<<' '<<ub_dims.cols<<std::endl;
         upper_bounds = fill_array(folder_name + "/upper_bounds.csv", ub_dims);
+        lower_bounds = fill_array(folder_name + "/lower_bounds.csv", ub_dims);
         //print_array(upper_bounds, ub_dims);
         n_tolls = ub_dims.rows;
 

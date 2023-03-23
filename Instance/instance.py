@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import List
 
 import networkx as nx
@@ -71,9 +72,10 @@ class Instance:
         self.transfer_costs = np.array([comm.transfer_cost[path]
                                         for comm in self.commodities for path in self.toll_paths])
         self.upper_bounds = np.array(list(self.N_p.values()))
+        self.lower_bounds = np.array([0.00000000001 for ijk in range(self.n_toll_paths)])
         self.n_users = np.array([comm.n_users for comm in self.commodities])
-        # print("users python")
-        # print(self.n_users)
+        print("users python")
+        print(self.n_users)
 
     def show(self):
 
@@ -95,8 +97,10 @@ class Instance:
                                                 index=False, index_label=False, header=False)
             pd.DataFrame(self.upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
                                                    index=False, index_label=False, header=False)
+            pd.DataFrame(self.lower_bounds).to_csv(folder_name + '/lower_bounds.csv',
+                                                   index=False, index_label=False, header=False)
             pd.DataFrame(self.n_users).to_csv(folder_name + '/n_users.csv',
                                               index=False, index_label=False, header=False)
 
         except:
-            pass
+            print(sys.exc_info())
