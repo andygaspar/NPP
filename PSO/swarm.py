@@ -44,7 +44,7 @@ class Swarm:
                                      lower_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      ctypes.c_short(n_commodities), ctypes.c_short(n_toll_paths),
                                      ctypes.c_short(n_particles), ctypes.c_int(n_iterations),
-                                     ctypes.c_short(num_threads), ctypes.c_short(N_PARTS), ctypes.c_short(n_cut), ctypes.c_short(N_DIV), ctypes.c_short(n_u_l))
+                                     ctypes.c_short(num_threads), ctypes.c_short(N_PARTS), ctypes.c_short(n_cut), ctypes.c_short(N_DIV), ctypes.c_int(n_u_l))
 
     def set_init_sols(self, solutions):
         n_solutions = 1
@@ -53,11 +53,11 @@ class Swarm:
                                 ctypes.c_int(n_solutions))
         print('c')
 
-    def get_best(self):
-        return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
+    # def get_best(self):
+    #     return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def run(self, init_sols=None):
+    def run(self, init_sols=None, stop=100):
         if init_sols is not None:
             self.set_init_sols(init_sols)
-        self.lib.run_(ctypes.c_void_p(self.swarm))
+        self.lib.run_(ctypes.c_void_p(self.swarm), ctypes.c_short(stop))
         return True

@@ -93,7 +93,8 @@ class GlobalSolver:
             self.m.optimize()
             toc = time.time()
             print(self.m.status)
-            self.solution = np.zeros(len(self.instance.toll_paths))
+            # self.solution = np.zeros(len(self.instance.toll_paths))
+            self.solution = {}
             for p in self.instance.toll_paths:
                 self.solution[p] = self.t[p].x
             self.obj = self.m.objVal

@@ -38,7 +38,7 @@ class PsoSolver:
             global_solver.print_model()
         self.swarm.run(init_sol)
 
-        self.best, self.best_val = self.swarm.get_best()
+        # self.best, self.best_val = self.swarm.get_best()
         print("final ", self.best)
 
 
