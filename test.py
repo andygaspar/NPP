@@ -4,7 +4,7 @@ import time
 import numpy as np
 from importlib.metadata import version
 from Instance.instance import Instance
-from Net.network_manager import NetworkManager
+# from Net.network_manager import NetworkManager
 from Solver.global_ import GlobalSolver
 from Solver.pso_solver import PsoSolver
 
@@ -28,15 +28,15 @@ npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodi
 # npp.show()
 
 
-a100 = True if version('torch') == '1.9.0+cu111' else False
+# a100 = True if version('torch') == '1.9.0+cu111' else False
 edge = False
 
-folder = 'GAT'
-net_manager = NetworkManager(folder)
-gat = net_manager.make_network()
-
-input_tens = gat.get_net_input(npp)
-price_guess = gat(input_tens)
+# folder = 'GAT'
+# net_manager = NetworkManager(folder)
+# gat = net_manager.make_network()
+#
+# input_tens = gat.get_net_input(npp)
+# price_guess = gat(input_tens)
 
 t = time.time()
 global_solver = GlobalSolver(npp)
@@ -55,6 +55,10 @@ n_particles = 96
 #
 t = time.time()
 s = PsoSolver(npp, None, n_particles, n_iterations)#, time_limit=1, init_sol_num=5)
+
+k = s.random_init()
+
+latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
 s.run()
 print('time pso ', time.time() - t)
 print(s.best_val)

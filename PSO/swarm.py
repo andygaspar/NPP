@@ -5,6 +5,8 @@ import os
 import numpy as np
 from numpy.ctypeslib import ndpointer
 
+from Instance.instance import Instance
+
 
 class Swarm:
 
@@ -12,6 +14,7 @@ class Swarm:
                  upper_bounds: np.array,
                  n_commodities, n_toll_paths, n_particles, n_iterations):
         num_threads = multiprocessing.cpu_count()
+
         self.lib = ctypes.CDLL('PSO/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
@@ -54,3 +57,9 @@ class Swarm:
             self.set_init_sols(init_sols)
         self.lib.run_(ctypes.c_void_p(self.swarm))
         return True
+
+
+
+
+
+
