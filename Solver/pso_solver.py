@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import qmc
 
 from Instance.instance import Instance
 from PSO.swarm import Swarm
@@ -13,6 +14,7 @@ class PsoSolver:
         self.best_val = None
         self.best = None
         self.npp = npp
+        self.n_particles = n_particles
         self.n_iterations = n_iterations
         self.path_costs = path_costs
         self.lower_solver = LowerSolverAggregated2(npp, n_particles)
@@ -38,3 +40,21 @@ class PsoSolver:
 
         self.best, self.best_val = self.swarm.get_best()
         print("final ", self.best)
+
+
+    def random_init(self):
+        return np.random.uniform(size=(self.n_particles, self.npp.n_toll_paths)) * self.npp.upper_bounds
+
+    def compute_latin_hypercube_init(self, dimensions):
+        init_positions = self.random_init()
+
+        tolls_idx = np.argsort(self.npp.upper_bounds)[::-1]
+        u_bounds = self.npp.upper_bounds[tolls_idx]
+
+        l_bounds = np.zeros(dimensions)
+        sampler = qmc.LatinHypercube(d=dimensions)
+        latin_positions = qmc.scale(sampler.random(n=self.n_particles), l_bounds, u_bounds[:dimensions])
+
+        init_positions[:, tolls_idx[:dimensions]] = latin_positions
+
+        return init_positions
