@@ -10,9 +10,9 @@ from Solver.global_ import GlobalSolver
 #comm_size = [8, 20, 56, 90]
 #toll_size = [8, 20, 56, 90]
 
-loc_size = [50]
-comm_size = [50]
-toll_size = [10]
+loc_size = [10]
+comm_size = [10]
+toll_size = [5]
 
 filename = './TestCases/gurobi_benchmark_times.txt'
 solutionname = './TestCases/gurobi_benchmark_solution.txt'

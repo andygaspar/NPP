@@ -10,7 +10,8 @@ from Solver.lower_aggregated_2 import LowerSolverAggregated2
 
 class PsoSolver:
 
-    def __init__(self, npp: Instance,  path_costs, n_particles, n_iterations, init_sol_num=None, time_limit=None):
+    def __init__(self, npp: Instance,  path_costs, n_particles, n_iterations, N_PARTS, n_cut, N_DIV, n_u_l,normalised=True,
+                 init_sol_num=None, time_limit=None, verbose=True):
         self.best_val = None
         self.best = None
         self.npp = npp
@@ -20,7 +21,8 @@ class PsoSolver:
         self.lower_solver = LowerSolverAggregated2(npp, n_particles)
         self.lower_solver.set_up()
         self.swarm = Swarm(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
-                           npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations)
+                           npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, N_PARTS=N_PARTS,
+                           n_cut=n_cut, N_DIV=N_DIV, n_u_l=n_u_l, normalised=normalised, verbose=verbose)
 
         self.init_sol_num = init_sol_num
         self.time_limit = time_limit
@@ -38,7 +40,7 @@ class PsoSolver:
             global_solver.print_model()
         self.swarm.run(init_sol)
 
-        # self.best, self.best_val = self.swarm.get_best()
+        self.best, self.best_val = self.swarm.get_best()
         print("final ", self.best)
 
 

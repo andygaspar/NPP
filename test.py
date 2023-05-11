@@ -19,38 +19,47 @@ os.system("PSO/install.sh")
 # n_tolls = 8
 
 
-n_locations = 20
-n_commodities = 20
-n_tolls = 10
 
-npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
-# npp.save_problem()
-# npp.show()
 
-t = time.time()
-global_solver = GlobalSolver(npp)
-global_solver.solve()
-# global_solver.print_model()
-print('time global ', time.time() - t)
+n_locations = 60
+n_commodities = 60
+n_tolls = 40
 
-print("obj val global", global_solver.m.objVal)
+for _ in range(1):
 
-n_iterations = 1_000_000
-n_particles = 96
-#
-# path_costs = np.random.uniform(size=npp.n_paths*n_particles)
-# init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
-#
-#
-t = time.time()
-s = PsoSolver(npp, None, n_particles, n_iterations)#, time_limit=1, init_sol_num=5)
+    npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
+    # npp.save_problem()
+    # npp.show()
 
-k = s.random_init()
+    t = time.time()
+    global_solver = GlobalSolver(npp)
+    # global_solver.solve()
+    # global_solver.print_model()
+    print('time global ', time.time() - t)
 
-latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
-s.run()
-print('time pso ', time.time() - t)
-print(s.best_val)
+    # print("obj val global", global_solver.m.objVal)
+
+    n_iterations = 1_000_000
+    n_particles = 96
+
+    N_PARTS = n_particles // 5
+    n_cut = 3
+    N_DIV = 4
+    n_u_l = 1000
+    #
+    # path_costs = np.random.uniform(size=npp.n_paths*n_particles)
+    # init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
+    #
+    #
+    t = time.time()
+    s = PsoSolver(npp, None, n_particles, n_iterations, N_PARTS, n_cut, N_DIV, n_u_l, normalised=False, verbose=False)#, time_limit=1, init_sol_num=5)
+
+    k = s.random_init()
+
+    latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
+    s.run()
+    print('time pso ', time.time() - t)
+    print(s.best_val)
 
 
 

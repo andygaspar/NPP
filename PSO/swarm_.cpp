@@ -35,6 +35,7 @@ class Swarm {
     // problem related features
     short n_commodities;
     short n_tolls;
+    double* obj_coefficients;
     double* search_lb;
     double* search_ub;
 
@@ -63,16 +64,17 @@ class Swarm {
     
     // computation parameters
     short num_threads;
+    bool verbose;
 
     
 
 
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
 
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, int n_u_l=500);
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, double* past_best, double* upp_b, int n_u_l=500);
-    Swarm(std::vector<std::vector<double>> p_init,double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
+    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, int n_u_l=500, bool verb=false);
+    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, double* past_best, double* upp_b, int n_u_l=500);
+    Swarm(std::vector<std::vector<double>> p_init,double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
+    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
     Swarm() {}
 
     void init_div(int n_cut);
@@ -88,6 +90,7 @@ class Swarm {
     void print();
     void print_particles();
     void save_particles();
+    void set_vals();
     bool check(int id) {
         for (int i=0;i<n_tolls;i++) {
             if ((particles[id].p[i]>search_ub[i]) || (particles[id].p[i]<search_lb[i])) {
@@ -98,12 +101,22 @@ class Swarm {
         return true;
     }
     void print_output(int iter);
+
+    double get_best_val() {
+        return cube_best_val[best_idx];
+    }
+
+    double* get_best(){
+        std::cout<<best_idx<<std::endl;
+        std::cout<<cube_p_best[best_idx][0]<<std::endl;
+        return cube_p_best[best_idx];
+    }
 };
 
 /*-----------------------------------------------------------------------------------------*/
 /* Initialize the swarm object and its particles with random velocity and given positions. */                                                                        
 /*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l) {
+Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef,double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l) {
     n_iterations = n_iter;
     no_update_lim=n_u_l;
     n_particles=n_parts; 
@@ -111,6 +124,7 @@ Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int
     n_p = n_particles;
     n_tolls=n_to;
     n_commodities=n_comm;
+    obj_coefficients=obj_coef;
     search_ub = u_bounds;
     search_lb = l_bounds;
     num_threads=num_th;
@@ -129,7 +143,7 @@ Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int
     d_M = std::sqrt(d_M);
 
     for(int i=0;i<n_p;++i){
-        particles.push_back({p_init[i], comm_tax_free, n_usr ,transf_costs,u_bounds,l_bounds, n_commodities, n_tolls, i, d_M,0});
+        particles.push_back({p_init[i], comm_tax_free, n_usr ,transf_costs,obj_coefficients, u_bounds,l_bounds, n_commodities, n_tolls, i, d_M,0});
     }
 
     double tmp = 0; 
@@ -147,7 +161,7 @@ Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int
 /*-----------------------------------------------------------------------------------------*/
 /* Initialize the swarm object and its particles with random velocity and random positions. */                                                                        
 /*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l) {
+Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l) {
     n_iterations = n_iter;
     no_update_lim=n_u_l;
     n_particles=n_parts; 
@@ -155,6 +169,7 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
     n_p = n_particles;
     n_tolls=n_to;
     n_commodities=n_comm;
+    obj_coefficients=obj_coef;
     search_ub = u_bounds;
     search_lb = l_bounds;
     num_threads=num_th;
@@ -173,7 +188,7 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
     d_M = std::sqrt(d_M);
 
     for(int i=0;i<n_p;++i){
-        particles.push_back({comm_tax_free, n_usr ,transf_costs,u_bounds,l_bounds, n_commodities, n_tolls, i, d_M,search_lb,search_ub,0});
+        particles.push_back({comm_tax_free, n_usr ,transf_costs,obj_coefficients, u_bounds,l_bounds, n_commodities, n_tolls, i, d_M,search_lb,search_ub,0});
     }
 
     double tmp = 0; 
@@ -192,7 +207,7 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
 /*      Initialize the swarm object and its particles with random velocity and position    */
 /*      implementing the latin hypercube sampling method in the bounded space.             */
 /*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr,double* transf_costs, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div_, int n_u_l) {
+Swarm::Swarm(double* comm_tax_free, int* n_usr,double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div_, int n_u_l, bool verb) {
     n_iterations = n_iter;
     no_update_lim=n_u_l;
     n_particles=n_parts; 
@@ -200,10 +215,12 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr,double* transf_costs, double* con
     n_p = n_particles;
     n_tolls=n_to;
     n_commodities=n_comm;
+    obj_coefficients=obj_coef;
     search_ub = u_bounds;
     search_lb = l_bounds;
     num_threads=num_th;
     N_div = N_div_;
+    verbose=verb;
 
     // find the number of dimensions on which the cuts are being performed, according with the desired number of particles 
     if (N_div==0) {
@@ -364,7 +381,7 @@ void Swarm::centering_particles(int N, double var) {
     particles=std::vector<Particle>(0);
 
     for(int i=0;i<N;++i){
-        particles.push_back({p_init[i], com_t_f.data(), n_u.data() ,t_cost.data(),search_ub,search_lb, n_commodities, n_tolls, i, d_M,i_lh});
+        particles.push_back({p_init[i], com_t_f.data(), n_u.data() ,t_cost.data(), obj_coefficients, search_ub,search_lb, n_commodities, n_tolls, i, d_M,i_lh});
     }
 
     double tmp = 0; 
@@ -426,7 +443,7 @@ void Swarm::LH_sampling(int i, int n_cut, double* comm_tax_free, int* n_usr,doub
         else {
             if (particles.size()>0) idx_part=particles[particles.size()-1].idx+1;
             for (int k=0;k<n_p/std::pow(n_cut,N_div);++k) {
-                particles.push_back({comm_tax_free, n_usr ,transf_costs, search_ub,search_lb, n_commodities, n_tolls, idx_part, d_M,div_start,div_end,(int)std::floor(idx_part/(n_p/std::pow(n_cut,N_div)))});
+                particles.push_back({comm_tax_free, n_usr ,transf_costs, obj_coefficients, search_ub,search_lb, n_commodities, n_tolls, idx_part, d_M,div_start,div_end,(int)std::floor(idx_part/(n_p/std::pow(n_cut,N_div)))});
                 idx_part++;
             }
             count++;
@@ -465,7 +482,7 @@ void Swarm::run_and_lower(int stop){
             red_done=1;
         }
 
-        if(iter%1==0) {
+        if(verbose and iter%10==0) {
             print_output(iter);
         }
         
