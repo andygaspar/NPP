@@ -42,25 +42,9 @@ class Swarm {
     //PSO parameters
     int n_iterations;
     int no_update=0;
-    int  stop_param=0;
-    int n_subcubes;
+    int  top_param=0;
     std::vector<Particle> particles;
-    int no_update_lim;
-
-    // latin hypercube parameters
-    int N_div; //  number of dimensions which get partitioned (divided)
-    double* div_start; //intervals start
-    double* div_end; 
-    int* div_dim;  // dimensions getting devided
-    short n_p;
-    short N_PARTICLES;
     short n_particles;
-    double d_M;
-
-    short* cube_best_particle_idx;
-    double* cube_best_val;
-    double** cube_p_best;
-    int best_idx;
     
     // computation parameters
     short num_threads;
@@ -71,19 +55,15 @@ class Swarm {
 
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
 
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, int n_u_l=500, bool verb=false);
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div, double* past_best, double* upp_b, int n_u_l=500);
-    Swarm(std::vector<std::vector<double>> p_init,double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
-    Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l=500);
+    Swarm(std::vector<std::vector<double>> p_init,double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, 
+                    double* const u_bounds,double* const l_bounds, short n_comm, short n_tolls_, short n_parts, int n_iter, short num_th, int n_u_l=500);
     Swarm() {}
 
-    void init_div(int n_cut);
     void set_init_sols(double* solutions, int n_solutions);
     void lower_particles(std::vector<double>& results);
     void centering_particles(int N, double var);
 
-    void LH_sampling(int i, int n_cut, double* comm_tax_free, int* n_usr,double* transf_costs, int idx_part);
-    void normal_sampling(double* cube_p_best, double* comm_tax_free, int* n_usr,double* transf_costs);
+
 
     void run_and_lower(int stop);
     
@@ -120,8 +100,7 @@ Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int
     n_iterations = n_iter;
     no_update_lim=n_u_l;
     n_particles=n_parts; 
-    N_PARTICLES = N_PARTS;
-    n_p = n_particles;
+    n_particles = N_PARTS;
     n_tolls=n_to;
     n_commodities=n_comm;
     obj_coefficients=obj_coef;
@@ -156,310 +135,6 @@ Swarm::Swarm(std::vector<std::vector<double>> p_init, double* comm_tax_free, int
     }
 
     for(int i=0; i< n_tolls; i++) cube_p_best[0][i]=particles[cube_best_particle_idx[0]].p[i];
-}
-
-/*-----------------------------------------------------------------------------------------*/
-/* Initialize the swarm object and its particles with random velocity and random positions. */                                                                        
-/*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, int n_u_l) {
-    n_iterations = n_iter;
-    no_update_lim=n_u_l;
-    n_particles=n_parts; 
-    N_PARTICLES = N_PARTS;
-    n_p = n_particles;
-    n_tolls=n_to;
-    n_commodities=n_comm;
-    obj_coefficients=obj_coef;
-    search_ub = u_bounds;
-    search_lb = l_bounds;
-    num_threads=num_th;
-    n_subcubes=1;
-    best_idx=0;
-    cube_best_val = new double[n_subcubes];
-    cube_p_best = new double*[n_subcubes];
-    cube_best_particle_idx = new short[n_subcubes];
-
-    cube_p_best[0] = new double[n_tolls];
-    particles=std::vector<Particle>(0);
-
-    d_M = 0;
-    for (int i=0;i<n_tolls;++i)
-        d_M += std::pow(u_bounds[i]-l_bounds[i],2);
-    d_M = std::sqrt(d_M);
-
-    for(int i=0;i<n_p;++i){
-        particles.push_back({comm_tax_free, n_usr ,transf_costs,obj_coefficients, u_bounds,l_bounds, n_commodities, n_tolls, i, d_M,search_lb,search_ub,0});
-    }
-
-    double tmp = 0; 
-    cube_best_val[0] = 0;
-    for(int i=0;i<n_p;++i) {
-        tmp = particles[i].compute_obj_and_update_best();
-        if (tmp>cube_best_val[0])
-            cube_best_particle_idx[0] = i;
-            cube_best_val[0] = tmp;
-    }
-
-    for(int i=0; i< n_tolls; i++) cube_p_best[0][i]=particles[cube_best_particle_idx[0]].p[i];
-}
-
-/*-----------------------------------------------------------------------------------------*/
-/*      Initialize the swarm object and its particles with random velocity and position    */
-/*      implementing the latin hypercube sampling method in the bounded space.             */
-/*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr,double* transf_costs, double* const obj_coef, double* const u_bounds,double* const l_bounds, short n_comm, short n_to, short n_parts, int n_iter, short num_th,short N_PARTS, short n_cut, short N_div_, int n_u_l, bool verb) {
-    n_iterations = n_iter;
-    no_update_lim=n_u_l;
-    n_particles=n_parts; 
-    N_PARTICLES = N_PARTS;
-    n_p = n_particles;
-    n_tolls=n_to;
-    n_commodities=n_comm;
-    obj_coefficients=obj_coef;
-    search_ub = u_bounds;
-    search_lb = l_bounds;
-    num_threads=num_th;
-    N_div = N_div_;
-    verbose=verb;
-
-    // find the number of dimensions on which the cuts are being performed, according with the desired number of particles 
-    if (N_div==0) {
-        while (std::pow(n_cut,N_div)<n_p) {N_div++;}
-        N_div--;
-    }
-    n_p = int(std::ceil(n_p/std::pow(n_cut,N_div))*std::pow(n_cut,N_div));
-    n_particles = n_p;
-    n_subcubes=std::pow(n_cut,N_div);
-    best_idx=0;
-    cube_best_val = new double[n_subcubes];
-    cube_p_best = new double*[n_subcubes];
-    cube_best_particle_idx = new short[n_subcubes];
-
-    for (int i=0;i<std::pow(n_cut,N_div);i++) cube_p_best[i] = new double[n_tolls];
-    particles=std::vector<Particle>(0);
-
-    d_M = 0;
-    for (int i=0;i<n_tolls;i++)
-        d_M += std::pow(u_bounds[i]-l_bounds[i],2);
-    d_M = std::sqrt(d_M);
-
-    // latin hypercube sampling method
-    div_start = new double[n_tolls];
-    div_end = new double[n_tolls];
-    div_dim = new int[N_div];
-    init_div(n_cut);
-    LH_sampling(0, n_cut,comm_tax_free, n_usr ,transf_costs,0);
-
-    // update the best_* things
-    double tmp = 0; 
-    for (int i=0;i<n_subcubes;i++) cube_best_val[i] = 0;
-    for(int i=0;i<n_p;i++) {
-        tmp = particles[i].compute_obj_and_update_best();
-        if (tmp>cube_best_val[particles[i].lh_idx]) {
-            cube_best_val[particles[i].lh_idx] = tmp;
-            cube_best_particle_idx[particles[i].lh_idx] = i;
-            cube_best_val[particles[i].lh_idx] = tmp;
-            if (tmp>cube_best_val[best_idx]) best_idx=particles[i].lh_idx;
-        }
-    }
-    for (int i=0;i<n_subcubes;i++) {
-        cube_p_best[i] = new double[n_tolls];
-        for(int j=0; j< n_tolls; j++) {
-            cube_p_best[i][j]=particles[cube_best_particle_idx[i]].p[j];
-        } 
-    }
-}
-
-/*-----------------------------------------------------------------------------------------*/
-/* Initialize the "div_start" and "div_end" vectors according to latin hypercube sampling. */                                                                      
-/*-----------------------------------------------------------------------------------------*/
-void Swarm::init_div(int n_cut) {
-    // create a list of two columns: [0]--> toll_idx [1]--> lenght of the toll
-    std::vector<std::array<double,2>> list_dim = create_list(search_lb,search_ub,n_tolls);
-    // sort it w.r.t. the toll lenght
-    std::sort(list_dim.begin(),list_dim.end(),compare);
-
-    // div_dim --> collects the toll_idx for the ones selected for the cutting
-    for (int i=0;i<N_div;++i) {div_dim[i]=list_dim[i][0];}
-    // div_start and div_end are inizialized for each toll with the respective search_lb and search_ub
-    for (int i=0;i<n_tolls;++i) {
-        div_start[i] = search_lb[i];
-        div_end[i] = search_ub[i];
-    }
-    // in case of the tolls selected for the cutting the div_end is initialized with the first cat value --> e.g. |--------|-------|-------|
-    for (int i=0;i<N_div;++i) {
-        div_end[div_dim[i]] = search_lb[div_dim[i]]+(search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-    }
-}
-
-void Swarm::set_init_sols(double* solutions, int n_solutions) {
-    std::cout<<"   init solutions "<< n_solutions<<"  tolls"<<n_tolls<< std::endl;
-    int n_sols = n_solutions;
-    if(n_sols > n_p) n_sols = n_p;
-
-    for(int i=0; i< n_sols; i ++) {
-        for(int j=0; j< n_tolls; j++) particles[i].p[j] = solutions[i*n_tolls + j];
-    }
-
-    for(int j=0; j< n_tolls; j++) std::cout<<particles[0].p[j]<< " ";
-    std::cout<< std::endl; 
-    std::cout<<particles[0].compute_obj_and_update_best()<<std::endl;
-    std::cout<< "  ++++++  " <<particles[0].personal_best_val<< std::endl;
-    for (int j=0;j<n_subcubes;j++)
-        for(int i=0; i< n_tolls; i++) cube_p_best[j][i]=particles[0].p[i];
-}
-
-/*-----------------------------------------------------------------------------------------*/
-/*    Mantain in the population only the first n_particles in terms of better results    */                                                                        
-/*-----------------------------------------------------------------------------------------*/
-void Swarm::lower_particles(std::vector<double>& results) {
-
-    std::vector<double> tmp(n_particles,0.);
-    std::vector<double> tmp_results(n_p,0.);
-    std::vector<short> tmp_cube_best_particle_idx(n_subcubes,-1);
-    std::vector<Particle> new_particles(n_p);
-
-    // collect and sort the results data in an increasing order to select the best ones
-    std::vector<std::array<double,2>> list = create_list(tmp.data(),results.data(),results.size());
-    std::sort(list.begin(),list.end(),compare);
-
-    // update best_idx
-    best_idx=particles[list[0][0]].lh_idx;
-
-    // update new_particles, tmp_results and tmp_cube_best_particle_idx vectors
-    for (int i=0;i<n_p;i++) {
-        new_particles[i] = particles[list[i][0]];
-        new_particles[i].p = new_particles[i].personal_best;
-        new_particles[i].v = std::vector<double>(n_tolls,0.);
-        new_particles[i].idx = i;
-        tmp_results[i] = list[i][1];
-        if (cube_best_particle_idx[particles[list[i][0]].lh_idx]==list[i][0]){
-            tmp_cube_best_particle_idx[particles[list[i][0]].lh_idx]=i;
-        }
-    }
-
-    // substitute the real vectors with the new ones
-    cube_best_particle_idx = tmp_cube_best_particle_idx.data();
-    particles = new_particles;
-}
-
-/* change the particles generating them around the best one so far with a normal distribution */
-void Swarm::centering_particles(int N, double var) {
-
-    std::vector<std::vector<double>> p_init(0);
-    p_init.push_back(particles[cube_best_particle_idx[best_idx]].personal_best);
-    for (int i=1;i<N;i++) {
-        // generate a random position with normal distribution around the best particle position
-        std::vector<double> pos(particles[0].n_tolls);
-        for (int k=0;k<n_tolls;k++) {
-            pos[k]=get_normal(particles[cube_best_particle_idx[best_idx]].personal_best[k],var);
-            if (pos[k]<search_lb[k]) pos[k]=search_lb[k];
-            if (pos[k]>search_ub[k]) pos[k]=search_ub[k];
-        }
-        p_init.push_back(pos);
-    }
-
-    std::vector<double> t_cost(particles[0].n_commodities*particles[0].n_tolls);
-    for (int i=0;i<particles[0].n_commodities*particles[0].n_tolls;i++) 
-        t_cost[i]=particles[0].transfer_costs[std::floor(i/particles[0].n_tolls)][i%particles[0].n_tolls];
-
-    std::vector<double> com_t_f = particles[0].commodities_tax_free;
-    std::vector<int> n_u = particles[0].n_users;
-    int i_lh = particles[0].lh_idx;
-
-
-    n_iterations = n_iterations;
-    n_particles=N; 
-    N_PARTICLES = N_PARTICLES;
-    n_p = n_particles;
-    n_tolls=particles[0].n_tolls;
-    n_commodities=particles[0].n_commodities;
-    search_ub = particles[0].search_ub.data();
-    search_lb = particles[0].search_lb.data();
-    num_threads=num_threads;
-
-    particles=std::vector<Particle>(0);
-
-    for(int i=0;i<N;++i){
-        particles.push_back({p_init[i], com_t_f.data(), n_u.data() ,t_cost.data(), obj_coefficients, search_ub,search_lb, n_commodities, n_tolls, i, d_M,i_lh});
-    }
-
-    double tmp = 0; 
-    cube_best_val[best_idx] = 0;
-    for(int i=0;i<N;++i) {
-        tmp = particles[i].compute_obj_and_update_best();
-        if (tmp>cube_best_val[best_idx]){
-            cube_best_particle_idx[best_idx] = i;
-            cube_best_val[best_idx] = tmp;
-        }
-    }
-    std::cout<<cube_best_particle_idx[best_idx]<<" "<<cube_best_val[best_idx]<<std::endl;
-    for(int i=0; i< n_tolls; i++) cube_p_best[best_idx][i]=particles[cube_best_particle_idx[best_idx]].p[i];
-    no_update=0;
-}
-
-
-/*----------------------------------------------------------------------------------------------------------------------------------*/
-/* Perform LH sampling                                                                                                              */     
-/* i -> during this call of LH_sampling the i-th (according to div_dim) toll dimension's considered portion is modified             */
-/* count -> takes trace of the already considered portions of the i-th toll dimension from those indicated in div_dim               */
-/*                                                                                                                                  */
-/* Example of functioning: N_div=2, n_cut=2 (so n_subcubes=2^2=4), n_p=6                                                            */
-/*    -----------------------                                                                                                       */
-/*    |   SC2    |   SC4    |  d                                                                                                    */ 
-/*    -----------------------  i                                                                                                    */ 
-/*    |   SC1    |   SC3    |  m                                                                                                    */ 
-/*    -----------------------  1                                                                                                    */
-/*             dim 0                                                                                                                */
-/*                                                                                                                                  */
-/* START CYCLE 1 -> i=0, count=0, idx_part=0 -> while OK -> if OK -> START CYCLE 2 with i=1, idx_part=0 in SC1                      */
-/*                                                                                                                                  */          
-/* CYCLE 2 with i=1, count=0, idx_part=0 in SC1 -> while OK -> if NO -> if NO -> for OK -> ADD PARTICLE with idx=0 in SC1 ->        */
-/* -> idx_part=1 -> ADD PARTICLE with idx=1 in SC1 -> idx_part=2 -> count=1 -> if NO -> go in SC2 -> while OK -> if NO -> if OK ->  */ 
-/* -> idx_part=2 -> for OK -> ADD PARTICLE with idx=2 in SC2 -> idx_part=3 -> ADD PARTICLE with idx=3 in SC2 -> idx=4 -> count=2 -> */ 
-/* -> if OK -> go in SC1 -> END CYCLE 2                                                                                             */  
-/*                                                                                                                                  */ 
-/* RESTART CYCLE 1 -> count=1 -> go in SC3 -> while OK -> if OK -> START CYCLE 3 with i=1, idx_part=0 in SC3                        */
-/*                                                                                                                                  */     
-/* CYCLE 3 -> i=1, count=0, idx_part=0 in SC3 -> while OK -> if NO -> if OK -> idx_part=4 -> for OK ->                              */
-/* -> ADD PARTICLE with idx=4 in SC3 -> idx_part=5 -> ADD PARTICLE with idx=5 in SC3 -> idx_part=6 -> count=1 -> if NO ->           */
-/* -> go in SC4 -> while OK -> if NO -> if OK -> idx_part=6 -> for OK -> ADD PARTICLE with idx=6 in SC4 -> idx_part=7 ->            */
-/* -> ADD PARTICLE with idx=7 in SC4 -> idx_part=8 -> count=2 -> if OK -> go in SC3 -> END CYCLE 2                                  */  
-/*                                                                                                                                  */ 
-/* RESTART CYCLE 1 -> count=2 -> go out of the space for dim_div[0] -> while NO -> go in SC1  -> END CYCLE 1                        */ 
-/*                                                                                                                                  */ 
-/*  NOTE ----> at the end the number of particles is not n_p=6, but is equal to ceil(n_p/(n_subcubes))*n_subcubes = 8               */
-/*----------------------------------------------------------------------------------------------------------------------------------*/
-void Swarm::LH_sampling(int i, int n_cut, double* comm_tax_free, int* n_usr,double* transf_costs,int idx_part) {
-    // count mantains the information about the portion of the toll dimension we are considering
-    int count=0; 
-    while (count<n_cut) {
-        if (i<N_div-1) {
-            LH_sampling(i+1, n_cut,comm_tax_free, n_usr ,transf_costs, idx_part);
-            count++;
-            div_start[div_dim[i]] += (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-            div_end[div_dim[i]] += (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-        } 
-        else {
-            if (particles.size()>0) idx_part=particles[particles.size()-1].idx+1;
-            for (int k=0;k<n_p/std::pow(n_cut,N_div);++k) {
-                particles.push_back({comm_tax_free, n_usr ,transf_costs, obj_coefficients, search_ub,search_lb, n_commodities, n_tolls, idx_part, d_M,div_start,div_end,(int)std::floor(idx_part/(n_p/std::pow(n_cut,N_div)))});
-                idx_part++;
-            }
-            count++;
-            if (count==n_cut) {
-                div_start[div_dim[i]] = search_lb[div_dim[i]];
-                div_end[div_dim[i]] = search_lb[div_dim[i]] + (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-            }
-            else {
-                div_start[div_dim[i]] += (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-                div_end[div_dim[i]] += (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
-            }
-        }
-        //std::cout<<idx_part<<"/"<<n_p<<std::endl;
-    }
-    div_start[div_dim[i]] = search_lb[div_dim[i]];
-    div_end[div_dim[i]] = search_lb[div_dim[i]] + (search_ub[div_dim[i]]-search_lb[div_dim[i]])/n_cut;
 }
 
 

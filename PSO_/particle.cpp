@@ -55,6 +55,8 @@ struct MagicNumbers{
 
 };
 
+MagicNumbers MAGIC_NUMBERS = MagicNumbers();
+
 
 /*
 Particle class implements a particle object such that:
@@ -123,13 +125,10 @@ class Particle {
     Particle() {}
     // search_ub, search_lb: search space bounds
     // init_ub, init_lb: initialization space bounds
-    Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub, double* search_lb, 
-            short n_comm, short n_to, int part_idx, double d_max, MagicNumbers mag_num);
-    Particle(std::vector<double> p_init, std::vector<double> v_init,
+    Particle(double* p_init, double* v_init,
             double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub, double* search_lb, 
-                    short n_comm, short n_to, int part_idx, double d_max, MagicNumbers mag_num);
+                    short n_comm, short n_to, int part_idx, double d_max, MagicNumbers MAGIC_NUMBERS);
     ~Particle() {}
-    void set_values(std::vector<double> pos, double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub_,double* search_lb_, short n_comm, short n_to, int i, double d_max, int lh_id,  MagicNumbers mag_num);
     void update_fitness(double best);
     void update_sigma(double* g) {sigma = compute_distance(p,std::vector<double>(g, g + n_tolls));}
     void update_pos();
@@ -150,36 +149,21 @@ class Particle {
     void print();
 };
 
-/*-----------------------------------------------------------------------------------------*/
-/*      Initialize the particle object with random velocity and position depending on      */
-/*      the "start" and "end" vectors passed, which limit the space of initialization      */
-/*-----------------------------------------------------------------------------------------*/
-Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub, double* search_lb, 
-            short n_comm, short n_to, int part_idx, double d_max, MagicNumbers mag_num) {
-        
-        std::vector<double> pos(n_to);
-        for(int j=0; j< n_to; j++) {
-            pos[j] = get_rand(search_lb[j], search_ub[j]);
-        }
-        set_values(pos, comm_tax_free, n_usr, trans_costs, obj_coef, search_ub_, search_lb_, n_comm, n_to, i, d_max, lh_id, mag_num);
-}
 
 /*-----------------------------------------------------------------------------------*/
 /*      Initialize the particle object with random velocity  and given position      */
 /*-----------------------------------------------------------------------------------*/
 
-Particle::Particle(std::vector<double> p_init, double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub_,double* search_lb_, short n_comm, short n_to, int i, double d_max, int lh_id,MagicNumbers mag_num = MagicNumbers()) {
-    set_values(p_init, comm_tax_free, n_usr, trans_costs, search_ub_, search_lb_, obj_coef, n_comm, n_to, i, d_max, lh_id, mag_num);
-}
-
-void Particle::set_values(std::vector<double> p_init, double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub_,double* search_lb_, short n_comm, short n_to, int i, double d_max, int lh_id, MagicNumbers mag_num ) {
+Particle::Particle(double* p_init, double* v_init,
+            double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub_, double* search_lb_, 
+                    short n_comm, short n_tolls_, int part_idx, double d_max, MagicNumbers mag_num) {
+                
         magic_numbers = mag_num;
-        particle_idx = i;
+        particle_idx = part_idx;
         n_commodities=n_comm;
-        n_tolls=n_to;
+        n_tolls=n_tolls_;
         sigma_max = d_max;
         count_iter=0;
-        lh_idx=lh_id;
 
         commodities_tax_free = std::vector<double> (n_commodities);
         for(int j=0; j< n_commodities; j++) commodities_tax_free[j] = comm_tax_free[j];
@@ -206,11 +190,15 @@ void Particle::set_values(std::vector<double> p_init, double* comm_tax_free, int
         for(int j=0; j< n_tolls; j++) search_range[j] = search_ub[j] - search_lb[j];
 
         // init positions
-        p = p_init;
-        p_past=p;
+        v = std::vector<double> (n_tolls);
+        p = std::vector<double> (n_tolls);
+ 
+        for(int j=0; j< n_tolls; j++) {
+                p[j] = p_init[j];
+                v[j] = v_init[j];
+            }
 
-        v= std::vector<double> (n_tolls);
-        for(int j=0; j< n_tolls; j++) v[j] = get_rand(0, 0.) * (search_ub[j]-search_lb[j]);
+        p_past=p;
 
         personal_best = p;
         personal_best_val = 0;
