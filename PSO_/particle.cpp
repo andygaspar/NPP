@@ -156,7 +156,7 @@ class Particle {
 
 Particle::Particle(double* p_init, double* v_init,
             double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, double* search_ub_, double* search_lb_, 
-                    short n_comm, short n_tolls_, int part_idx, double d_max, MagicNumbers mag_num) {
+                    short n_comm, short n_tolls_, int part_idx, double d_max, MagicNumbers mag_num=MAGIC_NUMBERS) {
                 
         magic_numbers = mag_num;
         particle_idx = part_idx;
