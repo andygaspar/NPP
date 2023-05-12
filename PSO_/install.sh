@@ -1,3 +1,3 @@
-g++  -c -g -fopenmp -fPIC PSO/bridge_.cpp -o PSO/bridge.o
-g++ -shared -fopenmp -Wl,-soname,PSO/bridge.so -o PSO/bridge.so PSO/bridge.o
-rm -f PSO/bridge.o
+g++  -c -W -fopenmp -fPIC bridge.cc
+g++ -shared -fopenmp -Wl,-soname,bridge.so -o bridge.so bridge.o
+rm -f bridge.o

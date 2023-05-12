@@ -21,9 +21,9 @@ os.system("PSO/install.sh")
 
 
 
-n_locations = 60
-n_commodities = 60
-n_tolls = 40
+n_locations = 10
+n_commodities = 8
+n_tolls = 15
 
 for _ in range(1):
 
@@ -33,13 +33,13 @@ for _ in range(1):
 
     t = time.time()
     global_solver = GlobalSolver(npp)
-    # global_solver.solve()
-    # global_solver.print_model()
+    global_solver.solve()
+    global_solver.print_model()
     print('time global ', time.time() - t)
 
     # print("obj val global", global_solver.m.objVal)
 
-    n_iterations = 1_000_000
+    n_iterations = 1_000
     n_particles = 96
 
     N_PARTS = n_particles // 5
