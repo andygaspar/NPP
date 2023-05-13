@@ -8,11 +8,11 @@ from Instance.instance import Instance
 from Solver.global_ import GlobalSolver
 from Solver.pso_solver import PsoSolver
 
-os.system("PSO/install.sh")
+os.system("PSO_/install.sh")
 
-# n_locations = 10
-# n_commodities = 2
-# n_tolls = 3
+n_locations = 10
+n_commodities = 2
+n_tolls = 3
 
 # n_locations = 50
 # n_commodities = 10
@@ -39,8 +39,8 @@ for _ in range(1):
 
     # print("obj val global", global_solver.m.objVal)
 
-    n_iterations = 1_000
-    n_particles = 96
+    n_iterations = 1_0
+    n_particles = 1
 
     N_PARTS = n_particles // 5
     n_cut = 3
@@ -53,11 +53,11 @@ for _ in range(1):
     #
     t = time.time()
     s = PsoSolver(npp, None, n_particles, n_iterations, N_PARTS, n_cut, N_DIV, n_u_l, normalised=False, verbose=False)#, time_limit=1, init_sol_num=5)
-
-    k = s.random_init()
-
-    latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
     s.run()
+    # k = s.random_init()
+    #
+    # latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
+
     print('time pso ', time.time() - t)
     print(s.best_val)
 

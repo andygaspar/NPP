@@ -14,6 +14,7 @@ class SwarmNew:
                  n_particles, n_iterations, n_u_l, ):
 
         num_threads = multiprocessing.cpu_count()
+        num_threads = 1;
         self.lib = ctypes.CDLL('PSO_/bridge.so')
 
 
