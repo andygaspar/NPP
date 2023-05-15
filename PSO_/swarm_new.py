@@ -11,11 +11,10 @@ class SwarmNew:
 
     def __init__(self, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
                  obj_coefficients: np.array, n_commodities, n_toll_paths,
-                 n_particles, n_iterations, n_u_l, ):
+                 n_particles, n_iterations, no_update_lim):
 
         num_threads = multiprocessing.cpu_count()
         self.lib = ctypes.CDLL('PSO_/bridge.so')
-
 
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
@@ -24,7 +23,7 @@ class SwarmNew:
         self.lib.Swarm_.restype = ctypes.c_void_p
 
         self.lib.run_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
-                                  ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
+                                  ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_bool, ctypes.c_bool]
 
         self.lib.get_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_val_.restype = ctypes.c_double
@@ -39,16 +38,18 @@ class SwarmNew:
                                      transfer_costs.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      obj_coefficients.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      ctypes.c_short(n_commodities), ctypes.c_short(n_toll_paths),
-                                     ctypes.c_short(n_particles), ctypes.c_int(n_iterations), ctypes.c_int(n_u_l),
+                                     ctypes.c_short(n_particles), ctypes.c_int(n_iterations), ctypes.c_int(no_update_lim),
                                      ctypes.c_short(num_threads))
 
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def run(self, init_positions, init_velocity, lb, ub):
+    def run(self, init_positions, init_velocity, lb, ub, stats=False, verbose=True):
         self.lib.run_(ctypes.c_void_p(self.swarm),
                       init_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                       init_velocity.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                       lb.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                      ub.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+                      ub.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                      ctypes.c_bool(stats),
+                      ctypes.c_bool(verbose))
         return True

@@ -127,6 +127,9 @@ class GlobalSolver:
 
         print('actual best_val', best_val)
 
+    def get_prices(self):
+        return np.array([self.t[p].x for p in self.instance.toll_paths])
+
 
 
 # 19.909572739759547 < 19.909572739759554

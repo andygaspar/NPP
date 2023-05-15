@@ -3,59 +3,8 @@
 #include <functional>
 #include <algorithm>
 #include <random>
-#include "utils_.h"
+#include "params.h"
 
-double INIT_COMMODITY_VAL = pow(10, 5);
-
-
-
-struct MagicNumbers{
-    double w1; 
-    double w2;
-    double w3;
-    double c_soc1;
-    double c_soc2;
-    double c_soc3;
-    double c_cog1;
-    double c_cog2;
-    double c_cog3;
-    double L1;
-    double L2;
-    double L3;
-    double U1;
-    double U2;
-    double U3;
-    double limit_sigma_1;
-    double limit_sigma_2;
-    double limit_sigma_3;
-
-    MagicNumbers(double ww1 = 0.1, 
-    double ww2 = 0.5,
-    double ww3 = 0.9,
-    double cc_soc1 = 0.2,
-    double cc_soc2 = 0.3,
-    double cc_soc3 =1.5,
-    double  cc_cog1 =0.2,
-    double cc_cog2 =0.9,
-    double cc_cog3 =1.1,
-    double lL1 =0,
-    double lL2 =0.001,
-    double lL3 =0.01,
-    double  uU1 =0.08,
-    double uU2 =0.25,
-    double uU3=0.5,
-    double ll1 = 0.2,
-    double ll2 = 0.4,
-    double ll3 = 0.7){
-    w1 = ww1;  w2 = ww2; w3 = ww3; c_soc1 = cc_soc1; c_soc2 = cc_soc2; c_soc3 =cc_soc3; c_cog1 = cc_cog1; c_cog2 = cc_cog2; c_cog3 =cc_cog3;
-    L1 =lL1; L2 = lL2; L3 =lL3; U1 = uU1; U2 =uU2; U3=uU3; limit_sigma_1 = ll1; limit_sigma_2 = ll2; limit_sigma_3 = ll3;
-
-    }
-
-
-};
-
-MagicNumbers MAGIC_NUMBERS = MagicNumbers();
 
 
 /*
@@ -81,7 +30,7 @@ class Particle {
     double init_commodity_val;
 
     //magic parameters
-    MagicNumbers magic_numbers; 
+    Params params; 
 
     // problem related
     short n_commodities;
@@ -127,7 +76,7 @@ class Particle {
     // init_ub, init_lb: initialization space bounds
     Particle(
             double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, 
-                    short n_comm, short n_to, int part_idx, MagicNumbers MAGIC_NUMBERS);
+                    short n_comm, short n_to, int part_idx,  Params parameters);
     ~Particle() {}
 
     void init_values(double* p_init, double* v_init,double* search_ub, double* search_lb, double d_max );
@@ -157,13 +106,18 @@ class Particle {
 /*-----------------------------------------------------------------------------------*/
 
 Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef,
-                    short n_comm, short n_tolls_, int part_idx, MagicNumbers mag_num=MAGIC_NUMBERS) {
-                
-        magic_numbers = mag_num;
+                    short n_comm, short n_tolls_, int part_idx, Params parameters) {
+
+  
+        params = parameters;
         particle_idx = part_idx;
         n_commodities=n_comm;
         n_tolls=n_tolls_;
         count_iter=0;
+
+        init_commodity_val = params.init_commodity_val;
+        L=0;
+        U=0.01;
 
         commodities_tax_free = std::vector<double> (n_commodities);
         for(int j=0; j< n_commodities; j++) commodities_tax_free[j] = comm_tax_free[j];
@@ -208,10 +162,6 @@ void Particle::init_values(double* p_init, double* v_init,double* search_ub_, do
 
     personal_best = p;
     personal_best_val = 0;
-    init_commodity_val = pow(10, 5);
-    L=0;
-    U=10;
-    
 
 }
 
@@ -255,37 +205,37 @@ void Particle::update_vel(std::vector<double> g, int iter, double random_compone
 
 void Particle::update_inertia() {
     w = 0;
-    w += (fitness_memb[2] + sigma_memb[0])*magic_numbers.w1; 
-    w += (fitness_memb[1] + sigma_memb[1])*magic_numbers.w2;
-    w += (fitness_memb[0] + sigma_memb[2])*magic_numbers.w3;
+    w += (fitness_memb[2] + sigma_memb[0])*params.w1; 
+    w += (fitness_memb[1] + sigma_memb[1])*params.w2;
+    w += (fitness_memb[0] + sigma_memb[2])*params.w3;
 }
 
 void Particle::update_c_soc() {
     c_soc = 0;
-    c_soc += (fitness_memb[0] + sigma_memb[1])*magic_numbers.c_soc1;
-    c_soc += (fitness_memb[1] + sigma_memb[0])*magic_numbers.c_soc2;
-    c_soc += (fitness_memb[2] + sigma_memb[2])*magic_numbers.c_soc3;
+    c_soc += (fitness_memb[0] + sigma_memb[1])*params.c_soc1;
+    c_soc += (fitness_memb[1] + sigma_memb[0])*params.c_soc2;
+    c_soc += (fitness_memb[2] + sigma_memb[2])*params.c_soc3;
 }
 
 void Particle::update_c_cog() {
     c_cog = 0;
-    c_cog += (sigma_memb[2])*magic_numbers.c_cog1;
-    c_cog += (fitness_memb[2] + fitness_memb[1] + sigma_memb[0] + sigma_memb[1])*magic_numbers.c_cog2;
-    c_cog += (fitness_memb[0])*magic_numbers.c_cog3;
+    c_cog += (sigma_memb[2])*params.c_cog1;
+    c_cog += (fitness_memb[2] + fitness_memb[1] + sigma_memb[0] + sigma_memb[1])*params.c_cog2;
+    c_cog += (fitness_memb[0])*params.c_cog3;
 }
 
 void Particle::update_L() {
     L = 0;
-    L += (fitness_memb[1] + fitness_memb[0] + sigma_memb[2])*magic_numbers.L1;
-    L += (sigma_memb[0] + sigma_memb[1])*magic_numbers.L2;
-    L += (fitness_memb[2])*magic_numbers.L3;
+    L += (fitness_memb[1] + fitness_memb[0] + sigma_memb[2])*params.L1;
+    L += (sigma_memb[0] + sigma_memb[1])*params.L2;
+    L += (fitness_memb[2])*params.L3;
 }
 
 void Particle::update_U() {
     U = 0;
-    U += (sigma_memb[0])*magic_numbers.U1;
-    U += (fitness_memb[1] + fitness_memb[0] + sigma_memb[1])*magic_numbers.U2;
-    U += (fitness_memb[2] + sigma_memb[2])*magic_numbers.U3;
+    U += (sigma_memb[0])*params.U1;
+    U += (fitness_memb[1] + fitness_memb[0] + sigma_memb[1])*params.U2;
+    U += (fitness_memb[2] + sigma_memb[2])*params.U3;
 }
 
 void Particle::update_params(double* g, double best) {
@@ -314,9 +264,9 @@ void Particle::evaluate_fitness_memb() {
 }
 
 void Particle::evaluate_sigma_memb() {
-    double l1 = magic_numbers.limit_sigma_1;
-    double l2 = magic_numbers.limit_sigma_2;
-    double l3 = magic_numbers.limit_sigma_3;
+    double l1 = params.limit_sigma_1;
+    double l2 = params.limit_sigma_2;
+    double l3 = params.limit_sigma_3;
     if (sigma<=l1*sigma_max) {
         sigma_memb[0] = 1;
         sigma_memb[1] = 0;
@@ -370,7 +320,7 @@ double Particle::compute_obj_and_update_best(){
             current_run_val += p[cheapest_path_idx]*obj_coefficients[cheapest_path_idx]*n_users[i];
         }
     }
-    //std::cout<<current_run_val<<std::endl;
+    //sstd::cout<<current_run_val<<std::endl;
     
     /* update personal_best and personal_best_val */
     if(current_run_val> personal_best_val){
