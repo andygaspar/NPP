@@ -129,8 +129,7 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         }
         
         n_users = std::vector<int> (n_commodities);
-        for(int j=0; j< n_commodities; j++) {n_users[j] = n_usr[j];std::cout<<n_usr[j];}
-        std::cout<<std::endl;
+        for(int j=0; j< n_commodities; j++) {n_users[j] = n_usr[j];}
 
         obj_coefficients = std::vector<double> (n_tolls);
 
@@ -297,7 +296,7 @@ double Particle::compute_obj_and_update_best(){
     current_run_val=0;
     int i,j,cheapest_path_idx;
 
-    std::cout<<"commodities "<<n_commodities<<std::endl;
+    // std::cout<<"commodities "<<n_commodities<<std::endl;
     for(i=0; i<n_commodities; i++) {
         commodity_cost=init_commodity_val;
         bool found = false;
@@ -320,8 +319,8 @@ double Particle::compute_obj_and_update_best(){
 //        std::cout<<"["<<i<<"]"<<commodities_tax_free[i]<<">="<<commodity_cost<<std::endl;
         if(commodities_tax_free[i] >= commodity_cost) {
             found = true;
-            std::cout<<obj_coefficients[cheapest_path_idx]<<" "<<n_users[i]<<" "<< p[cheapest_path_idx]<<std::endl;
-            std::cout<<std::endl;
+            // std::cout<<obj_coefficients[cheapest_path_idx]<<" "<<n_users[i]<<" "<< p[cheapest_path_idx]<<std::endl;
+            // std::cout<<std::endl;
             current_run_val += p[cheapest_path_idx]*obj_coefficients[cheapest_path_idx]*n_users[i];
         }
 
@@ -334,7 +333,7 @@ double Particle::compute_obj_and_update_best(){
         personal_best_val = current_run_val;
         count_iter=0;
     }
-    std::cout<<current_run_val<<" personal"<<std::endl;
+    // std::cout<<current_run_val<<" personal"<<std::endl;
     return current_run_val;
 }
 

@@ -103,6 +103,7 @@ class Swarm {
     }
 
     int get_actual_iteration() {return actual_final_iterations;}
+    int get_stats_len() {return p_means.size();}
     double* get_stats_array(std::vector<std::vector<double>> v);
     double* get_p_means();
     double* get_v_means();
@@ -215,7 +216,7 @@ void Swarm::run(double* p_init, double* v_init, double* const u_bounds, double* 
 
         }
 
-        actual_final_iterations = iter - 1;
+        actual_final_iterations = iter;
     }
 
 
@@ -243,15 +244,15 @@ void Swarm::updte_stats(){
         }
         p_stds[p_stds.size() - 1][toll] = sqrt(p_std/n_particles);
         v_stds[v_stds.size() - 1][toll] = sqrt(v_std/n_particles);
-        std::cout<<p_means[0][toll]<<"   llllll"<<std::endl;
+        // std::cout<<p_means[0][toll]<<"   llllll"<<std::endl;
     }
 }
 
 
 
 double* Swarm::get_stats_array(std::vector<std::vector<double>> v){
-    double* array = new double[n_tolls*actual_final_iterations];
-    for(int i=0; i< actual_final_iterations; i++)
+    double* array = new double[n_tolls*v.size()];
+    for(int i=0; i< v.size(); i++)
         for(int t=0; t < n_tolls; t++){
              array[i*n_tolls + t] = v[i][t];
         }

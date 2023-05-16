@@ -20,8 +20,6 @@ os.system("PSO_/install.sh")
 # n_tolls = 8
 
 
-print("ciao")
-
 n_locations = 10
 n_commodities = 8
 n_tolls = 15
@@ -53,13 +51,14 @@ for _ in range(1):
     k = pso.random_init()
 
     latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-    pso.run()
+    pso.run(stats=True, verbose=True)
     print('time pso ', time.time() - t)
     print(pso.best_val)
 
     print(global_solver.get_prices())
+    print(npp.n_toll_paths)
+    stats = pso.get_stats()
 
-    print(pso.get_stats())
 
 
 

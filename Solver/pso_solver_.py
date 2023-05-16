@@ -24,13 +24,13 @@ class PsoSolverNew:
 
         self.time_limit = time_limit
 
-    def run(self):
+    def run(self, stats=False, verbose=False):
 
         init_sol = np.random.uniform(0, 1, size=(self.npp.n_toll_paths, self.n_particles))
         vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles))/10
         lb = np.zeros(self.npp.n_toll_paths)
         ub = np.ones_like(lb)
-        self.swarm.run(init_sol, vel_init, ub, lb)
+        self.swarm.run(init_sol, vel_init, ub, lb, stats, verbose)
 
         self.best, self.best_val = self.swarm.get_best()
         # print(self.npp.upper_bounds)

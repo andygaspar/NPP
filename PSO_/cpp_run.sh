@@ -1,2 +1,1 @@
-g++ -g main_prova.cpp -fopenmp -o PSO
-./PSO
+g++ -g -fopenmp  test_main.cc -o test -ljsoncpp
