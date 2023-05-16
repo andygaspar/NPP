@@ -49,15 +49,17 @@ for _ in range(1):
     #
     #
     t = time.time()
-    s = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
-    k = s.random_init()
+    pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
+    k = pso.random_init()
 
-    latin_hyper = s.compute_latin_hypercube_init(dimensions=5)
-    s.run()
+    latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
+    pso.run()
     print('time pso ', time.time() - t)
-    print(s.best_val)
+    print(pso.best_val)
 
     print(global_solver.get_prices())
+
+    print(pso.get_stats())
 
 
 

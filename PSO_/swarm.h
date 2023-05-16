@@ -102,6 +102,7 @@ class Swarm {
         return velocity;
     }
 
+    int get_actual_iteration() {return actual_final_iterations;}
     double* get_stats_array(std::vector<std::vector<double>> v);
     double* get_p_means();
     double* get_v_means();
@@ -242,6 +243,7 @@ void Swarm::updte_stats(){
         }
         p_stds[p_stds.size() - 1][toll] = sqrt(p_std/n_particles);
         v_stds[v_stds.size() - 1][toll] = sqrt(v_std/n_particles);
+        std::cout<<p_means[0][toll]<<"   llllll"<<std::endl;
     }
 }
 

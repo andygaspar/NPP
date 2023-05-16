@@ -15,6 +15,7 @@ class SwarmNew:
 
         num_threads = multiprocessing.cpu_count()
         num_threads = 1;
+        self.n_tolls = n_toll_paths
         self.lib = ctypes.CDLL('PSO_/bridge.so')
 
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
@@ -32,6 +33,14 @@ class SwarmNew:
         self.lib.get_best_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
 
+        self.lib.get_actual_iteration_.argtypes = [ctypes.c_void_p]
+        self.lib.get_actual_iteration_.restype = ctypes.c_int
+
+        self.lib.get_p_means_.argtypes = [ctypes.c_void_p]
+        self.lib.get_v_means_.argtypes = [ctypes.c_void_p]
+        self.lib.get_p_stds_.argtypes = [ctypes.c_void_p]
+        self.lib.get_v_stds_.argtypes = [ctypes.c_void_p]
+
         n_users = np.array(n_users, dtype=np.intc)
 
         self.swarm = self.lib.Swarm_(commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -45,7 +54,7 @@ class SwarmNew:
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def run(self, init_positions, init_velocity, lb, ub, stats=False, verbose=True):
+    def run(self, init_positions, init_velocity, lb, ub, stats=True, verbose=False):
         self.lib.run_(ctypes.c_void_p(self.swarm),
                       init_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                       init_velocity.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -54,3 +63,21 @@ class SwarmNew:
                       ctypes.c_bool(stats),
                       ctypes.c_bool(verbose))
         return True
+
+    def get_stats(self):
+        self.lib.get_p_means_.restype = ctypes.c_double
+
+
+        iterations = self.lib.get_actual_iteration_(ctypes.c_void_p(self.swarm))
+
+        self.lib.get_p_means_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_tolls, iterations))
+        self.lib.get_v_means_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_tolls, iterations))
+        self.lib.get_p_stds_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_tolls, iterations))
+        self.lib.get_v_stds_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_tolls, iterations))
+
+        p_means =  self.lib.get_p_means_(ctypes.c_void_p(self.swarm))
+        v_means =  self.lib.get_v_means_(ctypes.c_void_p(self.swarm))
+        p_stds =  self.lib.get_p_stds_(ctypes.c_void_p(self.swarm))
+        v_stds =  self.lib.get_v_stds_(ctypes.c_void_p(self.swarm))
+
+        return p_means, p_stds, v_means, v_stds

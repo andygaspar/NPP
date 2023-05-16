@@ -65,7 +65,7 @@ int main() {
     }
 
     
-    swarm->run( p_init, v_init, u_bounds, l_bounds, false);
+    swarm->run( p_init, v_init, u_bounds, l_bounds, true, false);
     std::cout<<""<<std::endl;
     for(int i = 0; i < n_tolls_; i++){
         std::cout<<swarm->particles[swarm->best_particle_idx].p[i]<<" ";

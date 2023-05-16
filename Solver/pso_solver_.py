@@ -37,6 +37,9 @@ class PsoSolverNew:
         print(self.best * self.npp.upper_bounds)
         # print("final ", self.best)
 
+    def get_stats(self):
+        return self.swarm.get_stats()
+
     def random_init(self):
         return np.random.uniform(size=(self.n_particles, self.npp.n_toll_paths)) * self.npp.upper_bounds
 
