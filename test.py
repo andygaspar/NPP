@@ -20,7 +20,7 @@ os.system("PSO_/install.sh")
 # n_tolls = 8
 
 
-
+print("ciao")
 
 n_locations = 10
 n_commodities = 8
