@@ -19,27 +19,28 @@ os.system("PSO_/install.sh")
 # n_commodities = 10
 # n_tolls = 8
 
+np.random.seed(0)
 
 n_locations = 10
 n_commodities = 8
 n_tolls = 15
 
-for _ in range(1):
+for _ in range(2):
 
-    npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=True)
+    npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
     # npp.save_problem()
     # npp.show()
 
     t = time.time()
     global_solver = GlobalSolver(npp)
     global_solver.solve()
-    global_solver.print_model()
+    # global_solver.print_model()
     print('time global ', time.time() - t)
 
-    # print("obj val global", global_solver.m.objVal)
+    print("obj val global", global_solver.m.objVal)
 
-    n_iterations = 10
-    n_particles = 10
+    n_iterations = 10000
+    n_particles = 128
     no_update_lim = 1000
     #
     # path_costs = np.random.uniform(size=npp.n_paths*n_particles)
@@ -51,13 +52,15 @@ for _ in range(1):
     k = pso.random_init()
 
     latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-    pso.run(stats=True, verbose=True)
+    pso.run(init_pos=latin_hyper, stats=False, verbose=True)
     print('time pso ', time.time() - t)
     print(pso.best_val)
 
-    print(global_solver.get_prices())
-    print(npp.n_toll_paths)
-    stats = pso.get_stats()
+    print()
+
+    # print(global_solver.get_prices())
+    # print(npp.n_toll_paths)
+    # stats = pso.get_stats()
 
 
 

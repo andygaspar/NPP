@@ -177,6 +177,8 @@ void Swarm::run(double* p_init, double* v_init, double* const u_bounds, double* 
     best_val = 0;
     int iter=0;
 
+    double avg_velocity;
+
     while((iter< n_iterations) and (!no_update_lim_reached)) {
 
         
@@ -199,11 +201,14 @@ void Swarm::run(double* p_init, double* v_init, double* const u_bounds, double* 
                 }
             }
 
-        double speed = 0;
-        for(i=0;i<n_tolls;++i) speed += particles[best_particle_idx].v[i];
-        speed = speed/n_tolls;
+        if(verbose and (iter%100 == 0)){
+            avg_velocity = 0;
+            for(i=0;i<n_tolls;++i) avg_velocity += particles[best_particle_idx].v[i];
+            avg_velocity = avg_velocity/n_tolls;
+            if(verbose and (iter%100 == 0)) std::cout<<"iter "<<iter<<"  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
 
-        if(verbose and (iter%100 == 0)) std::cout<<"iter "<<iter<<"  best_val "<<best_val<<" "<<speed<<std::endl;
+        }
+        
         
         if (new_glob_best==false) no_update++;
         else no_update = 0;

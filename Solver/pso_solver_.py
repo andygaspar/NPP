@@ -13,6 +13,7 @@ class PsoSolverNew:
 
     def __init__(self, npp: Instance, n_particles, n_iterations, no_update_lim, time_limit=None):
         self.best_val = None
+        self.best_normalised = None
         self.best = None
         self.npp = npp
         self.n_particles = n_particles
@@ -24,17 +25,19 @@ class PsoSolverNew:
 
         self.time_limit = time_limit
 
-    def run(self, stats=False, verbose=False):
+    def run(self, init_pos=None, stats=False, verbose=False):
 
-        init_sol = np.random.uniform(0, 1, size=(self.npp.n_toll_paths, self.n_particles))
-        vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles))/10
+        if init_pos is None:
+            init_pos = np.random.uniform(0, 1, size=(self.npp.n_toll_paths, self.n_particles))
+        vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles))/2
         lb = np.zeros(self.npp.n_toll_paths)
         ub = np.ones_like(lb)
-        self.swarm.run(init_sol, vel_init, ub, lb, stats, verbose)
+        self.swarm.run(init_pos, vel_init, ub, lb, stats, verbose)
 
-        self.best, self.best_val = self.swarm.get_best()
+        self.best_normalised, self.best_val = self.swarm.get_best()
+        self.best = self.npp.upper_bounds * self.best_normalised
         # print(self.npp.upper_bounds)
-        print(self.best * self.npp.upper_bounds)
+        # print(self.best * self.npp.upper_bounds)
         # print("final ", self.best)
 
     def get_stats(self):
@@ -55,4 +58,4 @@ class PsoSolverNew:
 
         init_positions[:, tolls_idx[:dimensions]] = latin_positions
 
-        return init_positions
+        return init_positions/init_positions.max()
