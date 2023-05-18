@@ -18,18 +18,18 @@ class PsoSolverNew:
         self.npp = npp
         self.n_particles = n_particles
         self.n_iterations = n_iterations
-        self.lower_solver = LowerSolverAggregated2(npp, n_particles)
-        self.lower_solver.set_up()
+        # self.lower_solver = LowerSolverAggregated2(npp, n_particles)
+        # self.lower_solver.set_up()
         self.swarm = SwarmNew(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
-                           npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, no_update_lim=no_update_lim)
+                              npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations,
+                              no_update_lim=no_update_lim)
 
         self.time_limit = time_limit
 
     def run(self, init_pos=None, stats=False, verbose=False):
-
         if init_pos is None:
             init_pos = np.random.uniform(0, 1, size=(self.npp.n_toll_paths, self.n_particles))
-        vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles))/2
+        vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles)) / 2
         lb = np.zeros(self.npp.n_toll_paths)
         ub = np.ones_like(lb)
         self.swarm.run(init_pos, vel_init, ub, lb, stats, verbose)
@@ -58,4 +58,4 @@ class PsoSolverNew:
 
         init_positions[:, tolls_idx[:dimensions]] = latin_positions
 
-        return init_positions/init_positions.max()
+        return init_positions / init_positions.max()
