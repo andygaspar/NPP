@@ -94,7 +94,7 @@ class GlobalSolverNew:
             tic = time.time()
             self.m.optimize()
             toc = time.time()
-            print(self.m.status)
+            # print(self.m.status)
             # self.solution = np.zeros(len(self.instance.tolls))
             self.solution = {}
             for p in self.instance.tolls:

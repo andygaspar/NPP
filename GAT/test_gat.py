@@ -1,41 +1,34 @@
 import numpy as np
+import torch
 import torch_geometric
 from Instance.instance import Instance
 from Instance.instance2 import Instance2
 from Solver.global_new import GlobalSolverNew
 from Solver.pso_solver_ import PsoSolverNew
-
-np.random.seed(0)
-n_locations = 10
-n_commodities = 8
-n_tolls = 15
-
-npp = Instance2(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
-
-global_solver = GlobalSolverNew(npp)
-global_solver.solve()
-print("obj val global", global_solver.m.objVal)
+from torch_geometric.loader import DataLoader, HGTLoader
+from torch_geometric.data import HeteroData, Batch, InMemoryDataset
 
 
-n_iterations = 10000
-n_particles = 128
-no_update_lim = 1000
-#
-# path_costs = np.random.uniform(size=npp.n_paths*n_particles)
-# init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
-#
-#
+def to_hetero(data_homo):
+    n_commodities = int(data_homo.x[0, 4].item())
+    data_hetero = HeteroData()
+    data_hetero['commodities'].x = data_homo.x[:8, 1:3]
+    data_hetero['tolls'].x = data_homo.x[n_commodities:, -1]
+    data_hetero['tolls'].y = data_homo.y[n_commodities:]
 
-pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
-k = pso.random_init()
+    comm_tolls_idxs = torch.where(data_homo.edge_index[0] < n_commodities)[0]
+    from_comm = data_homo.edge_index[0][comm_tolls_idxs]
+    to_tolls = data_homo.edge_index[1][comm_tolls_idxs] - n_commodities
+    data_hetero['commodities', 'transfer', 'tolls'].edge_index = torch.stack([from_comm, to_tolls])
+    data_hetero['commodities', 'transfer', 'tolls'].edge_attr = data_homo.edge_attr[comm_tolls_idxs]
+    return data_hetero
 
-latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-pso.run(init_pos=latin_hyper, stats=False, verbose=True)
+ll = torch.load('Data_/data_homo.pth')
+data_list = []
+for l in ll:
+    data_list.append(to_hetero(l))
 
-npp.show()
+data_loader = DataLoader(data_list)
 
-data_set = npp.make_torch_graph(solution=global_solver.get_prices())
-
-print(data_set)
-
+l = 0
 
