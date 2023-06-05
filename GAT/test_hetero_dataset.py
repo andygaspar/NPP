@@ -9,14 +9,13 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import HeteroData, Batch, InMemoryDataset
 
 np.random.seed(0)
-n_locations = 10
-n_commodities = 8
+n_commodities = 10
 n_tolls = 15
 
 data_list, data_list_homo = [], []
 
 
-for i in range(15):
+for i in range(5000):
 
     npp = Instance2(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
 
