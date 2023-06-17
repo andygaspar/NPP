@@ -50,7 +50,6 @@ struct Params{
         U1 = params["U1"].asDouble(); U2 =params["U2"].asDouble(); U3=params["U3"].asDouble(); 
         limit_sigma_1 = params["limit_sigma_1"].asDouble(); limit_sigma_2 = params["limit_sigma_2"].asDouble(); limit_sigma_3 = params["limit_sigma_3"].asDouble();
         init_commodity_val=pow(10, 5);
-
         stat_frequency = params["stats_frequency"].asInt();
         }
     };

@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 import torch_geometric
@@ -9,14 +11,14 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import HeteroData, Batch, InMemoryDataset
 
 np.random.seed(0)
-n_commodities = 10
-n_tolls = 15
+
 
 data_list, data_list_homo = [], []
 
 
-for i in range(5000):
-
+for i in range(20_000):
+    n_commodities = random.choice(range(5, 15))
+    n_tolls = random.choice(range(5, 15))
     npp = Instance2(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
 
     global_solver = GlobalSolverNew(npp)
