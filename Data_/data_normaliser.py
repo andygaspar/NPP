@@ -10,98 +10,78 @@ from Solver.pso_solver_ import PsoSolverNew
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import HeteroData, Batch, InMemoryDataset
 
-np.random.seed(0)
 
+def normalise_dataset(data_set):
+    x_comm_min = []
+    x_comm_max = []
+    x_toll_min = []
+    x_toll_max = []
+    y_min = []
+    y_max = []
+    edge_min = []
+    edge_max = []
 
-data_list, data_list_homo = [], []
+    for d in data_set:
+        n_commodities = int((1 - d.x[:, 0]).sum())
+        x_comm_min.append(d.x[:n_commodities, :].min(dim=0)[0])
+        x_toll_min.append(d.x[n_commodities:, :].min(dim=0)[0])
+        y_min.append(d.y[n_commodities:].min(dim=0)[0])
+        edge_min.append(d.edge_attr.min(dim=0)[0])
 
+        x_comm_max.append(d.x[:n_commodities, :].max(dim=0)[0])
+        x_toll_max.append(d.x[n_commodities:, :].max(dim=0)[0])
+        y_max.append(d.y[n_commodities:].max(dim=0)[0])
+        edge_max.append(d.edge_attr.max(dim=0)[0])
 
-for i in range(20_000):
-    n_commodities = random.choice(range(5, 15))
-    n_tolls = random.choice(range(5, 15))
-    npp = Instance2(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
+    x_comm_min = torch.stack(x_comm_min)
+    x_toll_min = torch.stack(x_toll_min)
+    y_min = torch.stack(y_min)
+    edge_min = torch.stack(edge_min)
 
-    global_solver = GlobalSolverNew(npp)
-    global_solver.solve()
-    print(i, "obj val global", global_solver.m.objVal)
-    # data_set = npp.make_torch_hetero_graph(solution=global_solver.get_prices())
-    # data_list.append(data_set)
-    data_set = npp.make_torch_graph(solution=global_solver.get_prices())
-    data_list_homo.append(data_set)
-#
-# class MyDataset(InMemoryDataset):
-#     def __init__(self, root, data_list, transform=None):
-#         self.data_list = data_list
-#         super().__init__(root, transform)
-#         self.data, self.slices = torch.load(self.processed_paths[0])
-#
-#     @property
-#     def processed_file_names(self):
-#         return 'data_hetero2.pt'
-#
-#     def process(self):
-#         torch.save(self.collate(self.data_list), self.processed_paths[0])
-#
-#
-# md = MyDataset('Data_', data_list)
-# md.process()
-# kk = DataLoader(md)
-#
-#
-# ll = torch.load('Data_/processed/data_hetero2.pt')
-# lll = DataLoader(ll)
-# data, slices = InMemoryDataset.collate(data_list)
+    x_comm_max = torch.stack(x_comm_max)
+    x_toll_max = torch.stack(x_toll_max)
+    y_max = torch.stack(y_max)
+    edge_max = torch.stack(edge_max)
 
-torch.save(data_list_homo, 'Data_/data_homo.pth')
-ll = torch.load('Data_/data_homo.pth')
-llld = DataLoader(ll)
+    x_comm_min = x_comm_min.min(dim=0)[0]
+    x_toll_min = x_toll_min.min(dim=0)[0]
+    y_min = y_min.min(dim=0)[0]
+    edge_min = edge_min.min(dim=0)[0]
 
+    x_comm_max = x_comm_max.max(dim=0)[0]
+    x_toll_max = x_toll_max.max(dim=0)[0]
+    y_max = y_max.max(dim=0)[0]
+    edge_max = edge_max.max(dim=0)[0]
 
+    if y_min == y_max:
+        y_min = y_max - 0.0001
 
-# data_set = DataLoader(data_list)
-# torch.save(data_set, 'test_dataset.pth')
-#
-# ddd = torch.load('test_dataset.pth')
-#
-#
-# n_iterations = 10000
-# n_particles = 128
-# no_update_lim = 1000
-# #
-# path_costs = np.random.uniform(size=npp.n_paths*n_particles)
-# init_norm_costs = np.random.uniform(size=npp.n_paths*n_particles)
-#
-#
+    for i in range(x_comm_max.shape[0]):
+        if x_comm_max[i] == x_comm_min[i]:
+            x_comm_min[i] = x_comm_max[i] - 0.0001
 
-# pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
-# k = pso.random_init()
-#
-# latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-# pso.run(init_pos=latin_hyper, stats=False, verbose=True)
-#
-# data_loaded = torch.load('test_dataset.pth')
-#
-# import torch_geometric.transforms as T
-#
-# data_set = T.ToUndirected()(data_set)
-# data_set = T.AddSelfLoops()(data_set)
-# data_set = T.NormalizeFeatures()(data_set)
-#
-# #From node property prediction import :
-# from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+    for i in range(x_comm_max.shape[0]):
+        if x_toll_max[i] == x_toll_min[i]:
+            x_toll_min[i] = x_toll_max[i] - 0.0001
 
+    x_min = torch.zeros(x_comm_max.shape)
+    x_max = torch.zeros(x_comm_max.shape)
+    x_min[:3] = x_comm_min[:3]
+    x_min[3:] = x_toll_min[3:]
 
-# download the dataset
-# dataset = PygNodePropPredDataset(name='ogbn-arxiv',transform=T.ToSparseTensor())
-#
-# from torch_geometric.datasets import Planetoid
-#
-# # Import dataset from PyTorch Geometric
-# dataset1 = Planetoid(root=".", name="CiteSeer")
-#
-# dataset1[1]
+    x_max[:3] = x_comm_max[:3]
+    x_max[3:] = x_toll_max[3:]
 
+    for d in data_set:
+        n_commodities = int((1 - d.x[:, 0]).sum())
+        d.x = (d.x - x_min.repeat(d.x.shape[0], 1)) / (x_max.repeat(d.x.shape[0], 1) - x_min.repeat(d.x.shape[0], 1))
+        d.x[:n_commodities, 0] = 0
+        d.x[n_commodities:, 0] = 1
+        d.x[:n_commodities, 3] = 0
+        d.x[n_commodities:, 1] = 0
+        d.x[n_commodities:, 2] = 0
 
-
-
+        d.y = (d.y - y_min) / (y_max - y_min)
+        d.y[:n_commodities] = 0
+        d.edge_attr = (d.edge_attr - edge_min) / (edge_max - edge_min)
 
