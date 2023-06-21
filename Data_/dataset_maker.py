@@ -16,7 +16,7 @@ np.random.seed(0)
 data_list, data_list_homo = [], []
 
 
-for i in range(20_000):
+for i in range(40_000):
     n_commodities = random.choice(range(5, 15))
     n_tolls = random.choice(range(5, 15))
     npp = Instance2(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
@@ -52,9 +52,9 @@ for i in range(20_000):
 # lll = DataLoader(ll)
 # data, slices = InMemoryDataset.collate(data_list)
 
-torch.save(data_list_homo, 'Data_/data_homo.pth')
-ll = torch.load('Data_/data_homo.pth')
-llld = DataLoader(ll)
+torch.save(data_list_homo, 'Data_/data_homo2.pth')
+# ll = torch.load('Data_/data_homo.pth')
+# llld = DataLoader(ll)
 
 
 

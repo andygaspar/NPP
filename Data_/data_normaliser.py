@@ -3,6 +3,8 @@ import random
 import numpy as np
 import torch
 import torch_geometric
+from matplotlib import pyplot as plt
+
 from Instance.instance import Instance
 from Instance.instance2 import Instance2
 from Solver.global_new import GlobalSolverNew
@@ -20,6 +22,8 @@ def normalise_dataset(data_set):
     y_max = []
     edge_min = []
     edge_max = []
+
+    device = data_set[0].x.device
 
     for d in data_set:
         n_commodities = int((1 - d.x[:, 0]).sum())
@@ -43,6 +47,9 @@ def normalise_dataset(data_set):
     y_max = torch.stack(y_max)
     edge_max = torch.stack(edge_max)
 
+    plt.plot(y_min.cpu())
+    plt.show()
+
     x_comm_min = x_comm_min.min(dim=0)[0]
     x_toll_min = x_toll_min.min(dim=0)[0]
     y_min = y_min.min(dim=0)[0]
@@ -53,8 +60,10 @@ def normalise_dataset(data_set):
     y_max = y_max.max(dim=0)[0]
     edge_max = edge_max.max(dim=0)[0]
 
-    if y_min == y_max:
-        y_min = y_max - 0.0001
+    print(y_min, y_max)
+
+    assert(y_min != y_max)
+        # y_min = y_max - 0.0001
 
     for i in range(x_comm_max.shape[0]):
         if x_comm_max[i] == x_comm_min[i]:
@@ -64,8 +73,8 @@ def normalise_dataset(data_set):
         if x_toll_max[i] == x_toll_min[i]:
             x_toll_min[i] = x_toll_max[i] - 0.0001
 
-    x_min = torch.zeros(x_comm_max.shape)
-    x_max = torch.zeros(x_comm_max.shape)
+    x_min = torch.zeros(x_comm_max.shape, device=device)
+    x_max = torch.zeros(x_comm_max.shape, device=device)
     x_min[:3] = x_comm_min[:3]
     x_min[3:] = x_toll_min[3:]
 
