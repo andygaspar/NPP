@@ -26,22 +26,31 @@ class GAT(torch.nn.Module):
         self.hidden_dim = hidden_channels
         self.commodity_embedding = nn.Sequential(
             Linear(-1, hidden_channels),
-            nn.ReLU(),
-            Linear(hidden_channels, hidden_channels))
+            nn.ReLU()
+        )
 
         self.toll_embedding = nn.Sequential(
             Linear(-1, hidden_channels),
             nn.ReLU(),
-            Linear(hidden_channels, hidden_channels))
+            )
 
         self.edge_embedding = nn.Sequential(
             Linear(-1, hidden_channels),
             nn.ReLU(),
-            Linear(hidden_channels, hidden_channels))
+            )
 
-        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=3, edge_dim=hidden_channels)
-        self.conv2 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=3, edge_dim=hidden_channels)
+        self.heads = 3
+        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels)
+        self.conv2 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels)
         self.conv3 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=1, edge_dim=hidden_channels, concat=False)
+
+        self.lin_c1 = torch.nn.Linear(hidden_channels, hidden_channels * self.heads)
+        self.lin_c2 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels * self.heads)
+        self.lin_c3 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels)
+
+        self.lin_t1 = torch.nn.Linear(hidden_channels, hidden_channels * self.heads)
+        self.lin_t2 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels * self.heads)
+        self.lin_t3 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels)
 
         self.out_layer = nn.Sequential(
             Linear(-1, hidden_channels//2),
@@ -69,15 +78,21 @@ class GAT(torch.nn.Module):
         # x_ = torch.hstack([x_, self.scale_factor*torch.rand(size=x_.shape, device=self.device)])
         edges = self.edge_embedding(edges)
 
-        x_ = F.elu(self.conv1(x_, edge_index, edge_attr=edges))
-        x_ = F.elu(self.conv2(x_, edge_index, edge_attr=edges))
-        x_ = self.conv3(x_, edge_index, edge_attr=edges)
+        mask2 = x[:, 0].unsqueeze(1).repeat_interleave(self.hidden_dim * self.heads, -1)
+
+        x_ = F.elu(self.conv1(x_, edge_index, edge_attr=edges)
+                   + self.lin_c1(x_) * (1 - mask2) + self.lin_t1(x_) * mask2)
+
+        x_ = F.elu(self.conv2(x_, edge_index, edge_attr=edges)
+                   + self.lin_c2(x_) * (1 - mask2) + self.lin_t2(x_) * mask2)
+
+        x_ = self.conv3(x_, edge_index, edge_attr=edges) + self.lin_c3(x_) * (1 - mask) + self.lin_t3(x_) * mask
         x_ = self.out_layer(x_).squeeze(1)
         x_ = x_ * x[:, 0]
         return x_
 
 
-all_data = torch.load('Data_/data_homo2.pth', map_location=device)
+all_data = torch.load('Data_/data_homo.pth', map_location=device)
 
 normalise_dataset(all_data)
 
@@ -86,8 +101,6 @@ train_set = all_data[:split]
 test_set = all_data[split:]
 train_set = DataLoader(train_set, batch_size=128, shuffle=True)
 test_set = DataLoader(test_set, batch_size=64, shuffle=True)
-
-
 
 model = GAT(hidden_channels=128, out_channels=1)
 # init_weights(model)
