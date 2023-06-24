@@ -16,91 +16,20 @@ import torch.nn.functional as F
 import torch_geometric.transforms as T
 
 from Data_.data_normaliser import normalise_dataset
+from GAT.gat1 import GAT
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-class GAT(torch.nn.Module):
-    def __init__(self, hidden_channels, out_channels):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        super().__init__()
-        self.hidden_dim = hidden_channels
-        self.commodity_embedding = nn.Sequential(
-            Linear(-1, hidden_channels),
-            nn.ReLU()
-        )
-
-        self.toll_embedding = nn.Sequential(
-            Linear(-1, hidden_channels),
-            nn.ReLU(),
-            )
-
-        self.edge_embedding = nn.Sequential(
-            Linear(-1, hidden_channels),
-            nn.ReLU(),
-            )
-
-        self.heads = 3
-        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels)
-        self.conv2 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels)
-        self.conv3 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=1, edge_dim=hidden_channels, concat=False)
-
-        self.lin_c1 = torch.nn.Linear(hidden_channels, hidden_channels * self.heads)
-        self.lin_c2 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels * self.heads)
-        self.lin_c3 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels)
-
-        self.lin_t1 = torch.nn.Linear(hidden_channels, hidden_channels * self.heads)
-        self.lin_t2 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels * self.heads)
-        self.lin_t3 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels)
-
-        self.out_layer = nn.Sequential(
-            Linear(-1, hidden_channels//2),
-            nn.ReLU(),
-            Linear(hidden_channels//2, 1))
-
-        self.scale_factor = 10
-        self.features_extension = self.scale_factor * torch.linspace(0, 1, hidden_channels, device=self.device) ** 2
-
-        self.to(self.device)
-
-    def forward(self, x, edge_index, edge_attr=None):
-
-        x_ = x[:, 1:-1]
-        mask = x[:, 0].unsqueeze(1).repeat_interleave(self.hidden_dim, -1)
-
-        x_comm_1 = x_[:, 0].unsqueeze(1).repeat_interleave(self.hidden_dim, -1) * self.features_extension
-        x_comm_2 = x_[:, 1].unsqueeze(1).repeat_interleave(self.hidden_dim, -1) * self.features_extension
-        x_toll = x_[:, 2].unsqueeze(1).repeat_interleave(self.hidden_dim, -1) * self.features_extension
-        edges = edge_attr.unsqueeze(1).repeat_interleave(self.hidden_dim, -1) * self.features_extension
-
-        x_comm = torch.hstack([x_comm_1, x_comm_2])
-
-        x_ = self.commodity_embedding(x_comm) * (1 - mask) + self.toll_embedding(x_toll) * mask
-        # x_ = torch.hstack([x_, self.scale_factor*torch.rand(size=x_.shape, device=self.device)])
-        edges = self.edge_embedding(edges)
-
-        mask2 = x[:, 0].unsqueeze(1).repeat_interleave(self.hidden_dim * self.heads, -1)
-
-        x_ = F.elu(self.conv1(x_, edge_index, edge_attr=edges)
-                   + self.lin_c1(x_) * (1 - mask2) + self.lin_t1(x_) * mask2)
-
-        x_ = F.elu(self.conv2(x_, edge_index, edge_attr=edges)
-                   + self.lin_c2(x_) * (1 - mask2) + self.lin_t2(x_) * mask2)
-
-        x_ = self.conv3(x_, edge_index, edge_attr=edges) + self.lin_c3(x_) * (1 - mask) + self.lin_t3(x_) * mask
-        x_ = self.out_layer(x_).squeeze(1)
-        x_ = x_ * x[:, 0]
-        return x_
-
+torch.set_printoptions(linewidth=200)
 
 all_data = torch.load('Data_/data_homo.pth', map_location=device)
 
 normalise_dataset(all_data)
 
-split = len(all_data)*3//4
+split = len(all_data) * 3 // 4
 train_set = all_data[:split]
 test_set = all_data[split:]
 train_set = DataLoader(train_set, batch_size=128, shuffle=True)
-test_set = DataLoader(test_set, batch_size=64, shuffle=True)
+test_set = DataLoader(test_set, batch_size=len(test_set), shuffle=True)
 
 model = GAT(hidden_channels=128, out_channels=1)
 # init_weights(model)
@@ -109,33 +38,47 @@ model = GAT(hidden_channels=128, out_channels=1)
 # plt.show()
 
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-3)
-scheduler= StepLR(optimizer = optimizer, step_size=50, gamma=0.9)
+# scheduler = StepLR(optimizer = optimizer, step_size=50, gamma=0.9)
 criterion = torch.nn.MSELoss()
-
-for epoch in range(5000):
-    loss = None
-
+loss = None
+for epoch in range(50000):
     for data in train_set:
-
         optimizer.zero_grad()
         output = model(data.x.float(), data.edge_index, data.edge_attr)
-        y = data.y.float()
+        y = data.y.float() * 10
+        # y_min = out.min(dim=0)[0]
+        # y = (y - y_min) / (y_max - y_min)
         loss = criterion(output, y)
 
         loss.backward()
         # torch.nn.utils.clip_grad_norm_(dgn.parameters(), max_norm=0.001, norm_type=float('inf'))
         # torch.nn.utils.clip_grad_norm_(dgn.parameters(), 1)
         optimizer.step()
-    if epoch % 50 == 0:
+    if epoch % 1000 == 0:
         with torch.no_grad():
-            d = train_set.dataset[random.choice(range(len(train_set.dataset)))]
-            print('lr', scheduler.get_last_lr())
-            out = model(d.x.float(), d.edge_index, d.edge_attr)
-            print(out)
-            print(d.y)
-    scheduler.step()
+            for d in all_data[:5]:
+                # d = train_set.dataset[random.choice(range(len(train_set.dataset)))]
+                # d = train_set.dataset[0]
+                # print('lr', scheduler.get_last_lr())
+                out = model(d.x.float(), d.edge_index, d.edge_attr)
+                print(out[10:])
+                print(d.y[10:] * 10, '\n')
+            for data in test_set:
+                output = model(data.x.float(), data.edge_index, data.edge_attr)
+                y = data.y.float() * 10
+                loss = criterion(output, y)
+                print('test loss', loss)
+            for d in all_data[-5:]:
+                # d = train_set.dataset[random.choice(range(len(train_set.dataset)))]
+                # d = train_set.dataset[0]
+                # print('lr', scheduler.get_last_lr())
+                out = model(d.x.float(), d.edge_index, d.edge_attr)
+                print(out[10:])
+                print(d.y[10:] * 10, '\n')
 
-    print(epoch, loss.item())
+    # scheduler.step()
+    if epoch % 100 == 0:
+        print(epoch, loss.item())
 
 with torch.no_grad():
     for data in test_set:

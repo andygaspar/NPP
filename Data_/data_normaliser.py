@@ -39,25 +39,25 @@ def normalise_dataset(data_set):
 
     x_comm_min = torch.stack(x_comm_min)
     x_toll_min = torch.stack(x_toll_min)
-    y_min = torch.stack(y_min)
+    y_min_vect = torch.stack(y_min)
     edge_min = torch.stack(edge_min)
 
     x_comm_max = torch.stack(x_comm_max)
     x_toll_max = torch.stack(x_toll_max)
-    y_max = torch.stack(y_max)
+    y_max_vect = torch.stack(y_max)
     edge_max = torch.stack(edge_max)
 
-    plt.plot(y_min.cpu())
-    plt.show()
+    # plt.hist(y_min_vect.cpu(), bins=30)
+    # plt.show()
 
     x_comm_min = x_comm_min.min(dim=0)[0]
     x_toll_min = x_toll_min.min(dim=0)[0]
-    y_min = y_min.min(dim=0)[0]
+    y_min = y_min_vect.min(dim=0)[0]
     edge_min = edge_min.min(dim=0)[0]
 
     x_comm_max = x_comm_max.max(dim=0)[0]
     x_toll_max = x_toll_max.max(dim=0)[0]
-    y_max = y_max.max(dim=0)[0]
+    y_max = y_max_vect.max(dim=0)[0]
     edge_max = edge_max.max(dim=0)[0]
 
     print(y_min, y_max)
@@ -81,7 +81,7 @@ def normalise_dataset(data_set):
     x_max[:3] = x_comm_max[:3]
     x_max[3:] = x_toll_max[3:]
 
-    for d in data_set:
+    for i, d in enumerate(data_set):
         n_commodities = int((1 - d.x[:, 0]).sum())
         d.x = (d.x - x_min.repeat(d.x.shape[0], 1)) / (x_max.repeat(d.x.shape[0], 1) - x_min.repeat(d.x.shape[0], 1))
         d.x[:n_commodities, 0] = 0
@@ -93,4 +93,6 @@ def normalise_dataset(data_set):
         d.y = (d.y - y_min) / (y_max - y_min)
         d.y[:n_commodities] = 0
         d.edge_attr = (d.edge_attr - edge_min) / (edge_max - edge_min)
+        d.y_min = y_min_vect[i]
+        d.y_max = y_max_vect
 
