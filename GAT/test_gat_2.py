@@ -29,7 +29,7 @@ split = len(all_data) * 3 // 4
 train_set = all_data[:split]
 test_set = all_data[split:]
 train_set = DataLoader(train_set, batch_size=128, shuffle=True)
-test_set = DataLoader(test_set, batch_size=len(test_set), shuffle=True)
+test_set = DataLoader(test_set, batch_size=128, shuffle=True)
 
 model = GAT(hidden_channels=128, out_channels=1)
 # init_weights(model)
@@ -73,8 +73,9 @@ for epoch in range(50000):
                 # d = train_set.dataset[0]
                 # print('lr', scheduler.get_last_lr())
                 out = model(d.x.float(), d.edge_index, d.edge_attr)
-                print(out[10:])
-                print(d.y[10:] * 10, '\n')
+                idxs = d.y > 0
+                print(out[idxs])
+                print(d.y[idxs] * 10, '\n')
 
     # scheduler.step()
     if epoch % 100 == 0:
@@ -82,6 +83,6 @@ for epoch in range(50000):
 
 with torch.no_grad():
     for data in test_set:
-        output = model(data.x.float(), data.edge_index, data.dge_attr)
+        output = model(data.x.float(), data.edge_index, data.edge_attr)
         loss = criterion(output, data.y.float())
         print(loss)

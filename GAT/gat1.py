@@ -71,6 +71,8 @@ class GAT(torch.nn.Module):
         x_comm = torch.hstack([x_comm_1, x_comm_2])
 
         x_ = self.commodity_embedding(x_comm) * (1 - mask) + self.toll_embedding(x_toll) * mask
+        del x_toll
+        del x_comm
         # x_ = torch.hstack([x_, self.scale_factor*torch.rand(size=x_.shape, device=self.device)])
         edges = self.edge_embedding(edges)
 
