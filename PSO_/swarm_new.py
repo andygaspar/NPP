@@ -10,7 +10,7 @@ from numpy.ctypeslib import ndpointer
 class SwarmNew:
 
     def __init__(self, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
-                 obj_coefficients: np.array, n_commodities, n_toll_paths,
+                 upper_bounds: np.array, n_commodities, n_toll_paths,
                  n_particles, n_iterations, no_update_lim):
         num_threads = multiprocessing.cpu_count()
         self.stats = None
@@ -46,7 +46,7 @@ class SwarmNew:
         self.swarm = self.lib.Swarm_(commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      n_users.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
                                      transfer_costs.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     obj_coefficients.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                     upper_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                      ctypes.c_short(n_commodities), ctypes.c_short(n_toll_paths),
                                      ctypes.c_short(n_particles), ctypes.c_int(n_iterations),
                                      ctypes.c_int(no_update_lim),

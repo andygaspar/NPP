@@ -21,13 +21,14 @@ os.system("PSO_/install.sh")
 
 np.random.seed(0)
 
-n_locations = 10
 n_commodities = 8
 n_tolls = 15
 
 for _ in range(2):
 
-    npp = Instance(n_locations=n_locations, n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
+    npp = Instance(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
+    # npp.show_original()
+    # npp.show()
     # npp.save_problem()
     # npp.show()
 

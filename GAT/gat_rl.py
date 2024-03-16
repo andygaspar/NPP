@@ -5,11 +5,11 @@ import torch.nn.functional as F
 from GAT.network import Network
 
 
-class GAT(Network):
+class GAT_RL(Network):
     def __init__(self, params):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         super().__init__(params)
-        self.params['network'] = 'GAT'
+        self.params['network'] = 'GAT_RL'
 
         hidden_channels = params['hidden_channels']
 
@@ -30,9 +30,9 @@ class GAT(Network):
         )
 
         self.heads = 3
-        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels, dropout=0.4)
-        self.conv2 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels, dropout=0.4)
-        self.conv3 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=1, edge_dim=hidden_channels, concat=False, dropout=0.4)
+        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels, dropout=params['dropout'])
+        self.conv2 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=self.heads, edge_dim=hidden_channels, dropout=params['dropout'])
+        self.conv3 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=True, heads=1, edge_dim=hidden_channels, concat=False, dropout=params['dropout'])
 
         self.lin_c1 = torch.nn.Linear(hidden_channels, hidden_channels * self.heads)
         self.lin_c2 = torch.nn.Linear(hidden_channels * self.heads, hidden_channels * self.heads)
@@ -45,7 +45,7 @@ class GAT(Network):
         self.out_layer = nn.Sequential(
             Linear(-1, hidden_channels // 2),
             nn.ReLU(),
-            Linear(hidden_channels // 2, 1))
+            Linear(hidden_channels // 2, 2))
 
         self.scale_factor = 10
         self.features_extension = self.scale_factor * torch.linspace(0, 1, hidden_channels, device=self.device) ** 2
@@ -79,5 +79,7 @@ class GAT(Network):
 
         x_ = self.conv3(x_, edge_index, edge_attr=edges) + self.lin_c3(x_) * (1 - mask) + self.lin_t3(x_) * mask
         x_ = self.out_layer(x_).squeeze(1)
-        x_ = x_ * x[:, 0]
-        return x_
+        normal = torch.distributions.normal.Normal(x_[:, 0], torch.abs(x_[:, 1]) + 0.1)
+        y = normal.rsample()
+        y = y * x[:, 0]
+        return y

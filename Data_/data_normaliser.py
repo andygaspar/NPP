@@ -1,16 +1,4 @@
-import random
-
-import numpy as np
 import torch
-import torch_geometric
-from matplotlib import pyplot as plt
-
-from Instance.instance import Instance
-from Instance.instance2 import Instance2
-from Solver.global_new import GlobalSolverNew
-from Solver.pso_solver_ import PsoSolverNew
-from torch_geometric.loader import DataLoader
-from torch_geometric.data import HeteroData, Batch, InMemoryDataset
 
 
 def normalise_dataset(data_set):
@@ -60,10 +48,10 @@ def normalise_dataset(data_set):
     y_max = y_max_vect.max(dim=0)[0]
     edge_max = edge_max.max(dim=0)[0]
 
-    print(y_min, y_max)
+    # print(y_min, y_max)
 
-    assert(y_min != y_max)
-        # y_min = y_max - 0.0001
+    assert (y_min != y_max)
+    # y_min = y_max - 0.0001
 
     for i in range(x_comm_max.shape[0]):
         if x_comm_max[i] == x_comm_min[i]:
@@ -95,4 +83,3 @@ def normalise_dataset(data_set):
         d.edge_attr = (d.edge_attr - edge_min) / (edge_max - edge_min)
         d.y_min = y_min_vect[i]
         d.y_max = y_max_vect
-
