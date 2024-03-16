@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 import torch
 import torch_geometric
 from torch_geometric.data import HeteroData
+
+from Old.commodity import Commodity
 import pandas as pd
 
 
-class Commodity:
+class Commodity2:
 
     def __init__(self, name, nr_users, com_names, path_names, graph):
         self.name = name
@@ -35,7 +37,7 @@ class Commodity:
 
 class Path:
 
-    def __init__(self, name, commodities: List[Commodity], graph):
+    def __init__(self, name, commodities: List[Commodity2], graph):
         self.name = name
         self.node = graph.nodes[self.name]
         self.cost = None
@@ -50,35 +52,48 @@ class Path:
 
 
 class Instance(nx.Graph):
-    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seeds=False, **attr):
+    def __init__(self, n_tolls, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seeds=False, **attr):
         super().__init__(**attr)
         if seeds:
             np.random.seed(0)
-        self.n_paths = n_paths
+        self.original_graph = nx.Graph()
+        self.n_tolls = n_tolls
+        self.n_toll_paths = self.n_tolls
         self.n_commodities = n_commodities
-        self.commodities: List[Commodity]
-        self.paths: List[Path]
+        self.commodities: List[Commodity2]
+        self.tolls: List[Path]
         self.users = []
         self.cr_free = cr_free
         self.cr_transfer = cr_transfer
         self.nr_users = nr_users
 
         com_names = [self.get_com_name(i) for i in range(self.n_commodities)]
-        paths_names = [self.get_path_name(i) for i in range(self.n_paths)]
+        toll_names = [self.get_toll_name(i) for i in range(self.n_tolls)]
+        paths_names = [self.get_path_name(i, j) for i in range(self.n_tolls) for j in range(i + 1, self.n_tolls)]
+
+        self.original_graph.add_nodes_from([(name, {'type': 'commodity', 'color': 'g'}) for name in com_names])
+        self.original_graph.add_nodes_from([(name, {'type': 'toll', 'color': 'r'}) for name in toll_names])
 
         self.add_nodes_from([(name, {'type': 'commodity', 'color': 'g'}) for name in com_names])
         self.add_nodes_from([(name, {'type': 'path', 'color': 'r'}) for name in paths_names])
 
         for i in range(n_commodities):
             for j in range(i + 1, n_commodities):
-                self.add_edge(com_names[i], com_names[j], color='y', transfer=np.random.uniform(*cr_free))
+                self.original_graph.add_edge(com_names[i], com_names[j], color='y', transfer=np.random.uniform(*cr_free))
+                self.add_edge(com_names[i], com_names[j], color='y', transfer=self.original_graph[com_names[i]][com_names[j]]['transfer'])
 
-        for i in range(self.n_commodities):
-            for j in range(self.n_paths):
-                self.add_edge(com_names[i], self.get_path_name(j), color='y',
-                              transfer=np.random.uniform(*cr_transfer))
+        transfers = [(c_name, t_name) for c_name in com_names for t_name in toll_names]
+        for arc in transfers:
+            self.original_graph.add_edge(*arc, color='b', transfer=np.random.uniform(*cr_transfer))
 
-        self.commodities = [Commodity(name, nr_users, com_names, paths_names, self) for name in com_names]
+        for i in range(n_commodities):
+            for j in range(n_tolls):
+                for k in range(j + 1, n_tolls):
+                    transfer_cost = (self.original_graph[self.get_com_name(i)][self.get_toll_name(j)]['transfer']
+                                     + self.original_graph[self.get_com_name(i)][self.get_toll_name(k)]['transfer'])
+                    self.add_edge(com_names[i], self.get_path_name(j, k), color='y', transfer=transfer_cost)
+
+        self.commodities = [Commodity2(name, nr_users, com_names, paths_names, self) for name in com_names]
         self.paths = [Path(name, self.commodities, self) for name in paths_names]
 
         self.commodities_tax_free = np.array([comm.c_od for comm in self.commodities])
@@ -162,5 +177,9 @@ class Instance(nx.Graph):
         return r"$U_{}$".format('{' + str(i) + '}')
 
     @staticmethod
-    def get_path_name(i):
-        return r"$p_{}$".format('{' + str(i) + '}')
+    def get_toll_name(i):
+        return r"$T_{}$".format('{' + str(i) + '}')
+
+    @staticmethod
+    def get_path_name(i, j):
+        return r"$P_{}^{}$".format('{' + str(i) + '}', '{' + str(j) + '}')

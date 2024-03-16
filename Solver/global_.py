@@ -2,8 +2,8 @@ import time
 
 import numpy as np
 
-from Instance.instance import Instance, Commodity
-from gurobipy import Model, GRB, quicksum, Env
+from Old.instance_old import Instance, Commodity
+from gurobipy import Model, GRB, quicksum
 
 
 def stop(model, where):
