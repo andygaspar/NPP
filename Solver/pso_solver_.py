@@ -2,11 +2,7 @@ import numpy as np
 from scipy.stats import qmc
 
 from Instance.instance import Instance
-from PSO.swarm import Swarm
 from PSO_.swarm_new import SwarmNew
-from Solver.global_ import GlobalSolver
-from Solver.lower_aggregated import LowerSolverAggregated
-from Solver.lower_aggregated_2 import LowerSolverAggregated2
 
 
 class PsoSolverNew:
@@ -21,16 +17,16 @@ class PsoSolverNew:
         # self.lower_solver = LowerSolverAggregated2(npp, n_particles)
         # self.lower_solver.set_up()
         self.swarm = SwarmNew(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
-                              npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations,
+                              npp.n_commodities, npp.n_paths, n_particles, n_iterations,
                               no_update_lim=no_update_lim)
 
         self.time_limit = time_limit
 
     def run(self, init_pos=None, stats=False, verbose=False):
         if init_pos is None:
-            init_pos = np.random.uniform(0, 1, size=(self.npp.n_toll_paths, self.n_particles))
-        vel_init = np.random.uniform(-1, 1, size=(self.npp.n_toll_paths, self.n_particles)) / 2
-        lb = np.zeros(self.npp.n_toll_paths)
+            init_pos = np.random.uniform(0, 1, size=(self.npp.n_paths, self.n_particles))
+        vel_init = np.random.uniform(-4, 4, size=(self.npp.n_paths, self.n_particles)) / 2
+        lb = np.zeros(self.npp.n_paths)
         ub = np.ones_like(lb)
         self.swarm.run(init_pos, vel_init, ub, lb, stats, verbose)
 
@@ -44,7 +40,7 @@ class PsoSolverNew:
         return self.swarm.get_stats()
 
     def random_init(self):
-        return np.random.uniform(size=(self.n_particles, self.npp.n_toll_paths)) * self.npp.upper_bounds
+        return np.random.uniform(size=(self.n_particles, self.npp.n_paths)) * self.npp.upper_bounds
 
     def compute_latin_hypercube_init(self, dimensions):
         init_positions = self.random_init()
