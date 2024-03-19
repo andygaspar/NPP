@@ -1,16 +1,9 @@
-import json
 import time
 
 import torch
-from torch_geometric.graphgym import optim
-from torch_geometric.loader import DataLoader
-from Data_.data_normaliser import normalise_dataset
 from GAT import network_loader
-from GAT.gat1 import GAT
-from GAT.network import Network
 from Instance.instance2 import Instance2
-from Solver.global_ import GlobalSolver
-from Solver.global_new import GlobalSolverNew
+from Old.global_new import GlobalSolverNew
 
 print('************  Available cuda **************', torch.cuda.is_available())
 

@@ -15,7 +15,7 @@ class Swarm:
                  normalised=True, verbose=False):
 
         num_threads = multiprocessing.cpu_count()
-        self.lib = ctypes.CDLL('PSO/bridge.so')
+        self.lib = ctypes.CDLL('PSO_old/bridge.so')
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
                                     ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),

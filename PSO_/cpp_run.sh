@@ -1,1 +1,0 @@
-g++ -g -fopenmp  test_main.cc -o test -ljsoncpp

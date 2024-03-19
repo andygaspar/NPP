@@ -145,23 +145,5 @@ class FileReader{
     }
     }
 
-    void print_problem(){
-
-    std::cout<<"commodities_tax_free"<<std::endl;
-    print_array(commodities_tax_free, comm_t_free_dims);
-/*     short n_commodities;
-    short n_tolls;
-
-    dimensions comm_t_free_dims;
-    double* upper_bounds;
-    double* lower_bounds;
-    dimensions ub_dims;
-    double* transfer_costs;
-    dimensions tra__dims;
-    int* n_users;
-    dimensions n_users_dims; */
-
-    }
-
 
 };

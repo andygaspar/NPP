@@ -2,13 +2,8 @@ import random
 
 import numpy as np
 import torch
-import torch_geometric
-from Instance.instance import Instance
 from Instance.instance2 import Instance2
-from Solver.global_new import GlobalSolverNew
-from Solver.pso_solver_ import PsoSolverNew
-from torch_geometric.loader import DataLoader
-from torch_geometric.data import HeteroData, Batch, InMemoryDataset
+from Old.global_new import GlobalSolverNew
 
 np.random.seed(0)
 
