@@ -2,43 +2,31 @@ import os as os
 import time
 
 import numpy as np
-from importlib.metadata import version
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.global_ import GlobalSolver
-from Solver.pso_solver import PsoSolver
 from Solver.pso_solver_ import PsoSolverNew
 
 os.system("PSO_/install.sh")
 
-# n_locations = 10
-# n_commodities = 2
-# n_tolls = 3
-
-# n_locations = 50
-# n_commodities = 10
-# n_tolls = 8
-
 np.random.seed(0)
-
-n_commodities = 8
-n_tolls = 15
+VERBOSE = False
+n_commodities = 20
+n_paths = 20
 
 for _ in range(2):
 
-    npp = Instance(n_tolls=n_tolls, n_commodities=n_commodities, seeds=False)
+    npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=False)
     # npp.show_original()
     # npp.show()
     # npp.save_problem()
     # npp.show()
 
     t = time.time()
-    global_solver = GlobalSolver(npp)
+    global_solver = GlobalSolver(npp, verbose=True)
     global_solver.solve()
-    # global_solver.print_model()
     print('time global ', time.time() - t)
-
-    print("obj val global", global_solver.m.objVal)
+    print("obj val global", global_solver.obj)
 
     n_iterations = 10000
     n_particles = 128
@@ -53,15 +41,16 @@ for _ in range(2):
     k = pso.random_init()
 
     latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-    pso.run(init_pos=latin_hyper, stats=False, verbose=True)
+    pso.run(init_pos=k, stats=False, verbose=True)
     print('time pso ', time.time() - t)
     print(pso.best_val)
 
-    print()
+    print('gap', 1 - pso.best_val/global_solver.obj)
 
     # print(global_solver.get_prices())
     # print(npp.n_toll_paths)
     # stats = pso.get_stats()
+    print()
 
 
 
