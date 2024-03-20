@@ -35,7 +35,6 @@ class Swarm {
     // problem related features
     short n_commodities;
     short n_tolls;
-    double* obj_coefficients;
     double* search_lb;
     double* search_ub;
 
@@ -67,20 +66,21 @@ class Swarm {
 
     friend std::ostream& operator<<( std::ostream &os, Swarm& s );
 
-    Swarm( double* const comm_tax_free, int* const n_usr, double* transf_costs, double* const obj_coef, 
+    Swarm( double* const comm_tax_free, int* const n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
                      short n_comm, short n_tolls_, short n_parts, int n_iter, int no_update_lim_, short num_th);
     Swarm() {}
 
     double* get_best() {
         double* solution = new double[n_tolls]; 
         for(int i=0; i<n_tolls; i++) 
-        {solution[i] = particles[best_particle_idx].p[i];}
+        {solution[i] = particles[best_particle_idx].personal_best[i];}
         return solution;
         }
 
     double get_best_val() {return best_val;}
+    double get_status() {return no_update_lim_reached;}
 
-    void run(double* p_init, double* v_init, double* const u_bounds,double* const l_bounds, bool stats, bool verbose);
+    void run(double* p_init, double* v_init, bool stats, bool verbose, short seed);
     
     void print();
     void print_particles();
@@ -126,7 +126,7 @@ class Swarm {
 /*-----------------------------------------------------------------------------------------*/
 /* Initialize the swarm object and its particles with random velocity and given positions. */                                                                        
 /*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const obj_coef, 
+Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
                      short n_comm, short n_tolls_, 
                     short n_parts, int n_iter, int no_update_lim_, short num_th) {
 
@@ -134,7 +134,6 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
     n_particles=n_parts; 
     n_tolls=n_tolls_;
     n_commodities=n_comm;
-    obj_coefficients=obj_coef;
     no_update_lim = no_update_lim_,
     num_threads=num_th;
     best_particle_idx=0;
@@ -144,29 +143,29 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
 
 
     parameters = Params();
-
-    for(int i=0;i<n_particles;++i){
-        particles.push_back({comm_tax_free, n_usr ,transf_costs, obj_coefficients, n_commodities, n_tolls, i, parameters});
-    }
-}
-
-
-void Swarm::run(double* p_init, double* v_init, double* const u_bounds, double* const l_bounds, bool stats, bool verbose){
-    std::vector<double> run_results(n_particles);
-
-        // no idea what is this
     double d_M = 0;
     for (int i=0;i<n_tolls;++i)
         d_M += std::pow(u_bounds[i]-l_bounds[i],2);
     d_M = std::sqrt(d_M);
 
+    for(int i=0;i<n_particles;++i){
+        particles.push_back({comm_tax_free, n_usr ,transf_costs, u_bounds, l_bounds,n_commodities, n_tolls, i, parameters, d_M});
+    }
+}
+
+
+void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short seed){
+    std::vector<double> run_results(n_particles);
+
+        // no idea what is this
+    if (seed >= 0) {srand(seed);}//std::cout<<"seed set to "<<seed<<std::endl;}
 
     if (stats){}
 
 
     #pragma omp parallel for num_threads(this->num_threads) shared(particles)
     for(int i=0;i<n_particles;++i){
-        particles[i].init_values(&p_init[i+n_tolls], &v_init[i+n_tolls], u_bounds,l_bounds, d_M);
+        particles[i].init_values(&p_init[i+n_tolls], &v_init[i+n_tolls]);
     }
 
     int i;
@@ -203,7 +202,7 @@ void Swarm::run(double* p_init, double* v_init, double* const u_bounds, double* 
 
         if(verbose and (iter%100 == 0)){
             avg_velocity = 0;
-            for(i=0;i<n_tolls;++i) avg_velocity += particles[best_particle_idx].v[i];
+            //for(i=0;i<n_tolls;++i) avg_velocity += particles[best_particle_idx].v[i];
             avg_velocity = avg_velocity/n_tolls;
             if(verbose and (iter%100 == 0)) std::cout<<"iter "<<iter<<"  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
 

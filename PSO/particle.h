@@ -38,7 +38,6 @@ class Particle {
     double commodity_cost;
     double toll_cost;
     std::vector<std::vector<double>> transfer_costs;
-    std::vector<double> obj_coefficients;
     std::vector<double> search_ub;
     std::vector<double> search_lb;
     std::vector<double> search_range;
@@ -67,6 +66,8 @@ class Particle {
     double current_run_val;
     double past_run_val;
     int count_iter;
+
+    short seed;
     
     
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
@@ -75,11 +76,11 @@ class Particle {
     // search_ub, search_lb: search space bounds
     // init_ub, init_lb: initialization space bounds
     Particle(
-            double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef, 
-                    short n_comm, short n_to, int part_idx,  Params parameters);
+            double* comm_tax_free, int* n_usr, double* trans_costs, double* search_ub_, double* search_lb_,
+                    short n_comm, short n_to, int part_idx,  Params parameters, double d_max);
     ~Particle() {}
 
-    void init_values(double* p_init, double* v_init,double* search_ub, double* search_lb, double d_max );
+    void init_values(double* p_init, double* v_init);
     void update_fitness(double best);
     void update_sigma(double* g) {sigma = compute_distance(p,std::vector<double>(g, g + n_tolls));}
     void update_pos();
@@ -105,8 +106,8 @@ class Particle {
 /*      Initialize the particle object with random velocity  and given position      */
 /*-----------------------------------------------------------------------------------*/
 
-Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* obj_coef,
-                    short n_comm, short n_tolls_, int part_idx, Params parameters) {
+Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* search_ub_, double* search_lb_,
+                    short n_comm, short n_tolls_, int part_idx, Params parameters, double d_max) {
 
   
         params = parameters;
@@ -114,7 +115,10 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         n_commodities=n_comm;
         n_tolls=n_tolls_;
         count_iter=0;
-
+        search_ub = std::vector<double> (n_tolls);
+        search_lb = std::vector<double> (n_tolls);
+        sigma_max = d_max;
+        
         init_commodity_val = params.init_commodity_val;
         L=0;
         U=0.01;
@@ -130,33 +134,24 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         
         n_users = std::vector<int> (n_commodities);
         for(int j=0; j< n_commodities; j++) {n_users[j] = n_usr[j];}
-
-        obj_coefficients = std::vector<double> (n_tolls);
-
-
-        for(int j=0; j< n_tolls; j++) {
-            obj_coefficients[j] = obj_coef[j];
-
-        }
+            for(int j=0; j< n_tolls; j++) {
+                search_ub[j] = search_ub_[j];
+                search_lb[j] = search_lb_[j];
+            }
+        search_range = std::vector<double> (n_tolls);
+        for(int j=0; j< n_tolls; j++) search_range[j] = search_ub[j] - search_lb[j];
         
 }
 
-void Particle::init_values(double* p_init, double* v_init,double* search_ub_, double* search_lb_, double d_max ){
+void Particle::init_values(double* p_init, double* v_init){
 
     v = std::vector<double> (n_tolls);
     p = std::vector<double> (n_tolls);
-    search_ub = std::vector<double> (n_tolls);
-    search_lb = std::vector<double> (n_tolls);
-    sigma_max = d_max;
 
     for(int j=0; j< n_tolls; j++) {
             p[j] = p_init[j];
             v[j] = v_init[j];
-            search_ub[j] = search_ub_[j];
-            search_lb[j] = search_lb_[j];
         }
-    search_range = std::vector<double> (n_tolls);
-    for(int j=0; j< n_tolls; j++) search_range[j] = search_ub[j] - search_lb[j];
 
     p_past=p;
 
@@ -302,14 +297,14 @@ double Particle::compute_obj_and_update_best(){
         bool found = false;
         for(j=0; j< n_tolls; j++) {
             //std::cout<<p[j]<<", ";
-            toll_cost = p[j]*obj_coefficients[j] + transfer_costs[i][j];
+            toll_cost = p[j] + transfer_costs[i][j];
             if(toll_cost <= commodity_cost) {
                 if (toll_cost < commodity_cost) {
                     commodity_cost = toll_cost;
                     cheapest_path_idx = j;
                 }
                 else {
-                    if ( p[j]*obj_coefficients[j] > p[cheapest_path_idx]*obj_coefficients[cheapest_path_idx]) {
+                    if ( p[j] > p[cheapest_path_idx]) {
                         commodity_cost = toll_cost;
                         cheapest_path_idx = j;
                     }
@@ -321,11 +316,11 @@ double Particle::compute_obj_and_update_best(){
             found = true;
             // std::cout<<obj_coefficients[cheapest_path_idx]<<" "<<n_users[i]<<" "<< p[cheapest_path_idx]<<std::endl;
             // std::cout<<std::endl;
-            current_run_val += p[cheapest_path_idx]*obj_coefficients[cheapest_path_idx]*n_users[i];
+            current_run_val += p[cheapest_path_idx]*n_users[i];
         }
 
     }
-    //sstd::cout<<current_run_val<<std::endl;
+    
     
     /* update personal_best and personal_best_val */
     if(current_run_val> personal_best_val){
