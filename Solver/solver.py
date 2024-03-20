@@ -6,6 +6,7 @@ from Instance.instance import Instance, Commodity
 from gurobipy import Model, GRB, quicksum
 
 
+
 def stop(model, where):
     if where == GRB.Callback.MIP:
         num_current_solutions = model.cbGet(GRB.Callback.MIP_SOLCNT)
@@ -19,16 +20,20 @@ def stop(model, where):
 class GlobalSolver:
 
     def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False):
+        self.obj = None
+        self.solution_array = None
         self.instance = instance
         self.m = Model('CVRP')
+        self.m.setParam('TimeLimit', 3600)
         self.m._time_limit = time_limit
         self.m._min_sol_num = min_sol_num
+        self.m.setParam("ScaleFlag", 0)
         if not verbose:
             self.m.setParam("OutputFlag", 0)
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MAXIMIZE
 
-        self.eps = 1e-4
+        self.eps = 0
 
         self.p = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities])
         self.x = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities],
@@ -46,7 +51,6 @@ class GlobalSolver:
                                      for p in self.instance.paths for k in self.instance.commodities))
 
     def set_constraints(self):
-
         for k in self.instance.commodities:
             for q in self.instance.paths:
                 self.m.addConstr(
@@ -92,11 +96,12 @@ class GlobalSolver:
             tic = time.time()
             self.m.optimize()
             toc = time.time()
-            print(self.m.status)
+            # print(self.m.status)
             # self.solution = np.zeros(len(self.instance.paths))
             self.solution = {}
             for p in self.instance.paths:
                 self.solution[p] = self.t[p].x
+            self.solution_array = [self.t[p].x for p in self.instance.paths]
             self.obj = self.m.objVal
 
         return toc - tic, self.m.objVal, self.m.ObjBound, [self.t[p].x for p in self.instance.paths]
@@ -110,15 +115,13 @@ class GlobalSolver:
         for i, k in enumerate(self.instance.commodities):
             found = False
             for j, p in enumerate(self.instance.paths):
-                if i == 2 and j == 1:
-                    print(k.c_p[p], self.t[p].x, k.c_p[p] + self.t[p].x)
                 if self.x[p, k].x > 0.9:
                     gain = self.t[p].x * k.n_users * self.x[p, k].x
                     best_val += gain
 
-                    print('comm', i, '  p', j, ' n users', k.n_users, "  transf", k.c_p[p],
-                          "  p", self.t[p].x, "  cost ", self.t[p].x + k.c_p[p],
-                          "  free", k.c_od, "   gain", gain)
+                    print('comm', i, '  p', j, ' n users', k.n_users, "  transf", k.c_p[p.name],
+                          "  p", self.t[p].x, "  cost ", self.t[p].x + k.c_p[p.name],
+                          "  free", k.c_od, "   gain", gain,  'p selected', p)
                     found = True
             # if not found:
             #     print(k, 'c_od', k.c_od)
