@@ -18,15 +18,15 @@ df = pd.DataFrame(columns=columns)
 
 print("mandi")
 
-n_iterations = 2_000
+n_iterations = 500
 n_particles = 20_000
 no_update_lim = 1000
 
 VERBOSE = False
 row = 0
 
-for n_commodities in [20, 56, 90]:
-    for n_paths in [20, 56, 90]:
+for n_commodities in [20]:
+    for n_paths in [20]:
 # for n_commodities in [56]:
 #     for n_paths in [20, 56, 90]:
         for run in range(10):
@@ -34,14 +34,14 @@ for n_commodities in [20, 56, 90]:
             random.seed(run)
             np.random.seed(run)
 
-            npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=False)
+            npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=run)
             # npp.show_original()
             # npp.show()
             # npp.save_problem()
             # npp.show()
 
             t = time.time()
-            global_solver = GlobalSolver(npp, verbose=VERBOSE)
+            global_solver = GlobalSolver(npp, verbose=True, time_limit=10)
             global_solver.solve()
             print("target val", global_solver.obj)
             time_solver = time.time() - t
@@ -55,14 +55,18 @@ for n_commodities in [20, 56, 90]:
             #
             t = time.time()
             pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
-            k = pso.random_init()
-            # latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)
-            pso.run(init_pos=k, stats=False, verbose=True, seed=run)
+            initial_position = pso.random_init()
+            # initial_position = pso.compute_latin_hypercube_init(dimensions=5)
+            pso.run(init_pos=initial_position, stats=False, verbose=True, seed=run)
             pso_time = time.time() - t
             print('time global ', time_solver, 'time pso ', pso_time)
             gap = 1 - pso.best_val / global_solver.obj
             print("obj val global", global_solver.obj, "  obj pso", pso.best_val, '    gap', 1 - pso.best_val / global_solver.obj,
                   ' iter', pso.final_iterations)
+
+            initial_position = pso.compute_latin_hypercube_init(dimensions=5)
+            pso.run(init_pos=initial_position, stats=False, verbose=True, seed=run)
+            print('pso latin', pso.best_val)
 
             print("computed val ex", npp.compute_solution_value(global_solver.solution_array),
                   "computed val pso", npp.compute_solution_value(pso.best))
@@ -80,12 +84,10 @@ for n_commodities in [20, 56, 90]:
     # stats = pso.get_stats()
 df.to_csv('test.csv', index=False)
 '''
-time global  0.10101079940795898 time pso  2.761152982711792
-obj val global 1274.6312511954852   obj pso 1273.70652438468     gap 0.0007254857512224433
-computed val 1273.70652438468
-seed set to 1
-
-time global  0.0958106517791748 time pso  2.3473119735717773
-obj val global 805.3006068177644   obj pso 803.3259568497367     gap 0.0024520656650574013
-computed val 803.3259568497367
+iter 0  best_val: 355.979    avg vel: 0
+iter 100  best_val: 1125.06    avg vel: 0
+iter 200  best_val: 1142.53    avg vel: 0
+iter 300  best_val: 1175.73    avg vel: 0
+iter 400  best_val: 1185.21    avg vel: 0
+iter 500  best_val: 1191.62    avg vel: 0
 '''

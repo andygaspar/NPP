@@ -6,9 +6,9 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-import torch
-import torch_geometric
-from torch_geometric.data import HeteroData
+# import torch
+# import torch_geometric
+# from torch_geometric.data import HeteroData
 import pandas as pd
 
 

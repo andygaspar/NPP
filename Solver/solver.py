@@ -24,7 +24,8 @@ class GlobalSolver:
         self.solution_array = None
         self.instance = instance
         self.m = Model('CVRP')
-        self.m.setParam('TimeLimit', 3600)
+        if time_limit is not None:
+            self.m.setParam('TimeLimit', time_limit)
         self.m._time_limit = time_limit
         self.m._min_sol_num = min_sol_num
         self.m.setParam("ScaleFlag", 0)
@@ -91,7 +92,7 @@ class GlobalSolver:
             self.current_solution = np.zeros(len(self.instance.paths))
             for i, p in enumerate(self.instance.paths):
                 self.current_solution[i] = self.t[p].x
-            self.best_val = self.m.objVal
+            self.obj = self.m.objVal
         else:
             tic = time.time()
             self.m.optimize()
