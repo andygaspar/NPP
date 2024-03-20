@@ -49,4 +49,4 @@ class PsoSolverNew:
 
         init_positions[:, tolls_idx[:dimensions]] = latin_positions
 
-        return init_positions / init_positions.max()
+        return init_positions
