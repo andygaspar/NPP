@@ -7,7 +7,8 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 
 
-class SwarmNew:
+
+class Swarm:
 
     def __init__(self, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
                  upper_bounds: np.array, n_commodities, n_toll_paths,
@@ -25,13 +26,16 @@ class SwarmNew:
         self.lib.Swarm_.restype = ctypes.c_void_p
 
         self.lib.run_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
-                                  ctypes.c_bool, ctypes.c_bool]
+                                  ctypes.c_bool, ctypes.c_bool, ctypes.c_short]
 
         self.lib.get_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_val_.restype = ctypes.c_double
 
         self.lib.get_best_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
+
+        self.lib.get_actual_iteration_.argtypes = [ctypes.c_void_p]
+        self.lib.get_actual_iteration_.restype = ctypes.c_int
 
         self.lib.get_stats_len_.argtypes = [ctypes.c_void_p]
         self.lib.get_stats_len_.restype = ctypes.c_int
@@ -56,13 +60,17 @@ class SwarmNew:
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
-    def run(self, init_positions, init_velocity, stats=False, verbose=False):
+    def get_iterations(self):
+        return self.lib.get_actual_iteration_(ctypes.c_void_p(self.swarm))
+
+    def run(self, init_positions, init_velocity, stats=False, verbose=False, seed=None):
         self.stats = stats
+        seed = -1 if seed is None else seed
         self.lib.run_(ctypes.c_void_p(self.swarm),
                       init_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                       init_velocity.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                       ctypes.c_bool(stats),
-                      ctypes.c_bool(verbose))
+                      ctypes.c_bool(verbose), ctypes.c_short(seed))
         return True
 
     def get_stats(self):
