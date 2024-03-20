@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import qmc
 
 from Instance.instance import Instance
-from PSO.swarm_new import SwarmNew
+from PSO.swarm import Swarm
 from Solver.solver import GlobalSolver
 from Old.lower_aggregated_2 import LowerSolverAggregated2
 
@@ -22,7 +22,7 @@ class PsoSolver:
         # self.swarm = Swarm(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
         #                    npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, N_PARTS=N_PARTS,
         #                    n_cut=n_cut, N_DIV=N_DIV, n_u_l=n_u_l, normalised=normalised, verbose=verbose)
-        self.swarm = SwarmNew(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
+        self.swarm = Swarm(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
                            npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, n_u_l=n_u_l)
 
         self.init_sol_num = init_sol_num

@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <cstdlib>
 #include "particle.h"
+
 //#include "p_optimum.cpp"
 
 //std::vector<double> p_optimum{};
