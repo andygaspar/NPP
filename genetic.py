@@ -6,8 +6,6 @@ import time
 
 import numpy as np
 import pandas as pd
-import sklearn
-from sklearn.cluster import KMeans
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.solver import GlobalSolver
@@ -25,6 +23,7 @@ class Genetic:
         self.population = np.zeros((self.population_size + self.offs_size + self.pso_population, self.n_paths))
         self.combs = list(itertools.combinations(range(self.pop_size), 2))
         self.idx_range = range(self.n_paths)
+        self.pop_idx = range(self.pop_size)
         self.fitness_fun = fitness_fun
         self.mutation_rate = mutation_rate
         self.best_val = None
@@ -49,6 +48,9 @@ class Genetic:
         self.population = self.population[idxs[::-1]]
         self.best_val = max(vals)
 
+    def get_pop_sample(self, n):
+        return self.population[np.random.choice(self.pop_size, size=n, replace=False)]
+
 os.system("PSO/install.sh")
 
 
@@ -59,12 +61,12 @@ n_iterations = 1000
 n_particles = 20_000
 no_update_lim = 1000
 
-TIME_LIMIT = 1
+TIME_LIMIT = 100
 VERBOSE = False
 row = 0
 
-n_commodities = 20
-n_paths = 20
+n_commodities = 96
+n_paths = 96
 run = 0
 
 print(n_commodities, n_paths, run)
@@ -83,6 +85,7 @@ PARTICLES = 32
 PSO_ITERATIONS = 10000
 ADDITIONAL_PARTICLES = 8
 
+t = time.time()
 pso = PsoSolverNew(npp, POPULATION, 0, no_update_lim)
 initial_position = pso.random_init()
 npp.compute_solution_value(initial_position[0])
@@ -96,13 +99,21 @@ for i in range(500):
 
     if i % 100 == 0 and i > 0:
         pso = PsoSolverNew(npp, PARTICLES, n_iterations=PSO_ITERATIONS, no_update_lim=no_update_lim)
-        pso.run(genetic.population[np.random.choice(range(PARTICLES))], verbose=True)
+        pso.run(genetic.get_pop_sample(PARTICLES), verbose=True)
         new_particles = pso.get_particles()
         genetic.generation(pso_particles=new_particles[:ADDITIONAL_PARTICLES])
     else:
         genetic.generation()
-
-    print(genetic.best_val)
+    if i % 10 == 0 and i > 0:
+        print(genetic.best_val, np.std(np.std(genetic.population, axis=0)))
 pso = PsoSolverNew(npp, 12, n_iterations=PSO_ITERATIONS, no_update_lim=no_update_lim)
-pso.run(genetic.population[:128], verbose=True)
-print(pso.best_val)
+pso.run(genetic.get_pop_sample(128), verbose=True)
+
+PARTICLES = 10000
+pso = PsoSolverNew(npp, genetic.pop_size, 1000, no_update_lim)
+initial_position = pso.random_init()
+pso.run(genetic.population, verbose=True)
+
+t = time.time() - t
+
+print(pso.best_val, t, solver.obj, 1 - pso.best_val/solver.obj)
