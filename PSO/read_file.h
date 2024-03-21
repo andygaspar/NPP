@@ -54,10 +54,11 @@ class FileReader{
     }
 
     ~FileReader(){
-        //delete [] commodities_tax_free;
-        //delete [] upper_bounds;
-        //delete [] transfer_costs;
-        //delete [] n_users;
+        delete [] commodities_tax_free;
+        delete [] upper_bounds;
+        delete [] lower_bounds;
+        delete [] transfer_costs;
+        delete [] n_users;
     }
             
     dimensions get_dims(string file_name){

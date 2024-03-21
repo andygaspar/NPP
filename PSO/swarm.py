@@ -31,6 +31,9 @@ class Swarm:
         self.lib.get_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_val_.restype = ctypes.c_double
 
+        self.lib.get_particles_.argtypes = [ctypes.c_void_p]
+        self.lib.get_particles_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_particles, n_toll_paths))
+
         self.lib.get_best_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
 
@@ -59,6 +62,10 @@ class Swarm:
 
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
+
+    def get_particles(self):
+        particles = self.lib.get_particles_(ctypes.c_void_p(self.swarm))
+        return particles
 
     def get_iterations(self):
         return self.lib.get_actual_iteration_(ctypes.c_void_p(self.swarm))

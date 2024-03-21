@@ -20,5 +20,7 @@ int main(){
     }
 
 
-/*     Swarm* swarm = new Swarm{fr.commodities_tax_free, fr.n_users, fr.transfer_costs, fr., n_comm, n_tolls_, n_parts, n_iter, no_update_lim_, num_th};
- */}
+    Swarm* swarm = new Swarm{fr.commodities_tax_free, fr.n_users, fr.transfer_costs, fr.upper_bounds, fr.lower_bounds, fr.n_commodities,  fr.n_tolls, 128, 1000, 100, 1};
+
+
+}

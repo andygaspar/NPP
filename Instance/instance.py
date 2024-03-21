@@ -24,6 +24,7 @@ class Commodity:
         self.destination = np.random.choice(commodities)
         self.c_od = graph[self.name][self.destination]['transfer']
         self.c_p = {p: graph[self.name][p]['transfer'] for p in path_names}
+        self.c_p_vector = np.array(list(self.c_p.values()))
         self.M_p = {p: max([0, self.c_od - self.c_p[p]]) for p in path_names}
         self.node.update({'n_users': self.n_users, 'type_int': 0, 'c_od': self.c_od, 'N_p': 0, 'n_commodities': len(com_names)})
 
@@ -169,7 +170,8 @@ class Instance(nx.Graph):
     def compute_solution_value(self, sol):
         total_profit = 0
         for commodity in self.commodities:
-            costs = [sol[i] + commodity.c_p[list(commodity.c_p.keys())[i]] for i in range(len(sol))]
+            # costs = [sol[i] + commodity.c_p[list(commodity.c_p.keys())[i]] for i in range(len(sol))]
+            costs = sol + commodity.c_p_vector
             cost = 0 if min(costs) > commodity.c_od else sol[np.argmin(costs)]
             # print(costs)
             # print(min(costs), commodity.c_od, min(costs) > commodity.c_od + 1e-8, cost * commodity.n_users, commodity.n_users, sol[np.argmin(costs)], np.argmin(costs))

@@ -14,6 +14,8 @@ extern "C" {
 
     double* get_best_ (Swarm* swarm) {return swarm -> get_best();}
 
+    double* get_particles_(Swarm* swarm) {return swarm -> get_particle_position();}
+
     int get_actual_iteration_(Swarm* swarm){return swarm-> get_actual_iteration();}
     int get_stats_len_(Swarm* swarm){return swarm-> get_stats_len();}
     double* get_p_means_(Swarm* swarm){return swarm -> get_p_means();}

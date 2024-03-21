@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from scipy.stats import qmc
 
@@ -9,6 +11,7 @@ from PSO.swarm import Swarm
 class PsoSolverNew:
 
     def __init__(self, npp: Instance, n_particles, n_iterations, no_update_lim, time_limit=None):
+        self.time = None
         self.best_val = None
         self.best = None
         self.npp = npp
@@ -22,14 +25,19 @@ class PsoSolverNew:
         self.time_limit = time_limit
 
     def run(self, init_pos=None, speed_range=(-5, 5), stats=False, verbose=False, seed=None):
+        self.time = time.time()
         if init_pos is None:
             init_pos = np.random.uniform(0, 1, size=(self.npp.n_paths, self.n_particles))
         vel_init = np.random.uniform(speed_range[0], speed_range[1], size=(self.npp.n_paths, self.n_particles))
         seed = -1 if seed is None else seed
         self.swarm.run(init_pos, vel_init, stats, verbose, seed)
+        self.time = time.time() - self.time
 
         self.best, self.best_val = self.swarm.get_best()
         self.final_iterations = self.swarm.get_iterations()
+
+    def get_particles(self):
+        return self.swarm.get_particles()
 
     def get_stats(self):
         return self.swarm.get_stats()

@@ -78,6 +78,8 @@ class Swarm {
         return solution;
         }
 
+    ~Swarm (){}
+
     double get_best_val() {return best_val;}
     double get_status() {return no_update_lim_reached;}
 
@@ -179,6 +181,20 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
 
     double avg_velocity;
 
+    #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_particles, particles)
+        for(i=0;i<n_particles;++i) {
+            if(no_update>195 && no_update<205) {random_param=0.04;}
+            else {random_param=0.02;};
+            run_results[i] = particles[i].compute_obj_and_update_best();
+            }
+    for(i=0;i<n_particles;++i){
+        if(run_results[i] > best_val) {
+            best_val = run_results[i];
+            best_particle_idx = particles[i].particle_idx;
+            }
+        }
+    if(verbose and (iter%100 == 0)) std::cout<<"first iter  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
+
     while((iter< n_iterations) and (!no_update_lim_reached)) {
 
         
@@ -216,7 +232,6 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
         if (no_update>no_update_lim) no_update_lim_reached = true;
 
         if(stats and (iter % parameters.stat_frequency == 0)) updte_stats();
-
         iter++;
 
         }

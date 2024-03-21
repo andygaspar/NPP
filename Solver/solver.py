@@ -20,8 +20,7 @@ def stop(model, where):
 class GlobalSolver:
 
     def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False):
-        self.obj = None
-        self.solution_array = None
+
         self.instance = instance
         self.m = Model('CVRP')
         if time_limit is not None:
@@ -45,6 +44,10 @@ class GlobalSolver:
 
         self.solution = None
         self.best_val = None
+
+        self.time = None
+        self.obj = None
+        self.solution_array = None
 
     def set_obj(self):
         k: Commodity
@@ -83,29 +86,21 @@ class GlobalSolver:
                 )
 
     def solve(self):
+        self.time = time.time()
         self.set_obj()
         self.set_constraints()
-        if self.m._time_limit is not None:  # and self.m._min_sol_num is not None:
-            tic = time.time()
-            self.m.optimize(stop)
-            toc = time.time()
-            self.current_solution = np.zeros(len(self.instance.paths))
-            for i, p in enumerate(self.instance.paths):
-                self.current_solution[i] = self.t[p].x
-            self.obj = self.m.objVal
-        else:
-            tic = time.time()
-            self.m.optimize()
-            toc = time.time()
+
+        self.m.optimize()
+        self.time = time.time() - self.time
             # print(self.m.status)
             # self.solution = np.zeros(len(self.instance.paths))
-            self.solution = {}
-            for p in self.instance.paths:
-                self.solution[p] = self.t[p].x
-            self.solution_array = [self.t[p].x for p in self.instance.paths]
-            self.obj = self.m.objVal
+        self.solution = {}
+        for p in self.instance.paths:
+            self.solution[p] = self.t[p].x
+        self.solution_array = [self.t[p].x for p in self.instance.paths]
+        self.obj = self.m.objVal
 
-        return toc - tic, self.m.objVal, self.m.ObjBound, [self.t[p].x for p in self.instance.paths]
+
 
     def print_model(self):
         # for p in self.instance.paths:

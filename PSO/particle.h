@@ -328,7 +328,8 @@ double Particle::compute_obj_and_update_best(){
         personal_best_val = current_run_val;
         count_iter=0;
     }
-    // std::cout<<current_run_val<<" personal"<<std::endl;
+/*     std::cout<<current_run_val<<" personal"<<std::endl;
+    print(); */
     return current_run_val;
 }
 
