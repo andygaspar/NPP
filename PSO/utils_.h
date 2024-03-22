@@ -39,3 +39,11 @@ short get_rand_idx(short start, short end){
     return distribution(generator);  
 }
 
+
+template <typename T>
+void print_vect(T vect, int size) {
+    for(int i=0; i<size; i++) std::cout<<vect[i]<<" ";
+    std::cout<<std::endl;
+}
+
+
