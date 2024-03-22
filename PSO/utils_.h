@@ -33,3 +33,9 @@ double get_rand(double start, double end) {
         return distribution(generator);
 }
 
+short get_rand_idx(short start, short end){
+    std::default_random_engine generator(std::rand());
+    std::uniform_int_distribution<int> distribution(start, end);
+    return distribution(generator);  
+}
+

@@ -7,7 +7,6 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 
 
-
 class Swarm:
 
     def __init__(self, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
@@ -33,6 +32,9 @@ class Swarm:
 
         self.lib.get_particles_.argtypes = [ctypes.c_void_p]
         self.lib.get_particles_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_particles, n_toll_paths))
+
+        self.lib.get_values_.argtypes = [ctypes.c_void_p]
+        self.lib.get_values_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_particles,))
 
         self.lib.get_best_.argtypes = [ctypes.c_void_p]
         self.lib.get_best_.restype = ndpointer(dtype=ctypes.c_double, shape=(n_toll_paths,))
@@ -64,8 +66,10 @@ class Swarm:
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))
 
     def get_particles(self):
-        particles = self.lib.get_particles_(ctypes.c_void_p(self.swarm))
-        return particles
+        return self.lib.get_particles_(ctypes.c_void_p(self.swarm))
+
+    def get_values(self):
+        return self.lib.get_values_(ctypes.c_void_p(self.swarm))
 
     def get_iterations(self):
         return self.lib.get_actual_iteration_(ctypes.c_void_p(self.swarm))

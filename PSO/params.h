@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include <fstream>
-#include "utils_.h"
+#include "genetic_operators.h"
 
 struct Params{
     double w1; 

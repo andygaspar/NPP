@@ -15,6 +15,7 @@ extern "C" {
     double* get_best_ (Swarm* swarm) {return swarm -> get_best();}
 
     double* get_particles_(Swarm* swarm) {return swarm -> get_particle_position();}
+    double* get_values_(Swarm* swarm) {return swarm -> get_particle_values();}
 
     int get_actual_iteration_(Swarm* swarm){return swarm-> get_actual_iteration();}
     int get_stats_len_(Swarm* swarm){return swarm-> get_stats_len();}
@@ -23,5 +24,14 @@ extern "C" {
     double* get_p_stds_(Swarm* swarm){return swarm -> get_p_stds();}
     double* get_v_stds_(Swarm* swarm){return swarm -> get_v_stds();}
 
+    
+
+
+    Genetic* Genetic_(double* upper_bounds_, int* combs_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, 
+                        short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads)
+    {return new Genetic(upper_bounds_, combs_,comm_tax_free, n_usr, trans_costs, n_commodities_,pop_size_, off_size_, n_paths_, mutation_rate_, recombination_size_, num_threads);}
+
+    void generate_(Genetic* genetic, double* a_parent, double* b_parent, double* child, double* upper_bounds) { genetic -> generate(a_parent, b_parent, child, upper_bounds);}
+    void generation_(Genetic* genetic, double* population, double* vals) { genetic -> generation(population, vals);}
 
 }

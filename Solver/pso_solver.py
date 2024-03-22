@@ -39,6 +39,13 @@ class PsoSolverNew:
     def get_particles(self):
         return self.swarm.get_particles()
 
+    def get_best_n_particles(self, n_particles):
+        particles = self.swarm.get_particles()
+        values = self.swarm.get_values()
+        idx = np.argsort(values)
+        return particles[idx][-n_particles:]
+
+
     def get_stats(self):
         return self.swarm.get_stats()
 

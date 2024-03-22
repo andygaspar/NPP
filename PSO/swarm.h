@@ -97,6 +97,12 @@ class Swarm {
         return positions;
     }
 
+    double* get_particle_values(){
+        double* values = new double[n_particles];
+        for(int p=0; p < n_particles; p++) values[p] = particles[p].personal_best_val;
+        return values;
+    }
+
     double* get_particle_velocity(){
         double* velocity = new double[n_tolls*n_particles];
         for(int p=0; p < n_particles; p++){
@@ -187,7 +193,7 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
             else {random_param=0.02;};
             run_results[i] = particles[i].compute_obj_and_update_best();
             }
-    for(i=0;i<n_particles;++i){
+    for(i=0;i<n_particles; i++){
         if(run_results[i] > best_val) {
             best_val = run_results[i];
             best_particle_idx = particles[i].particle_idx;
@@ -199,7 +205,7 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
 
         
         #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_particles, particles)
-        for(i=0;i<n_particles;++i) {
+        for(i=0;i<n_particles; i++) {
             if(no_update>195 && no_update<205) {random_param=0.04;}
             else {random_param=0.02;};
 
@@ -208,7 +214,7 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
             run_results[i] = particles[i].compute_obj_and_update_best();
             }
 
-        for(i=0;i<n_particles;++i){
+        for(i=0;i<n_particles; i++){
             if(run_results[i] > best_val) {
                     best_val = run_results[i];
                     best_particle_idx = particles[i].particle_idx;
