@@ -27,11 +27,14 @@ extern "C" {
     
 
 
-    Genetic* Genetic_(double* upper_bounds_, int* combs_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, 
+    Genetic* Genetic_(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, 
                         short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads)
-    {return new Genetic(upper_bounds_, combs_,comm_tax_free, n_usr, trans_costs, n_commodities_,pop_size_, off_size_, n_paths_, mutation_rate_, recombination_size_, num_threads);}
+    {return new Genetic(upper_bounds_, comm_tax_free, n_usr, trans_costs, n_commodities_,pop_size_, off_size_, n_paths_, mutation_rate_, recombination_size_, num_threads);}
 
-    void generate_(Genetic* genetic, double* a_parent, double* b_parent, double* child, double* upper_bounds) { genetic -> generate(a_parent, b_parent, child, upper_bounds);}
-    void generation_(Genetic* genetic, double* population, double* vals) { genetic -> generation(population, vals);}
+    // void generate_(Genetic* genetic, double* a_parent, double* b_parent, double* child, double* upper_bounds) { genetic -> generate(a_parent, b_parent, child, upper_bounds);}
+    double* generation_(Genetic* genetic, double* population) { return genetic -> generation(population);}
+    double* eval_parallel_(Genetic* genetic, double* new_population) {return genetic -> eval_parallel(new_population);}
+
+    void print_(Genetic* genetic) {genetic -> print_stuff();}
 
 }

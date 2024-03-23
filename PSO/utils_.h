@@ -33,15 +33,18 @@ double get_rand(double start, double end) {
         return distribution(generator);
 }
 
-short get_rand_idx(short start, short end){
+int get_rand_idx(int start, int end){
+    // std::random_device rnd_device;
     std::default_random_engine generator(std::rand());
     std::uniform_int_distribution<int> distribution(start, end);
-    return distribution(generator);  
+    int i = distribution(generator);
+    // std::cout<<i<<"  iiii "<<start<<" "<<end<<std::endl;
+    return distribution(generator);
 }
 
 
 template <typename T>
-void print_vect(T vect, int size) {
+void print_vect(T* vect, int size) {
     for(int i=0; i<size; i++) std::cout<<vect[i]<<" ";
     std::cout<<std::endl;
 }

@@ -17,12 +17,12 @@ class Genetic {
     short off_size;
     double** upper_bounds;
     short offs_size;
-    int* a_combs;
-    int* b_combs;
+    std::vector<int> a_combs;
+    std::vector<int> b_combs;
     double mutation_rate;
     short recombination_size;
-    short* random_order;
-    short* random_element_order;
+    std::vector<int> random_order;
+    std::vector<std::vector<int>> random_element_order;
     short n_threads;
     short start_index;
     short n_commodities;
@@ -38,7 +38,7 @@ class Genetic {
 
 
 
-    Genetic(double* upper_bounds_, int* combs_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads_){
+    Genetic(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads_){
 
     pop_size = pop_size_;
     n_paths = n_paths_;
@@ -48,8 +48,10 @@ class Genetic {
     n_threads = num_threads_;
     start_index = pop_size * n_paths;
 
+
     n_commodities = n_commodities_;
     init_commodity_val = init_commodity_val=pow(10, 5);
+    std::random_device rnd_device;
     
     commodities_tax_free = new double*[n_threads];
     for(int i=0; i< n_threads; i++){
@@ -67,26 +69,28 @@ class Genetic {
             }
         }
 
-
     n_users = new short*[n_threads];
     for(int i=0; i< n_threads; i++){
         n_users[i] = new short[n_commodities];
         for(int j=0; j< n_commodities; j++) n_users[i][j] = n_usr[j];
     }
 
+    a_combs = std::vector<int> (0);
+    b_combs = std::vector<int> (0);
+    for(short i=0; i < pop_size - 1; i++){
+        for(short j=i + 1; j < pop_size; j++) {
+            a_combs.push_back(i);
+            b_combs.push_back(j);
+        }
+    }
+    std::cout<<"size a "<<a_combs.size()<<std::endl;
+    random_order = std::vector<int> (0);
+    for(int i=0; i<a_combs.size(); i++) random_order.push_back(i);
 
-    a_combs = new int[pop_size];
-    b_combs = new int[pop_size];
-    for(int i=0; i<pop_size; i++) a_combs[i] = combs_[i];
-    for(int i=0; i<pop_size; i++) b_combs[i] = combs_[pop_size + i];
-
-    
-
-    random_order = new short[pop_size];
-    for(int i=0; i<pop_size; i++) random_order[i] = i;
-
-    random_element_order = new short[n_paths];
-    for(int i=0; i<n_paths; i++) random_element_order[i] = i;
+    random_element_order = std::vector<std::vector<int>> (n_threads);
+    for(int i=0; i<n_threads; i++){
+        for(int j=0; j<n_paths; j++) random_element_order[i].push_back(i);
+        }
 
     upper_bounds = new double*[n_threads];
     for(int i=0; i<n_threads; i++){
@@ -108,13 +112,15 @@ class Genetic {
         delete[] transfer_costs;
         delete[] commodities_tax_free;
         delete[] upper_bounds;
-        delete[] random_element_order;
     }
 
-    void reshuffle_element_order(short* vect, short size){
-        short idx, temp;
-        for(int i=0; i<size; i++) {
-            idx = get_rand_idx(0, size - 1);
+    void reshuffle_element_order(std::vector<int> &vect){
+        int idx, temp;
+        for(int i=0; i<vect.size(); i++) {
+            // std::cout<<"size combs "<<vect.size()<<std::endl;
+            idx = get_rand_idx(0, vect.size() - 1);
+            // std::cout<<"idx "<<idx<<std::endl;
+            // std::cout<<"val idx "<<vect[idx]<<std::endl;
             if(idx!=i){
                 vect[i] += vect[idx];
                 vect[idx] = vect[i] - vect[idx];
@@ -122,39 +128,46 @@ class Genetic {
             }
 
         }
-/*         for(int i=0; i<size; i++) {
-            idx = get_rand_idx(0, size - 1);
-            temp = vect[idx];
-            vect[idx] = vect[i];
-            vect[i] = temp;
-        } */ 
     }
 
-    void generate(double* a_parent, double* b_parent, double* child, double* u_bounds){
+    void generate(double* a_parent, double* b_parent, double* child, double* u_bounds, std::vector<int> element_order){
         int i;
         for(i=0; i<n_paths; i++) child[i] = a_parent[i];
-        reshuffle_element_order(random_element_order, n_paths);
-        for(i=0; i < recombination_size; i++) child[random_order[i]] = b_parent[random_order[i]];
+        reshuffle_element_order(element_order);
+        for(i=0; i < recombination_size; i++) child[element_order[i]] = b_parent[element_order[i]];
         
         for(i=0; i<n_paths; i++) {
             if(get_rand(0., 1.) < mutation_rate) child[i] = get_rand(0., u_bounds[i]);
         }
+        // print_vect(child, n_paths);
 
     }
 
-    void generation(double* population, double* vals){
-        reshuffle_element_order(random_order, pop_size);
-        
-        #pragma omp parallel for num_threads(n_threads)
-        for(int i=0; i < offs_size; i++) {
-                short th = omp_get_thread_num();
-                std::cout<<i<<" "<<th<<std::endl;
-                generate(&population[a_combs[i] * n_paths], &population[b_combs[i] * n_paths], &population[start_index + i * n_paths], 
-                            upper_bounds[th]);
-                vals[i] = eval(&population[start_index + i * n_paths], transfer_costs[th], commodities_tax_free[th], n_users[th]);
-            }
-        
+    double* generation(double* population){
+        double* children = new double[off_size * n_paths];
+        reshuffle_element_order(random_order);
+        #pragma omp parallel for num_threads(n_threads) schedule(static) shared(population)
+        for(short i=0; i < off_size; i++) {
+            // std::cout<<a_combs[random_order[i]]<<" "<<b_combs[random_order[i]]<<" "<<population[a_combs[random_order[i]] * n_paths]<<std::endl;
+            short th = omp_get_thread_num();
 
+        // print_vect(&population[n_paths*i], n_paths);
+
+            generate(&population[a_combs[random_order[i]] * n_paths], &population[b_combs[random_order[i]] * n_paths], &children[i * n_paths], 
+                        upper_bounds[th], random_element_order[th]);
+            }
+        return children;
+
+    }
+
+    double* eval_parallel(double* new_population) {
+        double* vals = new double[off_size];
+        #pragma omp parallel for num_threads(n_threads) shared(new_population, vals)
+        for(int i=0; i < off_size; i++) {
+            short th = omp_get_thread_num();
+            vals[i] = eval(&new_population[ i * n_paths], transfer_costs[th], commodities_tax_free[th], n_users[th]);
+        }
+        return vals;
     }
 
 
@@ -164,9 +177,7 @@ class Genetic {
     double current_run_val=0;
     double toll_cost;
     int i,j,cheapest_path_idx;
-    std::cout<<comm_tax_free[0]<<std::endl;
 
-    // std::cout<<"commodities "<<n_commodities<<std::endl;
     for(i=0; i<n_commodities; i++) {
         commodity_cost=init_commodity_val;
         bool found = false;
@@ -200,8 +211,14 @@ class Genetic {
     return current_run_val;
 }
 
+void print_stuff(){
+    std::cout<<"hahaha"<<std::endl;
+}
 
 };
+
+
+
 
 
 
