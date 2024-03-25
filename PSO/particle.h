@@ -78,9 +78,12 @@ class Particle {
     Particle(
             double* comm_tax_free, int* n_usr, double* trans_costs, double* search_ub_, double* search_lb_,
                     short n_comm, short n_to, int part_idx,  Params parameters, double d_max);
-    ~Particle() {}
+    ~Particle() {
+    }
 
     void init_values(double* p_init, double* v_init);
+    void init_vector_values(std::vector<double> p_init, double* v_init);
+;
     void update_fitness(double best);
     void update_sigma(double* g) {sigma = compute_distance(p,std::vector<double>(g, g + n_tolls));}
     void update_pos();
@@ -150,6 +153,30 @@ void Particle::init_values(double* p_init, double* v_init){
 
     for(int j=0; j< n_tolls; j++) {
             p[j] = p_init[j];
+            v[j] = v_init[j];
+        }
+
+    p_past=p;
+
+    personal_best = p;
+    personal_best_val = 0;
+
+}
+
+
+void Particle::init_vector_values(std::vector<double> p_init, double* v_init){
+
+    v = std::vector<double> (n_tolls);
+    p = std::vector<double> ();
+    p = p_init;
+    #pragma omp critical
+    {
+    for(int i=0; i<n_tolls; i++) std::cout<<p[i]<<" ";
+    std::cout<<std::endl;
+    }
+
+
+    for(int j=0; j< n_tolls; j++) {
             v[j] = v_init[j];
         }
 
@@ -290,6 +317,7 @@ double Particle::compute_obj_and_update_best(){
     /* compute objective value */
     current_run_val=0;
     int i,j,cheapest_path_idx;
+    cheapest_path_idx = -1;
 
     // std::cout<<"commodities "<<n_commodities<<std::endl;
     for(i=0; i<n_commodities; i++) {

@@ -10,7 +10,8 @@
 #include <algorithm>
 
 #include <fstream>
-#include "genetic_operators.h"
+#include "utils_.h"
+
 
 struct Params{
     double w1; 
@@ -45,7 +46,7 @@ struct Params{
         w1 = params["w1"].asDouble();  w2 = params["w2"].asDouble(); w3 = params["w3"].asDouble(); 
         c_soc1 = params["c_soc1"].asDouble(); c_soc2 = params["c_soc2"].asDouble(); c_soc3 =params["c_soc3"].asDouble(); 
         c_cog1 = params["c_cog1"].asDouble();  c_cog2 = params["c_cog2"].asDouble(); c_cog3 =params["c_cog3"].asDouble();
-        L =params["L"].asDouble(); U = params["L"].asDouble();
+        L =params["L"].asDouble(); U = params["U"].asDouble();
         L1 =params["L1"].asDouble(); L2 = params["L2"].asDouble(); L3 =params["L3"].asDouble(); 
         U1 = params["U1"].asDouble(); U2 =params["U2"].asDouble(); U3=params["U3"].asDouble(); 
         limit_sigma_1 = params["limit_sigma_1"].asDouble(); limit_sigma_2 = params["limit_sigma_2"].asDouble(); limit_sigma_3 = params["limit_sigma_3"].asDouble();
