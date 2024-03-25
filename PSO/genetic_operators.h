@@ -9,7 +9,7 @@
 #include "utils_.h"
 
 
-class Genetic {
+class GeneticOperators {
     public:
     // problem related features
     short pop_size;
@@ -38,7 +38,7 @@ class Genetic {
 
 
 
-    Genetic(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads_){
+    GeneticOperators(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads_){
 
     pop_size = pop_size_;
     n_paths = n_paths_;
@@ -83,7 +83,6 @@ class Genetic {
             b_combs.push_back(j);
         }
     }
-    std::cout<<"size a "<<a_combs.size()<<std::endl;
     random_order = std::vector<int> (0);
     for(int i=0; i<a_combs.size(); i++) random_order.push_back(i);
 
@@ -100,7 +99,7 @@ class Genetic {
     }
 
 
-    ~Genetic(){
+    ~GeneticOperators(){
         for(int i=0; i<n_threads; i++) {
             delete[] upper_bounds[i];
             delete[] n_users[i];
@@ -211,9 +210,6 @@ class Genetic {
     return current_run_val;
 }
 
-void print_stuff(){
-    std::cout<<"hahaha"<<std::endl;
-}
 
 };
 

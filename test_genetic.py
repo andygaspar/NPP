@@ -16,70 +16,51 @@ from genetic import Genetic
 os.system("PSO/install.sh")
 
 
-columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_pso', 'gap', 'time_exact', 'time_pso', 'status', 'mip_gap']
+columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_alg', 'gap', 'time_exact', 'time_alg', 'status', 'mip_gap']
 
 
-n_iterations = 1000
-n_particles = 20_000
-no_update_lim = 1000
+POPULATION = 256
+MUTATION_RATE = 0.02
+N_THREADS = 8
+ITERATIONS = 1_000
 
-TIME_LIMIT = 120
+PSO_RUN = 50
+PARTICLES = 32
+
+PSO_ITERATIONS = 1000
+PSO_FINAL_ITERATIONS = 1000
+ADDITIONAL_PARTICLES = 4
+NO_UPDATE_LIM = 1000
+
+TIME_LIMIT = 60 * 2
 VERBOSE = False
 row = 0
 
-n_commodities = 20
-n_paths = 20
+# n_commodities = 20
+# n_paths = 20
 run = 0
 
-print(n_commodities, n_paths, run)
-random.seed(run)
-np.random.seed(run)
+df = pd.DataFrame(columns=columns)
+for n_commodities in [20, 56, 90]:
+    for n_paths in [20, 56, 90]:
+        for run in range(10):
+            print("\n", n_commodities, n_paths, run)
+            random.seed(run)
+            np.random.seed(run)
 
-npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=run)
-solver = GlobalSolver(npp, verbose=True, time_limit=TIME_LIMIT)
-solver.solve()
-print("target val", solver.obj)
+            npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=run)
+            solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
+            solver.solve()
+            print("target val", solver.obj)
 
-# solver.print_model()
+            genetic = Genetic(population_size=POPULATION, pso_population=ADDITIONAL_PARTICLES, npp=npp, mutation_rate=MUTATION_RATE,
+                              fitness_fun=npp.compute_solution_value, offspring_rate=0.5, n_threads=N_THREADS)
 
-POPULATION = 128
-PARTICLES = 32
-PSO_ITERATIONS = 1000
-ADDITIONAL_PARTICLES = 8
-MUTATION_RATE = 0.02
-N_THREADS = 1
+            genetic.run(ITERATIONS, PARTICLES, PSO_RUN, PSO_ITERATIONS, NO_UPDATE_LIM, ADDITIONAL_PARTICLES, PSO_FINAL_ITERATIONS, VERBOSE)
 
-t = time.time()
-pso = PsoSolverNew(npp, POPULATION, 0, no_update_lim)
-initial_position = pso.random_init()
-npp.compute_solution_value(initial_position[0])
-# 7568.098313182916
-particles = np.copy(initial_position)
+            print(genetic.time, solver.time, genetic.best_val, solver.obj, 1 - genetic.best_val/solver.obj)
+            gap = 1 - genetic.best_val / solver.obj
+            df.loc[row] = [run, n_commodities, n_paths, solver.obj, genetic.best_val, gap, solver.time, genetic.time, solver.m.status,
+                           solver.m.MIPGap]
 
-genetic = Genetic(population_size=initial_position.shape[0], pso_population=ADDITIONAL_PARTICLES, npp=npp, mutation_rate=MUTATION_RATE,
-                  fitness_fun=npp.compute_solution_value, offspring_rate=0.5, n_threads=N_THREADS)
-genetic.parallel_generation(particles)
-for i in range(10_000):
-
-    if i % 100 == 0 and i > 0:
-        pso = PsoSolverNew(npp, PARTICLES, n_iterations=PSO_ITERATIONS, no_update_lim=no_update_lim)
-        pso.run(genetic.get_pop_sample(PARTICLES), verbose=False)
-        new_particles = pso.get_best_n_particles(ADDITIONAL_PARTICLES)
-        genetic.parallel_generation(pso_particles=new_particles)
-    else:
-        genetic.parallel_generation()
-    if i % 150 == 0 and i > 0:
-        # print(genetic.best_val, np.std(np.std(genetic.population, axis=0)))
-        print(i, genetic.best_val)
-
-pso = PsoSolverNew(npp, PARTICLES, n_iterations=PSO_ITERATIONS, no_update_lim=no_update_lim)
-pso.run(genetic.population[:128], verbose=True)
-
-PARTICLES = 10000
-pso = PsoSolverNew(npp, genetic.pop_size, 1000, no_update_lim)
-initial_position = pso.random_init()
-pso.run(genetic.population, verbose=True)
-
-t = time.time() - t
-
-print(t, solver.time, pso.best_val, solver.obj, 1 - pso.best_val/solver.obj)
+df.to_csv('test.csv', index=False)

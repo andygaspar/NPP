@@ -45,7 +45,6 @@ class PsoSolverNew:
         idx = np.argsort(values)
         return particles[idx][-n_particles:]
 
-
     def get_stats(self):
         return self.swarm.get_stats()
 

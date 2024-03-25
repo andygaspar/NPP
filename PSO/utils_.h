@@ -50,3 +50,10 @@ void print_vect(T* vect, int size) {
 }
 
 
+template <typename T>
+void print_vector(std::vector<T> &vect) {
+    for(int i=0; i<vect.size(); i++) std::cout<<vect[i]<<" ";
+    std::cout<<std::endl;
+}
+
+

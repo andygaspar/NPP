@@ -26,12 +26,7 @@ class GeneticOperators:
 
         self.lib.Genetic_.restype = ctypes.c_void_p
 
-        # self.lib.generate_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
-        #                                ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
-
         self.lib.generation_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double)]
-
-        self.lib.print_.argtypes = [ctypes.c_void_p]
 
         self.lib.eval_parallel_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double)]
 
@@ -45,15 +40,6 @@ class GeneticOperators:
                                          ctypes.c_short(pop_size), ctypes.c_short(offs_size), ctypes.c_short(n_paths),
                                          ctypes.c_double(mutation_rate), ctypes.c_short(recombination_size),
                                          ctypes.c_short(num_threads))
-
-        self.lib.print_(ctypes.c_void_p(self.genetic))
-
-    # def generate(self, a_parent, b_parent, child, upper_bounds):
-    #     return self.lib.generate_(ctypes.c_void_p(self.genetic),
-    #                               a_parent.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-    #                               b_parent.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-    #                               child.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-    #                               upper_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
     def generation(self, population):
         self.lib.generation_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.offs_size, self.n_paths))
