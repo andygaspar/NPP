@@ -55,7 +55,11 @@ class Genetic {
     short pso_every;
     short pso_selection;
     short pso_iterations;
+    short pso_final_iterations;
     short pso_no_update_lim;
+
+    bool verbose;
+    bool provisional_mutation_rate;
 
     std::vector<std::default_random_engine> generators;
 
@@ -63,8 +67,8 @@ class Genetic {
 
     Genetic(double* upper_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
-    short pso_size_, short pso_selection_, short pso_every_, short pso_iterations_, short pso_no_update_lim_,
-    short num_threads_){
+    short pso_size_, short pso_selection_, short pso_every_, short pso_iterations_, short pso_final_iterations_, short pso_no_update_lim_,
+    short num_threads_, bool verbose_, short seed){
 
     pop_size = pop_size_;
     n_paths = n_paths_;
@@ -74,8 +78,11 @@ class Genetic {
     pso_every = pso_every_;
     pso_no_update_lim = pso_no_update_lim_;
     pso_iterations = pso_iterations_;
+    pso_final_iterations =  pso_final_iterations_;
 
     pop_total_size = pop_size + off_size + pso_selection;
+
+    provisional_mutation_rate = false;
     
 
     mutation_rate = mutation_rate_;
@@ -84,10 +91,16 @@ class Genetic {
     start_index = pop_size * n_paths;
     t_costs = trans_costs;
 
+    verbose = verbose_;
+
     std::random_device r;
     generators = std::vector<std::default_random_engine> (0);
     for (int i = 0; i <  n_threads; i++) {
-        generators.emplace_back(std::default_random_engine(r()));
+        std::default_random_engine engine;
+        if(seed>=0) engine.seed(i);
+        else engine = std::default_random_engine(r());
+        generators.emplace_back(engine);
+
     }
 
     population = std::vector<std::vector<double>> (pop_total_size, std::vector<double>(n_paths, 0));
@@ -160,7 +173,7 @@ class Genetic {
     for(short i=0; i < n_paths; i++) lower_bounds[i] = 0;
 
     short n_particles = pop_size;
-    swarm = Swarm{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads};
+    swarm = Swarm{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
     }
 
 
@@ -178,25 +191,23 @@ class Genetic {
         delete[] upper_bounds;
     }
 
-    // TO DO to speed up
+
     void reshuffle_element_order(std::vector<int> &vect){
         size_t idx;
+        std::uniform_int_distribution<size_t> distribution;
         for(size_t i=0; i<vect.size(); i++) {
-            idx = get_rand_idx(0, vect.size() - 1);
-            if(idx!=i){
-                vect[i] += vect[idx];
-                vect[idx] = vect[i] - vect[idx];
-                vect[i] -= vect[idx];
-            }
+            distribution = std::uniform_int_distribution<size_t> (i, vect.size() - 1);
+            idx = distribution(generators[0]);
+            vect[i] += vect[idx];
+            vect[idx] = vect[i] - vect[idx];
+            vect[i] -= vect[idx];
         }
     }
 
     void fill_random_velocity_vect(double* v, int size, double start, double end) {
-        std::random_device o;
-        std::default_random_engine generator(o());
         std::uniform_real_distribution<double> distribution(start, end);
         for(int i=0; i < size; i++){
-            v[i] = distribution(generator);
+            v[i] = distribution(generators[0]);
         }
     }       
    
@@ -214,8 +225,6 @@ class Genetic {
 
         double maxval = 0;
         for(short i=0; i < pop_size; i++) if(vals[i] > maxval) {maxval = vals[i];}
-
-        std::cout<<"init max val  "<<maxval<<std::endl;
     }
 
 
@@ -225,20 +234,23 @@ class Genetic {
             short r_size = recomb_size;
             int th = omp_get_thread_num();
             for(i=0; i<num_paths; i++) child[i] = a_parent[i];
+            std::uniform_int_distribution<int> distribution;
 
             // randomly select component from b_parent
             for(i=0; i < r_size; i++) {
-                std::uniform_int_distribution<int> distribution(i, num_paths - 1);
+                distribution = std::uniform_int_distribution<int> (i, num_paths - 1);
                 idx = distribution(gen);
+                // idx = get_rand_idx(i, num_paths - 1);
                 element_order[i] += element_order[idx];
                 element_order[idx] = element_order[i] - element_order[idx];
                 element_order[i] -= element_order[idx];
                 child[element_order[idx]] = b_parent[element_order[idx]];
             }
-            std::uniform_real_distribution<double> distribution_(0., 1.);
+            std::uniform_real_distribution<double> distribution_;
+            std::uniform_real_distribution<double> distribution_mutation(0., 1.);
             for(i=0; i<num_paths; i++) {
                 
-                if(distribution_(gen) < m_rate) {
+                if(distribution_mutation(gen) < m_rate) {
                     std::uniform_real_distribution<double> distribution_(0., u_bounds[i]);
                     child[i] = distribution_(gen);
                     }
@@ -254,8 +266,10 @@ class Genetic {
         init_population(init_pop);
         size_t k;
         int j, p;
+        double std;
         
         double* init_vel = new double[pso_size * n_paths];
+        double m_rate = mutation_rate;
 
         for(int iter= 0; iter<iterations; iter ++) {
         
@@ -274,15 +288,16 @@ class Genetic {
             
 
             if(iter % pso_every == 0 and iter > 0) {
+
                 argsort(vals, indices, pop_total_size);
 
-                reshuffle_element_order(pso_selection_idx);
+                // print_vector(pso_selection_idx);
                 for(k=0; k< pso_population.size(); k ++){
                     for(j=0; j<n_paths; j++) pso_population[k][j] = population[indices[pso_selection_idx[k]]][j]; 
                 }
 
                 fill_random_velocity_vect(init_vel, pso_size* n_paths, -5., 5.);
-                swarm.run(pso_population, init_vel, false, false, 0);
+                swarm.run(pso_population, init_vel, pso_iterations, false);
 
                 
                 argsort(swarm.particles_best, pso_selection_order, pso_size);
@@ -307,15 +322,17 @@ class Genetic {
             // for(k=0; k< indices.size(); k ++) std::cout<<vals[indices[k]]<<" ";
             // std::cout<<std::endl;
             
-            if(iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals)<<std::endl;
-            
+            //if(iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<std::endl;
+            std = get_var(vals);
+            if(verbose and  iter%250 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals)<<"   std " <<std<<std::endl;
+            if(std < 1) {restart_population(); std::cout<<"restarted"<<std::endl;}   
         }
         
         std::vector<std::vector<double>> final_run_population = std::vector<std::vector<double>> (pop_size, std::vector<double> (n_paths)); 
         for(p=0; p< pop_size; p ++) final_run_population[p] = population[indices[p]];
         double* final_init_vel = new double[pop_size*n_paths];
         fill_random_velocity_vect(final_init_vel, pop_size*n_paths, -5., 5.);
-        swarm.run(final_run_population, final_init_vel, false, true, 0);
+        swarm.run(final_run_population, final_init_vel, pso_final_iterations, verbose);
         std::cout<<"final iteration "<<swarm.best_val<<std::endl;
 
         delete [] init_vel;
@@ -373,6 +390,17 @@ class Genetic {
                     // sort indices according to corresponding array element
                     return array[left] > array[right];
                 });
+    }
+
+
+    void restart_population() { 
+        std::uniform_real_distribution<double> distribution;       
+        for(int i=1; i < pop_size; i++){
+            for(int j=0; j < n_paths; j++) {
+                distribution = std::uniform_real_distribution<double> (0., upper_bounds[0][j]);
+                population[indices[i]][j] = distribution(generators[0]);
+            }
+        }
     }
 
     void print_pop(){

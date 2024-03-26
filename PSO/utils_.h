@@ -14,11 +14,11 @@ std::vector<std::array<double,2>> create_list(double* results_l,double* results_
     return list;
 }
 
-double get_normal(double mean, double var) {
-    std::default_random_engine generator(std::rand());
-    std::normal_distribution<double> distribution(mean, var);
-    return distribution(generator);
-}
+// double get_normal(double mean, double var) {
+//     std::default_random_engine generator(std::rand());
+//     std::normal_distribution<double> distribution(mean, var);
+//     return distribution(generator);
+// }
 
 double compute_distance(std::vector<double> p_1,std::vector<double> p_2) {
     double sum=0;
@@ -27,20 +27,20 @@ double compute_distance(std::vector<double> p_1,std::vector<double> p_2) {
     }
     return std::sqrt(sum);
 }
-double get_rand(double start, double end) {
-        std::default_random_engine generator(std::rand());
-        std::uniform_real_distribution<double> distribution(start, end);
-        return distribution(generator);
-}
+// double get_rand(double start, double end) {
+//         std::default_random_engine generator(std::rand());
+//         std::uniform_real_distribution<double> distribution(start, end);
+//         return distribution(generator);
+// }
 
-size_t get_rand_idx(int start, int end){
-    // std::random_device rnd_device;
-    std::default_random_engine generator(std::rand());
-    std::uniform_int_distribution<size_t> distribution(start, end);
-    int i = distribution(generator);
-    // std::cout<<i<<"  iiii "<<start<<" "<<end<<std::endl;
-    return distribution(generator);
-}
+// size_t get_rand_idx(int start, int end){
+//     // std::random_device rnd_device;
+//     std::default_random_engine generator(std::rand());
+//     std::uniform_int_distribution<size_t> distribution(start, end);
+//     int i = distribution(generator);
+//     // std::cout<<i<<"  iiii "<<start<<" "<<end<<std::endl;
+//     return distribution(generator);
+// }
 
 
 template <typename T>
@@ -68,6 +68,15 @@ double get_mean(std::vector<double> &vect) {
     double mean = 0;
     for(size_t i=0; i<vect.size(); i++) mean += vect[i];
     return mean/vect.size();
+}
+
+double get_var(std::vector<double> &vect) {
+    double mean = 0;
+    for(size_t i=0; i<vect.size(); i++) mean += vect[i];
+    mean = mean/vect.size();
+    double var = 0;
+    for(size_t i=0; i<vect.size(); i++) var += pow(mean - vect[i],2);
+    return sqrt(var/vect.size());
 }
 
 

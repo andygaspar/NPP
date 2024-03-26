@@ -45,7 +45,6 @@ int* get_random_int(short size, double start, double end) {
     std::uniform_int_distribution<int> distribution(start, end);
     for(int i=0; i < size; i++){
         vect[i] = distribution(generator);
-        //std::cout<<vect[i]<<std::endl;
     }
     return vect;
 }
@@ -55,7 +54,7 @@ double* get_upper_bounds(double* comm_tax_free, double* trans_costs, short n_com
     for(int p=0; p < n_paths; p++){
         double bound = 0;
         for(int c=0; c < n_commodities; c++){
-            if(comm_tax_free[c] + trans_costs[p*n_paths + c] > bound) bound = comm_tax_free[c] + trans_costs[p*n_paths + c];
+            if(comm_tax_free[c] + trans_costs[c*n_paths + p] > bound) bound = comm_tax_free[c] + trans_costs[c*n_paths + p];
         }
         upper_bounds[p] = bound;
     }
@@ -69,22 +68,27 @@ int main(){
     // After function call
     
     // std::srand(std::time(0));
-    short n_paths = 90;
-    short n_commodities = 90;
+    short n_paths = 20;
+    short n_commodities = 20;
     short pop_size = 256;
     short off_size = pop_size/2;
-    int iterations = 1000;
+    int iterations = 10000;
     short recombination_size = n_paths/2;
     double mutation_rate = 0.02;
 
 
     short pso_every = 50;
     short pso_size = 32;
-    short pso_selection = 4;
+    short pso_selection = 2;
     short pso_iterations = 1000;
-    short pso_no_update = 1000;
+    short pso_final_iterations = 10000;
+    short pso_no_update = 300;
 
     short num_threads = 8;
+
+    bool verbose = true;
+
+    short seed = -1; 
 
 
 
@@ -97,11 +101,12 @@ int main(){
 
     double* population = get_random_population(upper_bounds, pop_size, n_paths);
     double* children = new double[n_paths * off_size];
+ 
 
 
     // Genetic gg(upper_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths, 
     //             pop_size, off_size,  mutation_rate, recombination_size, 
-    //             pso_size, pso_selection, pso_every, pso_iterations, pso_no_update, 1);
+    //             pso_size, pso_selection, pso_every, pso_iterations, pso_final_iterations, pso_no_update, 1, verbose);
     // auto start1 = high_resolution_clock::now();
     // gg.run(population,iterations);
     // auto stop1 = high_resolution_clock::now();
@@ -111,7 +116,7 @@ int main(){
     //double* new_population = get_random(n_paths*pop_size + n_paths * off_size, 10, 20);
     Genetic g(upper_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,
                 pop_size, off_size, mutation_rate, recombination_size, 
-                pso_size, pso_selection, pso_every,pso_iterations, pso_no_update, num_threads);
+                pso_size, pso_selection, pso_every,pso_iterations, pso_final_iterations, pso_no_update, num_threads, verbose, seed);
     auto start = high_resolution_clock::now();
     g.run(population,iterations);
     auto stop = high_resolution_clock::now();

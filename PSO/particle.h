@@ -68,6 +68,7 @@ class Particle {
     int count_iter;
 
     short seed;
+    std::default_random_engine generator;
     
     
     friend std::ostream& operator<<( std::ostream &os, Particle& v );
@@ -77,7 +78,7 @@ class Particle {
     // init_ub, init_lb: initialization space bounds
     Particle(
             double* comm_tax_free, int* n_usr, double* trans_costs, double* search_ub_, double* search_lb_,
-                    short n_comm, short n_to, int part_idx,  Params parameters, double d_max);
+                    short n_comm, short n_to, int part_idx,  Params parameters, double d_max, short seed);
     ~Particle() {
     }
 
@@ -110,7 +111,7 @@ class Particle {
 /*-----------------------------------------------------------------------------------*/
 
 Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, double* search_ub_, double* search_lb_,
-                    short n_comm, short n_tolls_, int part_idx, Params parameters, double d_max) {
+                    short n_comm, short n_tolls_, int part_idx, Params parameters, double d_max, short seed) {
 
   
         params = parameters;
@@ -125,6 +126,16 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         init_commodity_val = params.init_commodity_val;
         L=0;
         U=0.01;
+
+        std::random_device o;
+        
+        if(seed >= 0) {
+            generator.seed(particle_idx);
+        }
+        else{
+            generator = std::default_random_engine (o());
+        }
+        
 
         commodities_tax_free = std::vector<double> (n_commodities);
         for(int j=0; j< n_commodities; j++) commodities_tax_free[j] = comm_tax_free[j];
@@ -205,9 +216,14 @@ void Particle::update_pos() {
 
 void Particle::update_vel(std::vector<double> g, int iter, double random_component_dump=0.01) {
     count_iter++;
+    double r;
+    std::uniform_real_distribution<double> distribution;
     for(int i=0; i<n_tolls; i++) {
         random_velocity_adjustment = std::max((fitness_memb[1]+sigma_memb[0]),0.)*random_component_dump;
-        double r = get_rand(-0.2*(search_range[i]),0.5*(search_range[i]));
+
+        distribution = std::uniform_real_distribution<double> (-0.2*(search_range[i]),0.5*(search_range[i]));
+        r = distribution(generator);
+        // double r = get_rand(-0.2*(search_range[i]),0.5*(search_range[i]));
         v[i] = w*v[i] + c_soc*((g[i] - p[i])) + c_cog*((personal_best[i] - p[i])) + random_velocity_adjustment*r;
         if (std::abs(v[i])>U*(search_range[i]))
             v[i] = U*(search_range[i])*v[i]/std::abs(v[i]);
