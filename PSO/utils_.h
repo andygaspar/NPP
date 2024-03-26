@@ -57,3 +57,17 @@ void print_vector(std::vector<T> &vect) {
 }
 
 
+template <typename T>
+void print_vector_and_val(std::vector<T> &vect, double val) {
+    for(size_t i=0; i<vect.size(); i++) std::cout<<vect[i]<<" ";
+    std::cout<<"   "<<val<<std::endl;
+}
+
+
+double get_mean(std::vector<double> &vect) {
+    double mean = 0;
+    for(size_t i=0; i<vect.size(); i++) mean += vect[i];
+    return mean/vect.size();
+}
+
+

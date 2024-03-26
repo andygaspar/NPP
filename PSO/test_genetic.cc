@@ -69,22 +69,22 @@ int main(){
     // After function call
     
     // std::srand(std::time(0));
-    short n_paths = 10;
-    short n_commodities = 10;
-    short pop_size = 128;
+    short n_paths = 90;
+    short n_commodities = 90;
+    short pop_size = 256;
     short off_size = pop_size/2;
-    int iterations = 500;
+    int iterations = 1000;
     short recombination_size = n_paths/2;
-    double mutation_rate = 0.5;
+    double mutation_rate = 0.02;
 
 
     short pso_every = 50;
-    short pso_size = pop_size/4;
-    short pso_selection = pso_size/2;
+    short pso_size = 32;
+    short pso_selection = 4;
     short pso_iterations = 1000;
     short pso_no_update = 1000;
 
-    short num_threads = 12;
+    short num_threads = 8;
 
 
 
@@ -106,9 +106,9 @@ int main(){
     // gg.run(population,iterations);
     // auto stop1 = high_resolution_clock::now();
     // auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1);
-    // std::cout << "duration th "<<1<<" "<<duration1.count()/1000. << std::endl;
+    // std::cout << "duration th "<<1<<" "<<duration1.count()/1000. << std::endl<< std::endl;
 
-    population = get_random(n_paths*pop_size + n_paths * off_size, 10, 20);
+    //double* new_population = get_random(n_paths*pop_size + n_paths * off_size, 10, 20);
     Genetic g(upper_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,
                 pop_size, off_size, mutation_rate, recombination_size, 
                 pso_size, pso_selection, pso_every,pso_iterations, pso_no_update, num_threads);

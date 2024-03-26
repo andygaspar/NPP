@@ -36,6 +36,7 @@ class Genetic {
     std::vector<std::vector<double>> pso_population;
     std::vector<int> pso_selection_idx;
     std::vector<int> pso_selection_order;
+    std::vector<int> pso_selection_random_order;
 
     short n_threads;
     std::vector<int> indices;
@@ -139,6 +140,9 @@ class Genetic {
     pso_selection_order = std::vector<int> (pso_size);
     for(int i=0; i<pso_size; i++) pso_selection_order[i] = i;
 
+    pso_selection_random_order = std::vector<int> (pso_size);
+    for(int i=0; i<pso_size; i++) pso_selection_random_order[i] = i;
+
     random_element_order = std::vector<std::vector<int>> (n_threads, std::vector<int> (n_paths));
     for(int i=0; i<n_threads; i++){
         for(int j=0; j<n_paths; j++) random_element_order[i][j] = j;
@@ -207,6 +211,11 @@ class Genetic {
             vals[i] = eval(population[i], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, init_commodity_val, n_paths);
         }
         for(short i=pop_size; i< pop_total_size; i++) population[i] = std::vector<double> (n_paths);
+
+        double maxval = 0;
+        for(short i=0; i < pop_size; i++) if(vals[i] > maxval) {maxval = vals[i];}
+
+        std::cout<<"init max val  "<<maxval<<std::endl;
     }
 
 
@@ -252,6 +261,7 @@ class Genetic {
         
             short th;
             reshuffle_element_order(random_order);
+            // print_pop();
             #pragma omp parallel for num_threads(n_threads) default(none) private(th) shared(upper_bounds, population, a_combs, b_combs, random_order, random_element_order, n_commodities, init_commodity_val, n_paths, recombination_size, generators)
             for(short i=0; i < off_size; i++) {
                 th = omp_get_thread_num();
@@ -273,30 +283,39 @@ class Genetic {
 
                 fill_random_velocity_vect(init_vel, pso_size* n_paths, -5., 5.);
                 swarm.run(pso_population, init_vel, false, false, 0);
+
+                
                 argsort(swarm.particles_best, pso_selection_order, pso_size);
                 for(p=0; p< pso_selection; p ++) {
-                    print_vector(swarm.particles[pso_selection_order[p]].personal_best);
+                    // print_vector_and_val(swarm.particles[pso_selection_order[p]].personal_best, swarm.particles[pso_selection_order[p]].personal_best_val);
                     
                     population[indices[pop_size + off_size + p]] = swarm.particles[pso_selection_order[p]].personal_best;
                     vals[indices[pop_size + off_size + p]] = swarm.particles[pso_selection_order[p]].personal_best_val;
                 }
-                std::cout<<std::endl;
+                // std::cout<<std::endl;
+                reshuffle_element_order(pso_selection_random_order);
+                // for(p=0; p< pso_selection; p ++) {
+                //     print_vector_and_val(swarm.particles[pso_selection_random_order[p]].personal_best, swarm.particles[pso_selection_random_order[p]].personal_best_val);
+                // }
+                // std::cout<<std::endl;
+                // std::cout<<std::endl;
 
                 
             }
             argsort(vals, indices, pop_total_size);
-            // print_pop();
+            // if(iter%100 == 0 and iter > 0) print_pop();
             // for(k=0; k< indices.size(); k ++) std::cout<<vals[indices[k]]<<" ";
             // std::cout<<std::endl;
             
-            if(iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<std::endl;
+            if(iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals)<<std::endl;
+            
         }
         
         std::vector<std::vector<double>> final_run_population = std::vector<std::vector<double>> (pop_size, std::vector<double> (n_paths)); 
         for(p=0; p< pop_size; p ++) final_run_population[p] = population[indices[p]];
         double* final_init_vel = new double[pop_size*n_paths];
         fill_random_velocity_vect(final_init_vel, pop_size*n_paths, -5., 5.);
-        swarm.run(final_run_population, final_init_vel, false, false, 0);
+        swarm.run(final_run_population, final_init_vel, false, true, 0);
         std::cout<<"final iteration "<<swarm.best_val<<std::endl;
 
         delete [] init_vel;
