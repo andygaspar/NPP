@@ -169,11 +169,6 @@ void Particle::init_vector_values(std::vector<double> p_init, double* v_init){
     v = std::vector<double> (n_tolls);
     p = std::vector<double> ();
     p = p_init;
-    #pragma omp critical
-    {
-    for(int i=0; i<n_tolls; i++) std::cout<<p[i]<<" ";
-    std::cout<<std::endl;
-    }
 
 
     for(int j=0; j< n_tolls; j++) {

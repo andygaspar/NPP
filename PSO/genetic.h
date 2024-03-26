@@ -43,7 +43,6 @@ class Genetic {
     
 
     double current_run_val;
-    double commodity_cost;
     double init_commodity_val;
 
     double** commodities_tax_free;
@@ -61,7 +60,7 @@ class Genetic {
 
 
 
-    Genetic(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
+    Genetic(double* upper_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
     short pso_size_, short pso_selection_, short pso_every_, short pso_iterations_, short pso_no_update_lim_,
     short num_threads_){
@@ -103,6 +102,7 @@ class Genetic {
     for(int i=0; i< n_threads; i++){
         commodities_tax_free[i] = new double[n_commodities];
         for(int j=0; j< n_commodities; j++) commodities_tax_free[i][j] = comm_tax_free[j];
+
         }
 
 
@@ -110,8 +110,8 @@ class Genetic {
     for(int i=0; i< n_threads; i++){
         transfer_costs[i] = new double*[n_commodities];
         for(int j =0; j<n_commodities; j++)  {
-                transfer_costs[i][j] = new double[n_paths];
-                for(int k=0; k< n_paths; k++) transfer_costs[i][j][k]=trans_costs[j*n_paths + k];
+            transfer_costs[i][j] = new double[n_paths];
+            for(int k=0; k< n_paths; k++) transfer_costs[i][j][k]=trans_costs[j*n_paths + k];
             }
         }
 
@@ -156,7 +156,7 @@ class Genetic {
     for(short i=0; i < n_paths; i++) lower_bounds[i] = 0;
 
     short n_particles = pop_size;
-    swarm = Swarm{commodities_tax_free[0], n_users[0], t_costs, upper_bounds[0], lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads};
+    swarm = Swarm{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads};
     }
 
 
@@ -195,34 +195,7 @@ class Genetic {
             v[i] = distribution(generator);
         }
     }       
-
-
-    void generate(const std::vector<double> &a_parent, const std::vector<double> &b_parent, std::vector<double> &child, const double* u_bounds, std::vector<int> &element_order, double m_rate, short num_paths){
-        int i,iter, idx;
-        short r_size = recombination_size;
-        int th = omp_get_thread_num();
-        for(i=0; i<num_paths; i++) child[i] = a_parent[i];
-
-        // randomly select component from b_parent
-        for(i=0; i < r_size; i++) {
-            std::uniform_int_distribution<int> distribution(i, num_paths - 1);
-            idx = distribution(generators[th]);
-            element_order[i] += element_order[idx];
-            element_order[idx] = element_order[i] - element_order[idx];
-            element_order[i] -= element_order[idx];
-            child[element_order[idx]] = b_parent[element_order[idx]];
-        }
-        std::uniform_real_distribution<double> distribution_(0., 1.);
-        for(i=0; i<num_paths; i++) {
-            
-            if(distribution_(generators[omp_get_thread_num()]) < m_rate) {
-                std::uniform_real_distribution<double> distribution_(0., u_bounds[i]);
-                child[i] = distribution_(generators[omp_get_thread_num()]);
-                }
-        }
-        // print_vect(child, n_paths);
-
-    }
+   
 
     void init_population(double* init_pop){
         short th;
@@ -231,10 +204,41 @@ class Genetic {
             th = omp_get_thread_num();
             for(short j=0; j < n_paths; j++) population[i][j] = init_pop[i*n_paths + j];
 
-            vals[i] = eval(population[i], transfer_costs[th], commodities_tax_free[th], n_users[th]);
+            vals[i] = eval(population[i], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, init_commodity_val, n_paths);
         }
         for(short i=pop_size; i< pop_total_size; i++) population[i] = std::vector<double> (n_paths);
     }
+
+
+    void generate(const std::vector<double> &a_parent, const std::vector<double> &b_parent, std::vector<double> &child, const double* u_bounds, 
+                    std::vector<int> &element_order, double m_rate, short num_paths, short recomb_size, std::default_random_engine gen){
+            int i,iter, idx;
+            short r_size = recomb_size;
+            int th = omp_get_thread_num();
+            for(i=0; i<num_paths; i++) child[i] = a_parent[i];
+
+            // randomly select component from b_parent
+            for(i=0; i < r_size; i++) {
+                std::uniform_int_distribution<int> distribution(i, num_paths - 1);
+                idx = distribution(gen);
+                element_order[i] += element_order[idx];
+                element_order[idx] = element_order[i] - element_order[idx];
+                element_order[i] -= element_order[idx];
+                child[element_order[idx]] = b_parent[element_order[idx]];
+            }
+            std::uniform_real_distribution<double> distribution_(0., 1.);
+            for(i=0; i<num_paths; i++) {
+                
+                if(distribution_(gen) < m_rate) {
+                    std::uniform_real_distribution<double> distribution_(0., u_bounds[i]);
+                    child[i] = distribution_(gen);
+                    }
+            }
+            // print_vect(child, n_paths);
+
+        }
+
+
 
     void run(double* init_pop, int iterations){
         
@@ -248,14 +252,14 @@ class Genetic {
         
             short th;
             reshuffle_element_order(random_order);
-            #pragma omp parallel for num_threads(n_threads) default(none) private(th) shared(upper_bounds, population, a_combs, b_combs, random_order, random_element_order,n_paths)
+            #pragma omp parallel for num_threads(n_threads) default(none) private(th) shared(upper_bounds, population, a_combs, b_combs, random_order, random_element_order, n_commodities, init_commodity_val, n_paths, recombination_size, generators)
             for(short i=0; i < off_size; i++) {
                 th = omp_get_thread_num();
                 generate(population[indices[a_combs[random_order[i]]]], 
                         population[indices[b_combs[random_order[i]]]], 
                         population[indices[pop_size + i]], 
-                        upper_bounds[th], random_element_order[th], mutation_rate, n_paths);
-                vals[indices[pop_size + i]] = eval(population[indices[pop_size + i]], transfer_costs[th], commodities_tax_free[th], n_users[th]);
+                        upper_bounds[th], random_element_order[th], mutation_rate, n_paths, recombination_size, generators[th]);
+                vals[indices[pop_size + i]] = eval(population[indices[pop_size + i]], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, init_commodity_val, n_paths);
                 }
             
 
@@ -268,28 +272,20 @@ class Genetic {
                 }
 
                 fill_random_velocity_vect(init_vel, pso_size* n_paths, -5., 5.);
-                std::cout<<std::endl;
-                for(k=0; k< indices.size(); k ++) std::cout<<vals[indices[k]]<<" ";
-                std::cout<<std::endl;
-                for(k=0; k< pso_selection_idx.size(); k ++) std::cout<<vals[indices[pso_selection_idx[k]]]<<" ";
-                std::cout<<std::endl;
-                for(k=0; k< pso_population.size(); k ++){
-                    for(j=0; j<n_paths; j++) std::cout<<pso_population[k][j]<<" ";
-                    std::cout<<std::endl;
-                }
-                std::cout<<std::endl;
-                
-
-                swarm.run(pso_population, init_vel, false, true, 0);
+                swarm.run(pso_population, init_vel, false, false, 0);
                 argsort(swarm.particles_best, pso_selection_order, pso_size);
                 for(p=0; p< pso_selection; p ++) {
+                    print_vector(swarm.particles[pso_selection_order[p]].personal_best);
+                    
                     population[indices[pop_size + off_size + p]] = swarm.particles[pso_selection_order[p]].personal_best;
                     vals[indices[pop_size + off_size + p]] = swarm.particles[pso_selection_order[p]].personal_best_val;
                 }
+                std::cout<<std::endl;
 
                 
             }
             argsort(vals, indices, pop_total_size);
+            // print_pop();
             // for(k=0; k< indices.size(); k ++) std::cout<<vals[indices[k]]<<" ";
             // std::cout<<std::endl;
             
@@ -308,47 +304,47 @@ class Genetic {
         
     }
 
+    double eval(std::vector<double> &p, double** trans_costs, double* comm_tax_free, int* n_usr, short n_comm, double init_comm_val, short n_paths){
 
-    double eval(std::vector<double> &p, double** trans_costs, double* comm_tax_free, int* n_usr){
+        /* compute objective value */
+        double current_run_val=0;
+        double toll_cost;
+        int i,j,cheapest_path_idx;
+        cheapest_path_idx = -1;
+        double comm_cost;
 
-    /* compute objective value */
-    double current_run_val=0;
-    double toll_cost;
-    int i,j,cheapest_path_idx;
-    cheapest_path_idx = -1;
+        for(i=0; i<n_comm; i++) {
+            comm_cost=init_comm_val;
+            bool found = false;
+            for(j=0; j< n_paths; j++) {
 
-    for(i=0; i<n_commodities; i++) {
-        commodity_cost=init_commodity_val;
-        bool found = false;
-        for(j=0; j< n_paths; j++) {
-
-            toll_cost = p[j] + trans_costs[i][j];
-            //std::cout<<"commodities "<<p[j]<< " " <<trans_costs[i][j]<<std::endl;
-            if(toll_cost <= commodity_cost) {
-                if (toll_cost < commodity_cost) {
-                    commodity_cost = toll_cost;
-                    cheapest_path_idx = j;
-                }
-                else {
-                    if ( p[j] > p[cheapest_path_idx]) {
-                        commodity_cost = toll_cost;
+                toll_cost = p[j] + trans_costs[i][j];
+                //std::cout<<"commodities "<<p[j]<< " " <<trans_costs[i][j]<<std::endl;
+                if(toll_cost <= comm_cost) {
+                    if (toll_cost < comm_cost) {
+                        comm_cost = toll_cost;
                         cheapest_path_idx = j;
+                    }
+                    else {
+                        if ( p[j] > p[cheapest_path_idx]) {
+                            comm_cost = toll_cost;
+                            cheapest_path_idx = j;
+                        }
                     }
                 }
             }
-        }
 
-        if(comm_tax_free[i] >= commodity_cost) {
-            found = true;
-            current_run_val += p[cheapest_path_idx]*n_usr[i];
+            if(comm_tax_free[i] >= comm_cost) {
+                found = true;
+                current_run_val += p[cheapest_path_idx]*n_usr[i];
+            }
         }
+        
 
+
+        return current_run_val;
     }
-    
 
-
-    return current_run_val;
-}
 
 
     void argsort(const std::vector<double> &array, std::vector<int> &indeces, int end) {
@@ -360,11 +356,18 @@ class Genetic {
                 });
     }
 
-    void print_stuff(){
-        std::cout<<"hahaha"<<std::endl;
-}
+    void print_pop(){
+        for(int p=0; p<pop_total_size; p++){
+            for(int j =0; j<n_paths; j++)std::cout<<population[indices[p]][j]<<" ";
+            std::cout<<"     "<<vals[indices[p]]<<std::endl;
+        }
+        std::cout<<std::endl;
+    }
 
 };
+
+
+   
 
 
 
