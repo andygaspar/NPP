@@ -13,7 +13,7 @@ from Solver.pso_solver import PsoSolverNew
 from Genetic.genetic_cpp import GeneticOperators
 
 
-class Genetic:
+class GeneticOld:
 
     def __init__(self, population_size, pso_population, npp: Instance, offspring_rate, fitness_fun, mutation_rate=0.02,
                  n_threads=None):

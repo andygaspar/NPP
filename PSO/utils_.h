@@ -27,20 +27,20 @@ double compute_distance(std::vector<double> p_1,std::vector<double> p_2) {
     }
     return std::sqrt(sum);
 }
-// double get_rand(double start, double end) {
-//         std::default_random_engine generator(std::rand());
-//         std::uniform_real_distribution<double> distribution(start, end);
-//         return distribution(generator);
-// }
+double get_rand(double start, double end) {
+        std::default_random_engine generator(std::rand());
+        std::uniform_real_distribution<double> distribution(start, end);
+        return distribution(generator);
+}
 
-// size_t get_rand_idx(int start, int end){
-//     // std::random_device rnd_device;
-//     std::default_random_engine generator(std::rand());
-//     std::uniform_int_distribution<size_t> distribution(start, end);
-//     int i = distribution(generator);
-//     // std::cout<<i<<"  iiii "<<start<<" "<<end<<std::endl;
-//     return distribution(generator);
-// }
+size_t get_rand_idx(int start, int end){
+    // std::random_device rnd_device;
+    std::default_random_engine generator(std::rand());
+    std::uniform_int_distribution<size_t> distribution(start, end);
+    int i = distribution(generator);
+    // std::cout<<i<<"  iiii "<<start<<" "<<end<<std::endl;
+    return distribution(generator);
+}
 
 
 template <typename T>

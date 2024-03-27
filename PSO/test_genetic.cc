@@ -7,6 +7,7 @@
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include "genetic.h"
+#include "read_file.h"
 
 
 double* get_random(int size, double start, double end) {
@@ -64,7 +65,7 @@ double* get_upper_bounds(double* comm_tax_free, double* trans_costs, short n_com
 
 int main(){
     using namespace std::chrono;
-
+    FileReader fr{"TestCases/comm_20_tolls_20"};
     // After function call
     
     // std::srand(std::time(0));
@@ -81,14 +82,14 @@ int main(){
     short pso_size = 32;
     short pso_selection = 2;
     short pso_iterations = 1000;
-    short pso_final_iterations = 10000;
+    short pso_final_iterations = 100;
     short pso_no_update = 300;
 
-    short num_threads = 8;
+    short num_threads = 12;
 
     bool verbose = true;
 
-    short seed = -1; 
+    short seed = 1; 
 
 
 
@@ -99,10 +100,10 @@ int main(){
     double* upper_bounds = get_upper_bounds(comm_tax_free, trans_costs, n_commodities, n_paths);
     
 
-    double* population = get_random_population(upper_bounds, pop_size, n_paths);
+    double* population = get_random_population(fr.upper_bounds, pop_size, n_paths);
     double* children = new double[n_paths * off_size];
  
-
+fr.print_problem();
 
     // Genetic gg(upper_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths, 
     //             pop_size, off_size,  mutation_rate, recombination_size, 
@@ -114,7 +115,7 @@ int main(){
     // std::cout << "duration th "<<1<<" "<<duration1.count()/1000. << std::endl<< std::endl;
 
     //double* new_population = get_random(n_paths*pop_size + n_paths * off_size, 10, 20);
-    Genetic g(upper_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,
+    Genetic g(fr.upper_bounds, fr.commodities_tax_free, fr.n_users, fr.transfer_costs, n_commodities, n_paths,
                 pop_size, off_size, mutation_rate, recombination_size, 
                 pso_size, pso_selection, pso_every,pso_iterations, pso_final_iterations, pso_no_update, num_threads, verbose, seed);
     auto start = high_resolution_clock::now();
@@ -123,6 +124,19 @@ int main(){
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "duration th "<<num_threads<<" "<<duration.count()/1000. << std::endl;
 
+
+
+
+
+
+delete[] comm_tax_free;
+delete[] n_usr;
+delete[] trans_costs;;
+delete[] upper_bounds; n_paths;
+    
+
+delete[] population;
+delete[] children;
 
 
 

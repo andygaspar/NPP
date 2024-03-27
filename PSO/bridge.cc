@@ -1,4 +1,4 @@
-#include "genetic_operators.h"
+#include "genetic.h"
 
 
 extern "C" {
@@ -30,6 +30,19 @@ extern "C" {
     GeneticOperators* Genetic_(double* upper_bounds_, double* comm_tax_free, short* n_usr, double* trans_costs, short n_commodities_, short pop_size_, 
                         short off_size_, short n_paths_, double mutation_rate_, short recombination_size_, short num_threads)
     {return new GeneticOperators(upper_bounds_, comm_tax_free, n_usr, trans_costs, n_commodities_,pop_size_, off_size_, n_paths_, mutation_rate_, recombination_size_, num_threads);}
+
+
+    Genetic* Genetic2_(double* upper_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
+                        short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
+                        short pso_size_, short pso_selection_, short pso_every_, short pso_iterations_, short pso_final_iterations_, short pso_no_update_lim_,
+                        short num_threads_, bool verbose_, short seed) {
+        return new Genetic(upper_bounds_, comm_tax_free, n_usr, trans_costs, n_commodities_, n_paths_, 
+                        pop_size_, off_size_, mutation_rate_, recombination_size_, 
+                        pso_size_, pso_selection_, pso_every_, pso_iterations_, pso_final_iterations_, pso_no_update_lim_,
+                        num_threads_, verbose_, seed);
+    }
+
+    void run_genetic_(Genetic* g, double* population, int iterations) {g -> run(population,iterations);}
 
     // void generate_(Genetic* genetic, double* a_parent, double* b_parent, double* child, double* upper_bounds) { genetic -> generate(a_parent, b_parent, child, upper_bounds);}
     double* generation_(GeneticOperators* genetic, double* population) { return genetic -> generation(population);}

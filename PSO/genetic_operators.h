@@ -6,7 +6,7 @@
 #include <string>
 #include <omp.h>
 #include <cstdlib>
-#include "swarm.h"
+#include "swarm2.h"
 
 
 class GeneticOperators {
@@ -84,7 +84,7 @@ class GeneticOperators {
         }
     }
     random_order = std::vector<int> (0);
-    for(int i=0; i<a_combs.size(); i++) random_order.push_back(i);
+    for(size_t i=0; i<a_combs.size(); i++) random_order.push_back(i);
 
     random_element_order = std::vector<std::vector<int>> (n_threads);
     for(int i=0; i<n_threads; i++){
@@ -115,7 +115,7 @@ class GeneticOperators {
 
     void reshuffle_element_order(std::vector<int> &vect){
         int idx, temp;
-        for(int i=0; i<vect.size(); i++) {
+        for(size_t i=0; i<vect.size(); i++) {
             // std::cout<<"size combs "<<vect.size()<<std::endl;
             idx = get_rand_idx(0, vect.size() - 1);
             // std::cout<<"idx "<<idx<<std::endl;

@@ -6,7 +6,7 @@
 #include <string>
 #include <omp.h>
 #include <cstdlib>
-#include "particle.h"
+#include "swarm.h"
 
 //#include "p_optimum.cpp"
 
@@ -31,7 +31,7 @@ and the methods implemented allow to:
 */
 
 
-class Swarm {
+class Swarm2 {
     public:
     // problem related features
     short n_commodities;
@@ -41,10 +41,12 @@ class Swarm {
 
     //PSO parameters
     Params parameters;
-    int n_iterations;
+    short n_iterations;
     int no_update_lim;
     bool no_update_lim_reached = false;
     std::vector<Particle> particles;
+    std::vector<double> run_results;
+    std::vector<double> particles_best;
     short n_particles;
     
     // computation parameters
@@ -65,11 +67,11 @@ class Swarm {
 
 
 
-    friend std::ostream& operator<<( std::ostream &os, Swarm& s );
+    friend std::ostream& operator<<( std::ostream &os, Swarm2& s );
 
-    Swarm( double* const comm_tax_free, int* const n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
-                     short n_comm, short n_tolls_, short n_parts, int n_iter, int no_update_lim_, short num_th);
-    Swarm() {}
+    Swarm2( double* const comm_tax_free, int* const n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
+                     short n_comm, short n_tolls_, short n_parts, short n_iter, int no_update_lim_, short num_th, short seed);
+    Swarm2() {}
 
     double* get_best() {
         double* solution = new double[n_tolls]; 
@@ -78,12 +80,12 @@ class Swarm {
         return solution;
         }
 
-    ~Swarm (){}
+    ~Swarm2 (){}
 
     double get_best_val() {return best_val;}
     double get_status() {return no_update_lim_reached;}
 
-    void run(double* p_init, double* v_init, bool stats, bool verbose, short seed);
+    void run(std::vector<std::vector<double>> &p_init, double* v_init, short n_run_iterations, bool verbose);
     
     void print();
     void print_particles();
@@ -135,9 +137,9 @@ class Swarm {
 /*-----------------------------------------------------------------------------------------*/
 /* Initialize the swarm object and its particles with random velocity and given positions. */                                                                        
 /*-----------------------------------------------------------------------------------------*/
-Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
+Swarm2::Swarm2(double* comm_tax_free, int* n_usr, double* transf_costs, double* const u_bounds, double* const l_bounds,
                      short n_comm, short n_tolls_, 
-                    short n_parts, int n_iter, int no_update_lim_, short num_th) {
+                    short n_parts, short n_iter, int no_update_lim_, short num_th, short seed) {
 
     n_iterations = n_iter;
     n_particles=n_parts; 
@@ -148,7 +150,9 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
     best_particle_idx=0;
 
     particles=std::vector<Particle> (n_particles);
-    short seed = -1;
+    run_results = std::vector<double> (n_particles);
+    particles_best = std::vector<double> (n_particles);
+
 
 
     parameters = Params();
@@ -163,49 +167,48 @@ Swarm::Swarm(double* comm_tax_free, int* n_usr, double* transf_costs, double* co
 }
 
 
-void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short seed){
-    std::vector<double> run_results(n_particles);
+void Swarm2::run(std::vector<std::vector<double>>& p_init, double* v_init, short n_run_iterations, bool verbose){
 
-        // no idea what is this
-    if (seed >= 0) {srand(seed);}//std::cout<<"seed set to "<<seed<<std::endl;}
-
-    if (stats){}
+        // no idea what is this//std::cout<<"seed set to "<<seed<<std::endl;}
+    int n_run_particles = p_init.size();
 
 
     #pragma omp parallel for num_threads(this->num_threads) shared(particles)
-    for(int i=0;i<n_particles;++i){
-        particles[i].init_values(&p_init[i+n_tolls], &v_init[i+n_tolls]);
+    for(int i=0;i<n_run_particles;++i){
+        particles[i].init_vector_values(p_init[i], &v_init[i+n_tolls]);
     }
 
     int i;
     bool new_best = false;
     bool new_glob_best=false;
     int no_update = 0;
+    no_update_lim_reached = false;
     double random_param=0.01;
     best_val = 0;
     int iter=0;
 
-    double avg_velocity = 0;
+    double avg_velocity= 0;
 
     #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_particles, particles)
-        for(i=0;i<n_particles;++i) {
+        for(i=0;i<n_run_particles;++i) {
             if(no_update>195 && no_update<205) {random_param=0.04;}
             else {random_param=0.02;};
             run_results[i] = particles[i].compute_obj_and_update_best();
             }
-    for(i=0;i<n_particles; i++){
+            
+    for(i=0;i<n_run_particles; i++){
         if(run_results[i] > best_val) {
             best_val = run_results[i];
             best_particle_idx = particles[i].particle_idx;
             }
         }
-    if(verbose and (iter%100 == 0)) std::cout<<"first iter  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
+    if(verbose) std::cout<<"first iter  best_val: "<<best_val<<"    avg vel: "<<n_run_iterations<<std::endl;
 
-    while((iter< n_iterations) and (!no_update_lim_reached)) {
+    while((iter< n_run_iterations) and (!no_update_lim_reached)) {
 
         
-        #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_particles, particles)
-        for(i=0;i<n_particles; i++) {
+        #pragma omp parallel for num_threads(this->num_threads) shared(run_results, particles) //reduction(max : run_result)//implicit(none) private(i) shared(run_results, n_run_particles, particles)
+        for(i=0;i<n_run_particles; i++) {
             if(no_update>195 && no_update<205) {random_param=0.04;}
             else {random_param=0.02;};
 
@@ -214,7 +217,7 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
             run_results[i] = particles[i].compute_obj_and_update_best();
             }
 
-        for(i=0;i<n_particles; i++){
+        for(i=0;i<n_run_particles; i++){
             if(run_results[i] > best_val) {
                     best_val = run_results[i];
                     best_particle_idx = particles[i].particle_idx;
@@ -226,8 +229,8 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
         if(verbose and (iter%100 == 0)){
             avg_velocity = 0;
             //for(i=0;i<n_tolls;++i) avg_velocity += particles[best_particle_idx].v[i];
-            avg_velocity = avg_velocity/n_tolls;
-            if(verbose and (iter%100 == 0)) std::cout<<"iter "<<iter<<"  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
+            // avg_velocity = avg_velocity/n_tolls;
+            if(verbose and (iter%1 == 0)) std::cout<<"iter "<<iter<<"  best_val: "<<best_val<<"    avg vel: "<<avg_velocity<<std::endl;
 
         }
         
@@ -235,18 +238,19 @@ void Swarm::run(double* p_init, double* v_init, bool stats, bool verbose, short 
         if (new_glob_best==false) no_update++;
         else no_update = 0;
     
-        if (no_update>no_update_lim) no_update_lim_reached = true;
+        if (no_update>no_update_lim) {no_update_lim_reached = true;}
 
-        if(stats and (iter % parameters.stat_frequency == 0)) updte_stats();
         iter++;
 
         }
 
         actual_final_iterations = iter;
+        for(int i=0; i<n_run_particles; i++) 
+        {particles_best[i] = particles[i].personal_best_val;}
     }
 
 
-void Swarm::updte_stats(){
+void Swarm2::updte_stats(){
     p_means.push_back(std::vector<double>(n_tolls, 0));
     p_stds.push_back(std::vector<double>(n_tolls, 0));
     v_means.push_back(std::vector<double>(n_tolls, 0));
@@ -276,7 +280,7 @@ void Swarm::updte_stats(){
 
 
 
-double* Swarm::get_stats_array(std::vector<std::vector<double>> v){
+double* Swarm2::get_stats_array(std::vector<std::vector<double>> v){
     double* array = new double[n_tolls*v.size()];
     for(size_t i=0; i< v.size(); i++)
         for(int t=0; t < n_tolls; t++){
@@ -285,22 +289,22 @@ double* Swarm::get_stats_array(std::vector<std::vector<double>> v){
     return array;
 }
 
-double* Swarm::get_p_means(){return get_stats_array(p_means);}
-double* Swarm::get_v_means(){return get_stats_array(v_means);}
-double* Swarm::get_p_stds(){return get_stats_array(p_stds);}
-double* Swarm::get_v_stds(){return get_stats_array(v_stds);}
+double* Swarm2::get_p_means(){return get_stats_array(p_means);}
+double* Swarm2::get_v_means(){return get_stats_array(v_means);}
+double* Swarm2::get_p_stds(){return get_stats_array(p_stds);}
+double* Swarm2::get_v_stds(){return get_stats_array(v_stds);}
 
 
-void Swarm::print() {
+void Swarm2::print() {
     std::cout<<*this<<std::endl;
 }
 
-void Swarm::print_particles(){
+void Swarm2::print_particles(){
     for(int i=0; i< n_particles; i++ ) particles[i].print();
 }
 
 
-std::ostream& operator<<( std::ostream &os, Swarm& s ) {
+std::ostream& operator<<( std::ostream &os, Swarm2& s ) {
     std::cout<<"best pos -> "<<s.particles[s.best_particle_idx]<< " best obj -> "<<std::endl;
     for(int i=0; i<s.n_particles; ++i) {
         std::cout<<s.particles[i]<<"  obj -> "<< " best obj -> ";
@@ -335,3 +339,4 @@ void Swarm::print_output(int iter) {
              else std::cout<<std::endl;
 }
 */
+

@@ -1,17 +1,12 @@
-import copy
-import itertools
 import os as os
 import random
-import time
 
 import numpy as np
 import pandas as pd
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.solver import GlobalSolver
-from Solver.pso_solver import PsoSolverNew
-from Genetic.genetic_cpp import GeneticOperators
-from genetic import Genetic
+from Genetic.genetic_old import GeneticOld
 
 os.system("PSO/install.sh")
 
@@ -53,7 +48,7 @@ for n_commodities in [20, 56, 90]:
             solver.solve()
             print("target val", solver.obj)
 
-            genetic = Genetic(population_size=POPULATION, pso_population=ADDITIONAL_PARTICLES, npp=npp, mutation_rate=MUTATION_RATE,
+            genetic = GeneticOld(population_size=POPULATION, pso_population=ADDITIONAL_PARTICLES, npp=npp, mutation_rate=MUTATION_RATE,
                               fitness_fun=npp.compute_solution_value, offspring_rate=0.5, n_threads=N_THREADS)
 
             genetic.run(ITERATIONS, PARTICLES, PSO_RUN, PSO_ITERATIONS, NO_UPDATE_LIM, ADDITIONAL_PARTICLES, PSO_FINAL_ITERATIONS, VERBOSE)

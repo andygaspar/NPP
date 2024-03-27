@@ -140,9 +140,9 @@ class Instance(nx.Graph):
 
     def save_problem(self, folder_name=None):
         comm: Commodity
-        transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_toll_paths))
+        transfer_costs = self.transfer_costs.reshape((self.n_commodities, self.n_paths))
         if folder_name is None:
-            folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_tolls)
+            folder_name = "TestCases/" + "comm_" + str(self.n_commodities) + "_tolls_" + str(self.n_paths)
         try:
             os.mkdir(folder_name)
             pd.DataFrame(self.commodities_tax_free).to_csv(folder_name + '/commodities_tax_free.csv',
@@ -151,7 +151,8 @@ class Instance(nx.Graph):
                                                 index=False, index_label=False, header=False)
             pd.DataFrame(self.upper_bounds).to_csv(folder_name + '/upper_bounds.csv',
                                                    index=False, index_label=False, header=False)
-            pd.DataFrame(self.lower_bounds).to_csv(folder_name + '/lower_bounds.csv',
+            lower_bounds = np.zeros_like(self.upper_bounds)
+            pd.DataFrame(lower_bounds).to_csv(folder_name + '/lower_bounds.csv',
                                                    index=False, index_label=False, header=False)
             pd.DataFrame(self.n_users).to_csv(folder_name + '/n_users.csv',
                                               index=False, index_label=False, header=False)

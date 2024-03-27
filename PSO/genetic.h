@@ -7,7 +7,7 @@
 #include <omp.h>
 #include <cstdlib>
 
-#include "swarm2.h"
+#include "genetic_operators.h"
 
 
 class Genetic {
@@ -32,7 +32,7 @@ class Genetic {
     std::vector<std::vector<int>> random_element_order;
 
 
-    Swarm swarm;     
+    Swarm2 swarm;     
     std::vector<std::vector<double>> pso_population;
     std::vector<int> pso_selection_idx;
     std::vector<int> pso_selection_order;
@@ -173,7 +173,8 @@ class Genetic {
     for(short i=0; i < n_paths; i++) lower_bounds[i] = 0;
 
     short n_particles = pop_size;
-    swarm = Swarm{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
+    swarm = Swarm2{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
+    delete[] lower_bounds;
     }
 
 
@@ -183,6 +184,7 @@ class Genetic {
             delete[] n_users[i];
             delete[] commodities_tax_free[i];
             for(int j =0; j<n_commodities; j++) delete[] transfer_costs[i][j];
+            delete[] transfer_costs[i];
 
         }
         delete[] n_users;
@@ -262,8 +264,8 @@ class Genetic {
 
 
     void run(double* init_pop, int iterations){
-        
         init_population(init_pop);
+
         size_t k;
         int j, p;
         double std;
