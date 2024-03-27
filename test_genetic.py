@@ -16,7 +16,7 @@ columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_alg', 'gap', 'time_e
 
 POPULATION = 256
 MUTATION_RATE = 0.02
-N_THREADS = 8
+N_THREADS = 4
 ITERATIONS = 1_000
 
 PSO_RUN = 1500
@@ -30,15 +30,12 @@ NO_UPDATE_LIM = 1000
 TIME_LIMIT = 60 * 2
 VERBOSE = False
 row = 0
-
-# n_commodities = 20
-# n_paths = 20
 run = 0
 
 df = pd.DataFrame(columns=columns)
 for n_commodities in [20, 56, 90]:
     for n_paths in [20, 56, 90]:
-        for run in range(10):
+        for run in range(5):
             print("\n", n_commodities, n_paths, run)
             random.seed(run)
             np.random.seed(run)
@@ -57,5 +54,6 @@ for n_commodities in [20, 56, 90]:
             gap = 1 - genetic.best_val / solver.obj
             df.loc[row] = [run, n_commodities, n_paths, solver.obj, genetic.best_val, gap, solver.time, genetic.time, solver.m.status,
                            solver.m.MIPGap]
+            row += 1
 
 df.to_csv('test.csv', index=False)

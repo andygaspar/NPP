@@ -50,8 +50,8 @@ class GeneticPso:
 
 
 
-n_paths = 20
-n_commodities = 20
+n_paths = 10
+n_commodities = 10
 pop_size = 256
 off_size = int(pop_size/2)
 iterations = 10000
@@ -71,6 +71,7 @@ np.random.seed(0)
 random.seed(0)
 
 npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=0)
+npp.save_problem()
 solver = GlobalSolver(npp, verbose=False, time_limit=30)
 solver.solve()
 
@@ -78,7 +79,7 @@ solver.solve()
 t = time.time()
 genetic = GeneticPso(npp, pop_size, off_size, mutation_rate, recombination_size, pso_size,
                      pso_selection, pso_every, pso_iterations, pso_final_iterations,
-                     pso_no_update, verbose=True, n_threads=12, seed=-1)
+                     pso_no_update, verbose=False, n_threads=12, seed=-1)
 
 
 genetic.run(iterations)
