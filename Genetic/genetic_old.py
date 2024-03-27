@@ -15,13 +15,13 @@ from Genetic.genetic_cpp import GeneticOperators
 
 class GeneticOld:
 
-    def __init__(self, population_size, pso_population, npp: Instance, offspring_rate, fitness_fun, mutation_rate=0.02,
+    def __init__(self, population_size, pso_population, pso_selection, npp: Instance, offspring_rate, fitness_fun, mutation_rate=0.02,
                  n_threads=None):
         self.time = None
         self.pop_size = population_size
         self.pso_population = pso_population
         self.offs_size = int(self.pop_size * offspring_rate)
-        self.total_pop_size = self.pop_size + self.offs_size + self.pso_population
+        self.total_pop_size = self.pop_size + self.offs_size + pso_selection
 
         self.n_paths = npp.n_paths
         self.npp = npp

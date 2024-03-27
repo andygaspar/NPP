@@ -16,7 +16,7 @@ class FileReader{
     public:
     double* commodities_tax_free;
     short n_commodities;
-    short n_tolls;
+    short n_paths;
 
     dimensions comm_t_free_dims;
     double* upper_bounds;
@@ -40,7 +40,7 @@ class FileReader{
         upper_bounds = fill_array(folder_name + "/upper_bounds.csv", ub_dims);
         lower_bounds = fill_array(folder_name + "/lower_bounds.csv", ub_dims);
         //print_array(upper_bounds, ub_dims);
-        n_tolls = ub_dims.rows;
+        n_paths = ub_dims.rows;
 
         n_users_dims = get_dims(folder_name + "/n_users.csv");
         //std::cout<<n_users_dims.rows<<' '<<n_users_dims.cols<<std::endl;

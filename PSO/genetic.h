@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 #include "genetic_operators.h"
+#include "read_file.h"
 
 
 class Genetic {
@@ -18,7 +19,6 @@ class Genetic {
     short off_size;
     short pop_total_size;
     
-    double** upper_bounds;
     short n_commodities;
 
     std::vector<std::vector<double>> population;
@@ -46,10 +46,10 @@ class Genetic {
     double current_run_val;
     double init_commodity_val;
 
-    double** commodities_tax_free;
-    double*** transfer_costs;
-    int** n_users;
-    double* t_costs;
+    std::vector<std::vector<double>> commodities_tax_free;
+    std::vector<std::vector<std::vector<double>>> transfer_costs;
+    std::vector<std::vector<int>> n_users;
+    std::vector<std::vector<double>> upper_bounds;
 
     short pso_size;
     short pso_every;
@@ -62,6 +62,8 @@ class Genetic {
     bool provisional_mutation_rate;
 
     std::vector<std::default_random_engine> generators;
+
+    double best_val;
 
 
 
@@ -83,13 +85,14 @@ class Genetic {
     pop_total_size = pop_size + off_size + pso_selection;
 
     provisional_mutation_rate = false;
+
+
     
 
     mutation_rate = mutation_rate_;
     recombination_size = recombination_size_;
     n_threads = num_threads_;
     start_index = pop_size * n_paths;
-    t_costs = trans_costs;
 
     verbose = verbose_;
 
@@ -112,26 +115,22 @@ class Genetic {
     indices = std::vector<int> (pop_total_size);
     std::iota(indices.begin(), indices.begin() + pop_total_size, 0);
     
-    commodities_tax_free = new double*[n_threads];
+    commodities_tax_free = std::vector<std::vector<double>> (n_threads, std::vector<double>(n_commodities, 0));;
     for(int i=0; i< n_threads; i++){
-        commodities_tax_free[i] = new double[n_commodities];
         for(int j=0; j< n_commodities; j++) commodities_tax_free[i][j] = comm_tax_free[j];
-
         }
 
 
-    transfer_costs = new double**[n_threads];
+    transfer_costs = std::vector<std::vector<std::vector<double>>> 
+                    (n_threads, std::vector<std::vector<double>>(n_commodities, std::vector<double> (n_paths, 0)));
     for(int i=0; i< n_threads; i++){
-        transfer_costs[i] = new double*[n_commodities];
         for(int j =0; j<n_commodities; j++)  {
-            transfer_costs[i][j] = new double[n_paths];
             for(int k=0; k< n_paths; k++) transfer_costs[i][j][k]=trans_costs[j*n_paths + k];
             }
         }
 
-    n_users = new int*[n_threads];
+    n_users = std::vector<std::vector<int>> (n_threads, std::vector<int>(n_commodities, 0));
     for(int i=0; i< n_threads; i++){
-        n_users[i] = new int[n_commodities];
         for(int j=0; j< n_commodities; j++) n_users[i][j] = n_usr[j];
     }
 
@@ -161,9 +160,8 @@ class Genetic {
         for(int j=0; j<n_paths; j++) random_element_order[i][j] = j;
         }
 
-    upper_bounds = new double*[n_threads];
+    upper_bounds = std::vector<std::vector<double>> (n_threads, std::vector<double>(n_paths, 0));;
     for(int i=0; i<n_threads; i++){
-        upper_bounds[i] = new double[n_paths];
         for(int j=0; j<n_paths; j++) upper_bounds[i][j] = upper_bounds_[j];
         }
 
@@ -173,26 +171,16 @@ class Genetic {
     for(short i=0; i < n_paths; i++) lower_bounds[i] = 0;
 
     short n_particles = pop_size;
-    swarm = Swarm2{comm_tax_free, n_usr, t_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
+    swarm = Swarm2{comm_tax_free, n_usr, trans_costs, upper_bounds_, lower_bounds, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
     delete[] lower_bounds;
     }
 
 
     ~Genetic(){
-        for(int i=0; i<n_threads; i++) {
-            delete[] upper_bounds[i];
-            delete[] n_users[i];
-            delete[] commodities_tax_free[i];
-            for(int j =0; j<n_commodities; j++) delete[] transfer_costs[i][j];
-            delete[] transfer_costs[i];
-
-        }
-        delete[] n_users;
-        delete[] transfer_costs;
-        delete[] commodities_tax_free;
-        delete[] upper_bounds;
     }
 
+
+    double get_best_val() {return best_val;}
 
     void reshuffle_element_order(std::vector<int> &vect){
         size_t idx;
@@ -230,23 +218,25 @@ class Genetic {
     }
 
 
-    void generate(const std::vector<double> &a_parent, const std::vector<double> &b_parent, std::vector<double> &child, const double* u_bounds, 
+    void generate(const std::vector<double> &a_parent, const std::vector<double> &b_parent, std::vector<double> &child, std::vector<double> & u_bounds, 
                     std::vector<int> &element_order, double m_rate, short num_paths, short recomb_size, std::default_random_engine gen){
             int i,iter, idx;
             short r_size = recomb_size;
-            int th = omp_get_thread_num();
+            // int th = omp_get_thread_num();
             for(i=0; i<num_paths; i++) child[i] = a_parent[i];
             std::uniform_int_distribution<int> distribution;
-
+            reshuffle_element_order(element_order);
             // randomly select component from b_parent
             for(i=0; i < r_size; i++) {
-                distribution = std::uniform_int_distribution<int> (i, num_paths - 1);
-                idx = distribution(gen);
+                // distribution = std::uniform_int_distribution<int> (i, num_paths - 1);
+                // idx = distribution(gen);
                 // idx = get_rand_idx(i, num_paths - 1);
-                element_order[i] += element_order[idx];
-                element_order[idx] = element_order[i] - element_order[idx];
-                element_order[i] -= element_order[idx];
-                child[element_order[idx]] = b_parent[element_order[idx]];
+                // element_order[i] += element_order[idx];
+                // element_order[idx] = element_order[i] - element_order[idx];
+                // element_order[i] -= element_order[idx];
+                // child[element_order[idx]] = b_parent[element_order[idx]];
+                child[element_order[i]] = b_parent[element_order[i]];
+
             }
             std::uniform_real_distribution<double> distribution_;
             std::uniform_real_distribution<double> distribution_mutation(0., 1.);
@@ -335,14 +325,16 @@ class Genetic {
         double* final_init_vel = new double[pop_size*n_paths];
         fill_random_velocity_vect(final_init_vel, pop_size*n_paths, -5., 5.);
         swarm.run(final_run_population, final_init_vel, pso_final_iterations, verbose);
-        std::cout<<"final iteration "<<swarm.best_val<<std::endl;
+        if(verbose) std::cout<<"final iteration "<<swarm.best_val<<std::endl;
+        
+        best_val = swarm.best_val;
 
         delete [] init_vel;
         delete [] final_init_vel;
         
     }
 
-    double eval(std::vector<double> &p, double** trans_costs, double* comm_tax_free, int* n_usr, short n_comm, double init_comm_val, short n_paths){
+    double eval(const std::vector<double> &p,const std::vector<std::vector<double>> & trans_costs, const std::vector<double> &comm_tax_free, const std::vector<int> n_usr, const short n_comm, const double init_comm_val, const short n_paths){
 
         /* compute objective value */
         double current_run_val=0;
@@ -404,6 +396,7 @@ class Genetic {
             }
         }
     }
+
 
     void print_pop(){
         for(int p=0; p<pop_total_size; p++){
