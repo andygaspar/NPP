@@ -10,7 +10,7 @@ from Instance.instance import Instance
 from Solver.solver import GlobalSolver
 from Solver.pso_solver import PsoSolverNew
 
-os.system("PSO/install.sh")
+os.system("../PSO/install.sh")
 
 columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_pso', 'gap', 'time_exact', 'time_pso', 'status', 'mip_gap']
 

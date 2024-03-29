@@ -54,7 +54,7 @@ class GeneticOperators:
 
 
 class GeneticCpp:
-    def __init__(self, upper_bounds, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
+    def __init__(self, upper_bounds, lower_bounds, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
                  n_commodities, n_paths,
                  pop_size, offs_size, mutation_rate, recombination_size,
                  pso_size, pso_selection_size, pso_every, pso_iterations, pso_final_iterations, pso_no_update_limit,
@@ -68,6 +68,7 @@ class GeneticCpp:
         self.lib = ctypes.CDLL('PSO/bridge.so')
 
         self.lib.Genetic2_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
+                                       ctypes.POINTER(ctypes.c_double),
                                        ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double),
                                        ctypes.c_short, ctypes.c_short,
                                        ctypes.c_short, ctypes.c_short, ctypes.c_double, ctypes.c_short,
@@ -92,6 +93,7 @@ class GeneticCpp:
         n_usr = np.array(n_users, dtype=np.int32)
 
         self.genetic = self.lib.Genetic2_(upper_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                          lower_bounds.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                           commodities_tax_free.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                                           n_usr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
                                           transfer_costs.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),

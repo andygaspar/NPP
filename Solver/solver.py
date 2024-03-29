@@ -48,6 +48,7 @@ class GlobalSolver:
         self.time = None
         self.obj = None
         self.solution_array = None
+        self.status = None
 
     def set_obj(self):
         k: Commodity
@@ -81,9 +82,17 @@ class GlobalSolver:
                 self.m.addConstr(
                     self.t[p] - self.p[p, k] <= p.N_p * (1 - self.x[p, k])
                 )
+
                 self.m.addConstr(
                     self.p[p, k] <= self.t[p]
                 )
+        for p in self.instance.paths:
+            self.m.addConstr(
+                self.t[p] >= p.L_p
+            )
+            self.m.addConstr(
+                self.t[p] <= p.N_p
+            )
 
     def solve(self):
         self.time = time.time()
@@ -92,6 +101,7 @@ class GlobalSolver:
 
         self.m.optimize()
         self.time = time.time() - self.time
+        self.status = self.m.status
             # print(self.m.status)
             # self.solution = np.zeros(len(self.instance.paths))
         self.solution = {}

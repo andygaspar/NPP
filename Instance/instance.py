@@ -42,7 +42,8 @@ class Path:
         self.node = graph.nodes[self.name]
         self.cost = None
         self.N_p = max([c.M_p[self.name] for c in commodities])
-        self.node.update({'n_users': 0, 'type_int': 1, 'c_od': 0, 'N_p': self.N_p, 'n_commodities': len(commodities)})
+        self.L_p = min([c.M_p[self.name] for c in commodities])
+        self.node.update({'n_users': 0, 'type_int': 1, 'c_od': 0, 'N_p': self.N_p, 'L_p': self.L_p,'n_commodities': len(commodities)})
 
     def __hash__(self):
         return hash(self.name)
@@ -87,6 +88,7 @@ class Instance(nx.Graph):
         self.transfer_costs = np.array([comm.c_p[path.name]
                                         for comm in self.commodities for path in self.paths])
         self.upper_bounds = np.array([p.N_p for p in self.paths])
+        self.lower_bounds = np.array([p.L_p for p in self.paths])
         self.n_users = np.array([comm.n_users for comm in self.commodities])
 
     def show(self):
@@ -168,12 +170,17 @@ class Instance(nx.Graph):
     def get_path_name(i):
         return r"$p_{}$".format('{' + str(i) + '}')
 
-    def compute_solution_value(self, sol, tol = 1e-6):
+    def compute_solution_value(self, sol):
         total_profit = 0
         for commodity in self.commodities:
             costs = sol + commodity.c_p_vector
-            # idxs = np.argsort(costs)
-            # costs =
-            cost = 0 if min(costs) > commodity.c_od else sol[np.argmin(costs)]
-            total_profit += cost * commodity.n_users
+            idxs = np.argsort(np.append(costs, commodity.c_od))
+            s = np.append(sol, [0])
+            c = np.sort(np.append(costs, commodity.c_od))
+            duplicates = np.where(c == c[0])[0]
+            if duplicates.shape[0] > 1:
+                prices = np.append(sol, [0])
+                total_profit += prices[idxs[duplicates]].max() * commodity.n_users
+            else:
+                total_profit += s[idxs[0]] * commodity.n_users
         return total_profit

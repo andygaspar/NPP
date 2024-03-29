@@ -70,13 +70,13 @@ double get_mean(std::vector<double> &vect) {
     return mean/vect.size();
 }
 
-double get_var(std::vector<double> &vect) {
+double get_std(std::vector<double> &vect, std::vector<int> &indices,  int size) {
     double mean = 0;
-    for(size_t i=0; i<vect.size(); i++) mean += vect[i];
-    mean = mean/vect.size();
+    for(int i=0; i<size; i++) mean += vect[indices[i]];
+    mean = mean/size;
     double var = 0;
-    for(size_t i=0; i<vect.size(); i++) var += pow(mean - vect[i],2);
-    return sqrt(var/vect.size());
+    for(int i=0; i<size; i++) var += pow(mean - vect[indices[i]],2);
+    return sqrt(var/size);
 }
 
 
