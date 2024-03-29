@@ -64,6 +64,7 @@ class GeneticOld:
         self.vals = self.vals[idxs[::-1]]
         self.population = self.population[idxs[::-1]]
         self.best_val = max(self.vals)
+        # print(self.vals)
 
     def generation(self, initial_position=None, pso_particles=None):
         if initial_position is not None:
@@ -100,23 +101,27 @@ class GeneticOld:
     def random_init(self):
         return np.random.uniform(size=(self.pop_size, self.npp.n_paths)) * self.npp.upper_bounds
 
-    def run(self, iterations, pso_n_particles, pso_run, pso_iterations, no_update_lim, additional_particles,
-            pso_final_iteration, verbose=False):
+    def run(self, iterations, pso_n_particles, pso_every, pso_iterations, no_update_lim, pso_selection_size,
+            pso_final_iteration, verbose=False, initial_position=None):
         self.time = time.time()
-        initial_position = self.random_init()
+        initial_position = self.random_init() if initial_position is None else initial_position
         self.parallel_generation(initial_position)
         for i in range(1, iterations):
 
-            if i % pso_run == 0:
+            if i % pso_every == 0:
                 pso = PsoSolverNew(self.npp, pso_n_particles, n_iterations=pso_iterations, no_update_lim=no_update_lim)
                 pso.run(self.get_pop_sample(pso_n_particles), verbose=False)
-                new_particles = pso.get_best_n_particles(additional_particles)
+                new_particles = pso.get_best_n_particles(pso_selection_size)
                 self.parallel_generation(pso_particles=new_particles)
             else:
                 self.parallel_generation()
-            if verbose and i % 150 == 0:
+            if verbose and i % 100 == 0:
                 # print(genetic.best_val, np.std(np.std(genetic.population, axis=0)))
                 print(i, self.best_val)
+            # for j in range(self.pop_size):
+            #     print(self.population[j], self.vals[j])
+            #
+            # print('')
         pso = PsoSolverNew(self.npp, self.total_pop_size, pso_final_iteration, no_update_lim)
         pso.run(self.population, verbose=verbose)
         self.best_val = pso.best_val if pso.best_val > self.best_val else self.best_val

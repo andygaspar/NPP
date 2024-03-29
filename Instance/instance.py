@@ -168,13 +168,12 @@ class Instance(nx.Graph):
     def get_path_name(i):
         return r"$p_{}$".format('{' + str(i) + '}')
 
-    def compute_solution_value(self, sol):
+    def compute_solution_value(self, sol, tol = 1e-6):
         total_profit = 0
         for commodity in self.commodities:
-            # costs = [sol[i] + commodity.c_p[list(commodity.c_p.keys())[i]] for i in range(len(sol))]
             costs = sol + commodity.c_p_vector
+            # idxs = np.argsort(costs)
+            # costs =
             cost = 0 if min(costs) > commodity.c_od else sol[np.argmin(costs)]
-            # print(costs)
-            # print(min(costs), commodity.c_od, min(costs) > commodity.c_od + 1e-8, cost * commodity.n_users, commodity.n_users, sol[np.argmin(costs)], np.argmin(costs))
             total_profit += cost * commodity.n_users
         return total_profit

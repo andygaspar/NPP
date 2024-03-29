@@ -48,10 +48,12 @@ class GeneticOperators {
     n_threads = num_threads_;
     start_index = pop_size * n_paths;
 
+    std::cout<<recombination_size_<<std::endl;
+
 
     n_commodities = n_commodities_;
     init_commodity_val = init_commodity_val=pow(10, 5);
-    std::random_device rnd_device;
+    // std::random_device rnd_device;
     
     commodities_tax_free = new double*[n_threads];
     for(int i=0; i< n_threads; i++){

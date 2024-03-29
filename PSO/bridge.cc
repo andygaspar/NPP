@@ -44,6 +44,8 @@ extern "C" {
 
     void run_genetic_(Genetic* g, double* population, int iterations) {g -> run(population,iterations);}
     double get_gen_best_val_(Genetic* g) {return g -> get_best_val();}
+    double* get_population_ (Genetic* g) {return g -> get_population();}
+    double* get_vals_ (Genetic* g) {return g-> get_vals();}
     void destroy(Genetic* g) {delete g;}
 
     // void generate_(Genetic* genetic, double* a_parent, double* b_parent, double* child, double* upper_bounds) { genetic -> generate(a_parent, b_parent, child, upper_bounds);}

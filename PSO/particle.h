@@ -127,10 +127,19 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         L=0;
         U=0.01;
 
-        std::random_device o;
+        std::mt19937 o;
+
+    //         generators = std::vector<std::default_random_engine> (0);
+    // for (int i = 0; i <  n_threads; i++) {
+    //     std::default_random_engine engine;
+    //     if(seed>=0) engine.seed(i);
+    //     else engine = std::default_random_engine(r());
+    //     generators.emplace_back(engine);
+
+    // }
         
         if(seed >= 0) {
-            generator.seed(particle_idx);
+            generator.seed(seed);
         }
         else{
             generator = std::default_random_engine (o());

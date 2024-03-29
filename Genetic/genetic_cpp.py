@@ -12,7 +12,7 @@ class GeneticOperators:
     def __init__(self, upper_bounds, commodities_tax_free: np.array, n_users: np.array, transfer_costs: np.array,
                  n_commodities, pop_size, offs_size, n_paths, mutation_rate, recombination_size, n_threads=None):
         num_threads = multiprocessing.cpu_count() if n_threads is None else n_threads
-        print('num_threads', num_threads)
+        # print('num_threads', num_threads)
         self.stats = None
         self.n_paths = n_paths
         self.offs_size = offs_size
@@ -60,7 +60,7 @@ class GeneticCpp:
                  pso_size, pso_selection_size, pso_every, pso_iterations, pso_final_iterations, pso_no_update_limit,
                  verbose, n_threads=None, seed=None):
         num_threads = multiprocessing.cpu_count() if n_threads is None else n_threads
-        print('num_threads', num_threads)
+        # print('num_threads', num_threads)
         self.seed = -1 if seed is None else seed
         self.stats = None
         self.n_paths = n_paths
@@ -80,6 +80,12 @@ class GeneticCpp:
 
         self.lib.get_gen_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_gen_best_val_.restype = ctypes.c_double
+
+        self.lib.get_population_.argtypes = [ctypes.c_void_p]
+        self.lib.get_population_.restype = ndpointer(dtype=ctypes.c_double, shape=(pop_size, self.n_paths))
+
+        self.lib.get_vals_.argtypes = [ctypes.c_void_p]
+        self.lib.get_vals_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_paths,))
 
         self.lib.run_genetic_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.c_int]
 
@@ -105,3 +111,8 @@ class GeneticCpp:
                               population.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), ctypes.c_int(iterations))
 
         return self.lib.get_gen_best_val_(ctypes.c_void_p(self.genetic))
+
+    def get_results(self):
+        a = self.lib.get_population_(ctypes.c_void_p(self.genetic))
+        b = self.lib.get_vals_(ctypes.c_void_p(self.genetic))
+        return a, b
