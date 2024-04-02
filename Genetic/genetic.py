@@ -61,10 +61,10 @@ class GeneticPso:
         self.final_population, self.final_vals = self.genetic.get_results()
 
 
-n_paths = 90
-n_commodities = 90
+n_paths = 56
+n_commodities = 56
 
-POPULATION = 256
+POPULATION = 32
 off_size = int(POPULATION / 2)
 ITERATIONS = 20000
 recombination_size = int(n_paths / 2)
@@ -79,7 +79,7 @@ NO_UPDATE_LIM = 300
 os.system("PSO/install.sh")
 
 N_THREADS = None
-seed = 6
+seed = 0
 VERBOSE = True
 
 np.set_printoptions(edgeitems=30, linewidth=100000)
@@ -94,6 +94,12 @@ solutions = np.zeros((2, n_paths))
 solver_solution = 1
 
 npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=seed)
+
+g = GeneticOld(population_size=POPULATION, pso_population=0, pso_selection=0, npp=npp, mutation_rate=MUTATION_RATE,
+                               offspring_rate=0.5, n_threads=N_THREADS)
+
+g.init_values()
+g.generation_es()
 
 solver = GlobalSolver(npp, verbose=True, time_limit=TIME_LIMIT)
 solver.solve()
@@ -116,8 +122,8 @@ for i in range(island_size):
                             PSO_SELECTION, 15000, PSO_ITERATIONS, 0,
                             NO_UPDATE_LIM, verbose=False, n_threads=N_THREADS, seed=-1)
 
-    genetic_op.run(500)
-
+    genetic_op.run(200)
+    print('gen pre', genetic_op.best_val)
     start[i] = improve_solution(npp, genetic_op.final_population[0], genetic.best_val)
     vals[i] = genetic_op.best_val
 

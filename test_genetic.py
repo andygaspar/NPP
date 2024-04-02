@@ -45,8 +45,9 @@ for n_commodities in [20, 56, 90]:
             solver.solve()
             print("target val", solver.obj)
 
-            genetic = GeneticOld(population_size=POPULATION, pso_population=ADDITIONAL_PARTICLES, npp=npp, mutation_rate=MUTATION_RATE,
-                              fitness_fun=npp.compute_solution_value, offspring_rate=0.5, n_threads=N_THREADS)
+            genetic = GeneticOld(population_size=POPULATION, pso_population=ADDITIONAL_PARTICLES,
+                                 pso_selection=0, npp=npp, mutation_rate=MUTATION_RATE,
+                                    offspring_rate=0.5, n_threads=N_THREADS)
 
             genetic.run(ITERATIONS, PARTICLES, PSO_RUN, PSO_ITERATIONS, NO_UPDATE_LIM, ADDITIONAL_PARTICLES, PSO_FINAL_ITERATIONS, VERBOSE)
 

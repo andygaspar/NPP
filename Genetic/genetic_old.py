@@ -15,7 +15,7 @@ from Genetic.genetic_cpp import GeneticOperators
 
 class GeneticOld:
 
-    def __init__(self, population_size, pso_population, pso_selection, npp: Instance, offspring_rate, fitness_fun, mutation_rate=0.02,
+    def __init__(self, population_size, pso_population, pso_selection, npp: Instance, offspring_rate, mutation_rate=0.02,
                  n_threads=None):
         self.time = None
         self.pop_size = population_size
@@ -31,18 +31,22 @@ class GeneticOld:
         self.combs = list(itertools.combinations(range(self.pop_size), 2))
         self.idx_range = range(self.n_paths)
         self.pop_idx = range(self.pop_size)
-        self.fitness_fun = fitness_fun
+        self.fitness_fun = npp.compute_solution_value
         self.mutation_rate = mutation_rate
         self.best_val = None
         self.recombination_size = self.n_paths//2
+
+        self.values = np.array([c.c_od for c in self.npp.commodities] +
+                               [c.c_od - p for c in self.npp.commodities for p in c.c_p_vector])
 
         self.operator = GeneticOperators(self.upper_bounds, npp.commodities_tax_free,
                                          npp.n_users,
                                          npp.transfer_costs, npp.n_commodities,
                                          self.pop_size, self.offs_size, self.n_paths,
                                          self.mutation_rate, self.recombination_size, n_threads)
-
         self.vals = None
+
+
 
     def parallel_generation(self, initial_position=None, pso_particles=None):
         if initial_position is not None:
@@ -89,6 +93,35 @@ class GeneticOld:
             self.vals[self.pop_size: self.pop_size + self.offs_size] = (
                 np.array([self.fitness_fun(sol)
                           for sol in self.population[self.pop_size: self.pop_size + self.offs_size]]))
+
+        idxs = np.argsort(self.vals)
+        self.vals = self.vals[idxs[::-1]]
+        self.population = self.population[idxs[::-1]]
+        self.best_val = max(self.vals)
+
+    def init_values(self):
+        for i in range(self.n_paths):
+            vals = self.values[self.npp.paths[i].L_p <= self.values]
+            vals = vals[self.npp.paths[i].N_p >= vals]
+            self.population[:self.pop_size, i] = (
+                np.random.choice(vals, size=self.pop_size, replace=True))
+        self.vals = np.array([self.fitness_fun(sol) for sol in self.population])
+    def generation_es(self, initial_position=None):
+        if initial_position is not None:
+            self.population[:self.pop_size] = initial_position
+            self.vals = np.array([self.fitness_fun(sol) for sol in self.population])
+
+        for i in range(self.n_paths):
+            self.population[self.pop_size: self.pop_size + self.offs_size, i] = (
+                np.random.choice(self.population[:self.pop_size, i], size=self.offs_size, replace=True))
+            mutation = np.array([1 if np.random.uniform() < self.mutation_rate else 0
+                                 for _ in range((self.pop_size) * self.n_paths)])
+            mutation = mutation.reshape((self.pop_size, self.n_paths))
+            mutation = np.where(mutation == 1)
+            for idx in range(len(mutation)):
+                self.population[mutation[idx][0], mutation[idx][1]] = np.random.choice(self.values)
+
+        self.vals[self.pop_size:] = np.array([self.fitness_fun(sol) for sol in self.population[self.pop_size:]])
 
         idxs = np.argsort(self.vals)
         self.vals = self.vals[idxs[::-1]]
