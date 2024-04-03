@@ -53,10 +53,11 @@ class Path:
 
 
 class Instance(nx.Graph):
-    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seeds=False, **attr):
+    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seed=None, **attr):
         super().__init__(**attr)
-        if seeds:
-            np.random.seed(0)
+        if seed is not None:
+            np.random.seed(seed)
+        self.seed = seed
         self.n_paths = n_paths
         self.n_commodities = n_commodities
         self.commodities: List[Commodity]
@@ -172,6 +173,7 @@ class Instance(nx.Graph):
 
     def compute_solution_value(self, sol):
         total_profit = 0
+        i = 0
         for commodity in self.commodities:
             costs = sol + commodity.c_p_vector
             idxs = np.argsort(np.append(costs, commodity.c_od))
@@ -180,7 +182,10 @@ class Instance(nx.Graph):
             duplicates = np.where(c == c[0])[0]
             if duplicates.shape[0] > 1:
                 prices = np.append(sol, [0])
+                # print(i, np.argmax(idxs[duplicates]))
                 total_profit += prices[idxs[duplicates]].max() * commodity.n_users
             else:
                 total_profit += s[idxs[0]] * commodity.n_users
+                # print(i, idxs[0])
+            i+= 1
         return total_profit

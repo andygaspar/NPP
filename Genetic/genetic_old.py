@@ -85,7 +85,7 @@ class GeneticOld:
             self.population[self.pop_size + i][recombination_idx] = self.population[comb[1]][recombination_idx]
             mutation = np.array([1 if np.random.uniform() < self.mutation_rate else 0 for _ in range(self.n_paths)])
             for idx in np.where(mutation == 1)[0]:
-                self.population[self.pop_size + i][idx] = np.random.uniform(0, self.upper_bounds[idx])
+                self.population[self.pop_size + i][idx] = np.random.choice(self.values)#np.random.uniform(0, self.upper_bounds[idx])
 
         if pso_particles is not None:
             self.vals[self.pop_size:] = (np.array([self.fitness_fun(sol) for sol in self.population[self.pop_size:]]))
@@ -106,6 +106,7 @@ class GeneticOld:
             self.population[:self.pop_size, i] = (
                 np.random.choice(vals, size=self.pop_size, replace=True))
         self.vals = np.array([self.fitness_fun(sol) for sol in self.population])
+
     def generation_es(self, initial_position=None):
         if initial_position is not None:
             self.population[:self.pop_size] = initial_position
@@ -115,7 +116,7 @@ class GeneticOld:
             self.population[self.pop_size: self.pop_size + self.offs_size, i] = (
                 np.random.choice(self.population[:self.pop_size, i], size=self.offs_size, replace=True))
             mutation = np.array([1 if np.random.uniform() < self.mutation_rate else 0
-                                 for _ in range((self.pop_size) * self.n_paths)])
+                                 for _ in range(self.pop_size * self.n_paths)])
             mutation = mutation.reshape((self.pop_size, self.n_paths))
             mutation = np.where(mutation == 1)
             for idx in range(len(mutation)):

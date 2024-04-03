@@ -94,10 +94,15 @@ class GlobalSolver:
                 self.t[p] <= p.N_p
             )
 
-    def solve(self):
+    def solve(self, ub=False):
         self.time = time.time()
         self.set_obj()
         self.set_constraints()
+        if ub:
+            max_val = max([c.N_p for c in self.instance.paths]) * sum([c.n_users for c in self.instance.commodities])
+            print('ub', max_val)
+            self.m.addConstr(quicksum(k.n_users * self.p[(p, k)]
+                                         for p in self.instance.paths for k in self.instance.commodities) <= max_val)
 
         self.m.optimize()
         self.time = time.time() - self.time
@@ -107,10 +112,8 @@ class GlobalSolver:
         self.solution = {}
         for p in self.instance.paths:
             self.solution[p] = self.t[p].x
-        self.solution_array = [self.t[p].x for p in self.instance.paths]
+        self.solution_array = np.array([self.t[p].x for p in self.instance.paths])
         self.obj = self.m.objVal
-
-
 
     def print_model(self):
         # for p in self.instance.paths:

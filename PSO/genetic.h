@@ -323,14 +323,14 @@ class Genetic {
 
             if(no_improvement >= 500) {
                 restart_population();
-                std::cout<<"restarted"<<std::endl;
+                //std::cout<<"restarted"<<std::endl;
                 
                 no_improvement = 0;
             }
 
             std = get_std(vals, indices, pop_size + 5);
             if(verbose and  iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
-            if(std < 0.0000001) {restart_population(); std::cout<<"restarted "<<std<<std::endl;}   
+            if(std < 0.0000001) {restart_population(); }//std::cout<<"restarted "<<std<<std::endl;}
         }
         
         std::vector<std::vector<double>> final_run_population = std::vector<std::vector<double>> (pop_size, std::vector<double> (n_paths)); 
