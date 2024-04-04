@@ -11,9 +11,9 @@ from sklearn.cluster import KMeans
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.solver import GlobalSolver
-from Solver.pso_solver import PsoSolverNew
+from Solver.pso_solver import PsoSolver
 
-os.system("../PSO/install.sh")
+os.system("../CPP/install.sh")
 
 columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_pso', 'gap', 'time_exact', 'time_pso', 'status', 'mip_gap']
 
@@ -44,7 +44,7 @@ print("target val", solver.obj)
 
 # solver.print_model()
 
-pso = PsoSolverNew(npp, 1, 0, no_update_lim)
+pso = PsoSolver(npp, 1, 0, no_update_lim)
 initial_position = pso.random_init()
 npp.compute_solution_value(initial_position[0])
 pso.run(initial_position)
@@ -73,7 +73,7 @@ b_val = 0
 new_population = []
 for i in range(n_clusters):
     print(i)
-    pso = PsoSolverNew(npp, init_clusters[i].shape[0], 100, no_update_lim)
+    pso = PsoSolver(npp, init_clusters[i].shape[0], 100, no_update_lim)
     pso.run(init_pos=init_clusters[i], stats=False, verbose=False, seed=run)
     new_population.append(pso.best)
     if pso.best_val > b_val:
@@ -81,7 +81,7 @@ for i in range(n_clusters):
         print(pso.best_val)
 
 new_population = np.array(new_population)
-pso = PsoSolverNew(npp, new_population.shape[0], 0, no_update_lim)
+pso = PsoSolver(npp, new_population.shape[0], 0, no_update_lim)
 pso.run(init_pos=new_population, stats=False, verbose=True, seed=run)
 
 for sol in new_population:

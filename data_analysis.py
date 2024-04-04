@@ -4,7 +4,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
-df = pd.read_csv('test.csv')
+df = pd.read_csv('test_old.csv')
 
 df = df.astype({'run': int, 'commodities': int, 'paths': int})
 df['case'] = df.commodities.astype(str) + '_' + df.paths.astype(str)
@@ -38,5 +38,5 @@ table_style = TableStyle([
 table.setStyle(table_style)
 pdf_table=[]
 pdf_table.append(table)
-pdf = SimpleDocTemplate("dataframe.pdf", pagesize=letter)
+pdf = SimpleDocTemplate("Docs/dataframe.pdf", pagesize=letter)
 pdf.build(pdf_table)

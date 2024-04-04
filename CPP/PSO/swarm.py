@@ -15,7 +15,7 @@ class Swarm:
         num_threads = multiprocessing.cpu_count()
         self.stats = None
         self.n_tolls = n_toll_paths
-        self.lib = ctypes.CDLL('PSO/bridge.so')
+        self.lib = ctypes.CDLL('CPP/libs/pso_bridge.so')
 
         self.lib.Swarm_.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                     ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
@@ -23,6 +23,8 @@ class Swarm:
                                     ctypes.c_short, ctypes.c_short, ctypes.c_short, ctypes.c_int,
                                     ctypes.c_int, ctypes.c_short]
         self.lib.Swarm_.restype = ctypes.c_void_p
+
+        self.lib.destroy.argtypes = [ctypes.c_void_p]
 
         self.lib.run_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
                                   ctypes.c_bool, ctypes.c_bool, ctypes.c_short]
@@ -61,6 +63,9 @@ class Swarm:
                                      ctypes.c_short(n_particles), ctypes.c_int(n_iterations),
                                      ctypes.c_int(no_update_lim),
                                      ctypes.c_short(num_threads))
+
+    def __del__(self):
+        self.lib.destroy(ctypes.c_void_p(self.swarm))
 
     def get_best(self):
         return self.lib.get_best_(ctypes.c_void_p(self.swarm)), self.lib.get_best_val_(ctypes.c_void_p(self.swarm))

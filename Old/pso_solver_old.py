@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import qmc
 
 from Instance.instance import Instance
-from PSO.swarm import Swarm
+from CPP.PSO.swarm import Swarm
 from Solver.solver import GlobalSolver
 from Old.lower_aggregated_2 import LowerSolverAggregated2
 

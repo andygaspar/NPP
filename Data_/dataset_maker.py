@@ -68,7 +68,7 @@ torch.save(data_list_homo, 'Data_/data_homo2.pth')
 #
 #
 
-# pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
+# pso = PsoSolver(npp, n_particles, n_iterations, no_update_lim)
 # k = pso.random_init()
 #
 # latin_hyper = pso.compute_latin_hypercube_init(dimensions=5)

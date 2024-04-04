@@ -23,13 +23,19 @@ class GlobalSolver:
 
         self.instance = instance
         self.m = Model('CVRP')
+        if not verbose:
+            self.m.setParam("OutputFlag", 0)
         if time_limit is not None:
             self.m.setParam('TimeLimit', time_limit)
         self.m._time_limit = time_limit
         self.m._min_sol_num = min_sol_num
+        tol = 1e-9
         self.m.setParam("ScaleFlag", 0)
-        if not verbose:
-            self.m.setParam("OutputFlag", 0)
+        self.m.setParam("OptimalityTol", tol)
+        self.m.setParam("FeasibilityTol", tol)
+
+
+
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
         self.m.modelSense = GRB.MAXIMIZE
 

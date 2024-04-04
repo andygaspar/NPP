@@ -1,16 +1,11 @@
-import copy
 import itertools
-import os as os
-import random
 import time
 
 import numpy as np
-import pandas as pd
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
-from Solver.solver import GlobalSolver
-from Solver.pso_solver import PsoSolverNew
-from Genetic.genetic_cpp import GeneticOperators
+from Solver.pso_solver import PsoSolver
+from CPP.GA.genetic_cpp import GeneticOperators
 
 
 class GeneticOld:
@@ -143,7 +138,7 @@ class GeneticOld:
         for i in range(1, iterations):
 
             if i % pso_every == 0:
-                pso = PsoSolverNew(self.npp, pso_n_particles, n_iterations=pso_iterations, no_update_lim=no_update_lim)
+                pso = PsoSolver(self.npp, pso_n_particles, n_iterations=pso_iterations, no_update_lim=no_update_lim)
                 pso.run(self.get_pop_sample(pso_n_particles), verbose=False)
                 new_particles = pso.get_best_n_particles(pso_selection_size)
                 self.parallel_generation(pso_particles=new_particles)
@@ -156,7 +151,7 @@ class GeneticOld:
             #     print(self.population[j], self.vals[j])
             #
             # print('')
-        pso = PsoSolverNew(self.npp, self.total_pop_size, pso_final_iteration, no_update_lim)
+        pso = PsoSolver(self.npp, self.total_pop_size, pso_final_iteration, no_update_lim)
         pso.run(self.population, verbose=verbose)
         self.best_val = pso.best_val if pso.best_val > self.best_val else self.best_val
         self.time = time.time() - self.time

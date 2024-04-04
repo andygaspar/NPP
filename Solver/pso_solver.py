@@ -4,11 +4,10 @@ import numpy as np
 from scipy.stats import qmc
 
 from Instance.instance import Instance
-from PSO.swarm import Swarm
+from CPP.PSO.swarm import Swarm
 
 
-
-class PsoSolverNew:
+class PsoSolver:
 
     def __init__(self, npp: Instance, n_particles, n_iterations, no_update_lim, time_limit=None):
         self.time = None

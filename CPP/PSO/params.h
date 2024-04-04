@@ -8,9 +8,10 @@
 #include <jsoncpp/json/json.h>
 #include <iostream>
 #include <algorithm>
+#include <filesystem>
 
 #include <fstream>
-#include "utils_.h"
+#include "../Utils/utils_.h"
 
 
 struct Params{
@@ -40,6 +41,7 @@ struct Params{
     int stat_frequency;
 
     Params(){
+        // std::cout << "Current path is " << std::filesystem::current_path() << '\n';
         std::ifstream params_file("pso_params.json", std::ifstream::binary);
         Json::Value params;
         params_file >> params;

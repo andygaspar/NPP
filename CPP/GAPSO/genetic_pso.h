@@ -6,12 +6,10 @@
 #include <string>
 #include <omp.h>
 #include <cstdlib>
-
-#include "genetic_operators.h"
-#include "read_file.h"
+#include "../PSO/swarm.h"
 
 
-class Genetic {
+class GeneticPso {
     public:
     // problem related features
     short pop_size;
@@ -32,7 +30,7 @@ class Genetic {
     std::vector<std::vector<int>> random_element_order;
 
 
-    Swarm2 swarm;     
+    Swarm swarm;     
     std::vector<std::vector<double>> pso_population;
     std::vector<int> pso_selection_idx;
     std::vector<int> pso_selection_order;
@@ -70,7 +68,7 @@ class Genetic {
 
 
 
-    Genetic(double* upper_bounds_, double* lower_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
+    GeneticPso(double* upper_bounds_, double* lower_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
     short pso_size_, short pso_selection_, short pso_every_, short pso_iterations_, short pso_final_iterations_, short pso_no_update_lim_,
     short num_threads_, bool verbose_, short seed){
@@ -178,11 +176,11 @@ class Genetic {
     
 
     short n_particles = pop_size;
-    swarm = Swarm2{comm_tax_free, n_usr, trans_costs, upper_bounds_, lower_bounds_, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
+    swarm = Swarm{comm_tax_free, n_usr, trans_costs, upper_bounds_, lower_bounds_, n_commodities, n_paths, n_particles, pso_iterations, pso_no_update_lim, n_threads, seed};
     }
 
 
-    ~Genetic(){
+    ~GeneticPso(){
     }
 
 
@@ -214,10 +212,13 @@ class Genetic {
         }
     }
 
-    void fill_random_velocity_vect(double* v, int size, double start, double end) {
+    void fill_random_velocity_vect(std::vector<std::vector<double>> & v, double start, double end) {
         std::uniform_real_distribution<double> distribution(start, end);
-        for(int i=0; i < size; i++){
-            v[i] = distribution(generators[0]);
+        size_t j;
+        for(size_t i=0; i < v.size(); i++){
+            for(j=0; j < v[i].size(); j++){
+                v[i][j] = distribution(generators[0]);
+            }
         }
     }       
    
@@ -274,7 +275,7 @@ class Genetic {
         int j, p;
         double std;
         
-        double* init_vel = new double[pso_size * n_paths];
+        std::vector<std::vector<double>>  init_vel = std::vector<std::vector<double>> (pso_size, std::vector<double> (n_paths, 0));
         double m_rate = mutation_rate;
 
         for(int iter= 0; iter<iterations; iter ++) {
@@ -301,7 +302,7 @@ class Genetic {
                     for(j=0; j<n_paths; j++) pso_population[k][j] = population[indices[pso_selection_random_order[k]]][j]; 
                 }
 
-                fill_random_velocity_vect(init_vel, pso_size* n_paths, -5., 5.);
+                fill_random_velocity_vect(init_vel, -5., 5.);
                 swarm.run(pso_population, init_vel, pso_iterations, false);
 
                 
@@ -329,21 +330,21 @@ class Genetic {
             }
 
             std = get_std(vals, indices, pop_size + 5);
-            if(verbose and  iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
+            if(verbose and  iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<
+                                                        get_mean(vals, indices, pop_size + 5)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
             if(std < 0.0000001) {restart_population(); }//std::cout<<"restarted "<<std<<std::endl;}
         }
         
         std::vector<std::vector<double>> final_run_population = std::vector<std::vector<double>> (pop_size, std::vector<double> (n_paths)); 
         for(p=0; p< pop_size; p ++) final_run_population[p] = population[indices[p]];
-        double* final_init_vel = new double[pop_size*n_paths];
-        fill_random_velocity_vect(final_init_vel, pop_size*n_paths, -5., 5.);
+
+        std::vector<std::vector<double>>  final_init_vel = std::vector<std::vector<double>> (pop_size, std::vector<double> (n_paths));
+        fill_random_velocity_vect(final_init_vel, -5., 5.);
         swarm.run(final_run_population, final_init_vel, pso_final_iterations, verbose);
         if(verbose) std::cout<<"final iteration "<<swarm.best_val<<std::endl;
         
         best_val = swarm.best_val;
 
-        delete [] init_vel;
-        delete [] final_init_vel;
         
     }
 

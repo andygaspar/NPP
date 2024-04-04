@@ -83,8 +83,7 @@ class Particle {
     }
 
     void init_values(double* p_init, double* v_init);
-    void init_vector_values(std::vector<double> p_init, double* v_init);
-;
+    void init_vector_values(std::vector<double>& p_init, std::vector<double>& v_init);
     void update_fitness(double best);
     void update_sigma(double* g) {sigma = compute_distance(p,std::vector<double>(g, g + n_tolls));}
     void update_pos();
@@ -126,6 +125,9 @@ Particle::Particle(double* comm_tax_free, int* n_usr, double* trans_costs, doubl
         init_commodity_val = params.init_commodity_val;
         L=0;
         U=0.01;
+
+        v = std::vector<double> (n_tolls);
+        p = std::vector<double> (n_tolls);
 
         std::mt19937 o;
 
@@ -184,16 +186,12 @@ void Particle::init_values(double* p_init, double* v_init){
 }
 
 
-void Particle::init_vector_values(std::vector<double> p_init, double* v_init){
+void Particle::init_vector_values(std::vector<double>& p_init, std::vector<double>& v_init){
 
-    v = std::vector<double> (n_tolls);
-    p = std::vector<double> ();
+
     p = p_init;
-
-
-    for(int j=0; j< n_tolls; j++) {
-            v[j] = v_init[j];
-        }
+    v = v_init;
+    
 
     p_past=p;
 

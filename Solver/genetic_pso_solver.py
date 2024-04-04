@@ -1,14 +1,11 @@
-import os
-import random
 import time
 
 import numpy as np
 
-from Genetic.genetic_cpp import GeneticCpp
-from Genetic.genetic_old import GeneticOld
+from CPP.GAPSO.genetic_pso_cpp import GeneticPsoCpp
 from Instance.instance import Instance
-from Solver.pso_solver import PsoSolverNew
-from Solver.solver import GlobalSolver
+
+
 # from heuristic import improve_solution
 
 
@@ -41,7 +38,7 @@ class GeneticPso:
         self.final_population = None
         self.final_vals = None
 
-        self.genetic = GeneticCpp(npp.upper_bounds, npp.lower_bounds,
+        self.genetic = GeneticPsoCpp(npp.upper_bounds, npp.lower_bounds,
                                   npp.commodities_tax_free,
                                   npp.n_users, npp.transfer_costs,
                                   npp.n_commodities, npp.n_paths,
@@ -52,8 +49,7 @@ class GeneticPso:
                                   self.pso_final_iterations, self.pso_no_update_limit,
                                   self.verbose, self.num_threads, self.seed)
 
-        self.values = np.array([c.c_od for c in self.npp.commodities] +
-                               [c.c_od - p for c in self.npp.commodities for p in c.c_p_vector])
+        self.values = np.array([c.c_od - p for c in self.npp.commodities for p in c.c_p_vector])
 
     def run(self, iterations, init_population=None):
         self.time = time.time()
@@ -88,7 +84,7 @@ class GeneticPso:
 # PSO_ITERATIONS = 20000
 # PSO_FINAL_ITERATIONS = 1
 # NO_UPDATE_LIM = 300
-# os.system("PSO/install.sh")
+# os.system("CPP/install.sh")
 #
 # N_THREADS = None
 # seed = 0

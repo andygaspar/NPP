@@ -8,9 +8,9 @@ import pandas as pd
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.solver import GlobalSolver
-from Solver.pso_solver import PsoSolverNew
+from Solver.pso_solver import PsoSolver
 
-os.system("../PSO/install.sh")
+os.system("../CPP/install.sh")
 
 columns = ['run', 'commodities', 'paths', 'obj_exact', 'obj_pso', 'gap', 'time_exact', 'time_pso', 'status', 'mip_gap']
 
@@ -47,7 +47,7 @@ for n_commodities in [20]:
 
             # solver.print_model()
 
-            pso = PsoSolverNew(npp, n_particles, n_iterations, no_update_lim)
+            pso = PsoSolver(npp, n_particles, n_iterations, no_update_lim)
             initial_position = pso.random_init()
             pso.run(init_pos=initial_position, stats=False, verbose=True, seed=run)
             print('time global ', solver.time, 'time pso ', pso.time)
@@ -73,7 +73,7 @@ for n_commodities in [20]:
     # print(solver.get_prices())
     # print(npp.n_toll_paths)
     # stats = pso.get_stats()
-# df.to_csv('test.csv', index=False)
+# df.to_csv('test_old.csv', index=False)
 '''
 iter 0  best_val: 355.979    avg vel: 0
 iter 100  best_val: 1125.06    avg vel: 0

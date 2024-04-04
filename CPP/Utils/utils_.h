@@ -64,10 +64,10 @@ void print_vector_and_val(std::vector<T> &vect, double val) {
 }
 
 
-double get_mean(std::vector<double> &vect) {
+double get_mean(std::vector<double> &vect, std::vector<int> &indices,  int size) {
     double mean = 0;
-    for(size_t i=0; i<vect.size(); i++) mean += vect[i];
-    return mean/vect.size();
+    for(int i=0; i<size; i++) mean += vect[indices[i]];
+    return mean/size;
 }
 
 double get_std(std::vector<double> &vect, std::vector<int> &indices,  int size) {

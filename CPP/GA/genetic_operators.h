@@ -6,7 +6,7 @@
 #include <string>
 #include <omp.h>
 #include <cstdlib>
-#include "swarm2.h"
+#include "../PSO/swarm.h"
 
 
 class GeneticOperators {

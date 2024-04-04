@@ -2,10 +2,9 @@ import random
 import time
 
 import numpy as np
-import pandas as pd
 
-from Genetic.genetic_ import GeneticPso
-from Genetic.genetic_old import GeneticOld
+from Solver.genetic_pso_solver import GeneticPso
+from Old.Genetic.genetic_old import GeneticOld
 from Instance.instance import Instance
 from Solver.solver import GlobalSolver
 
