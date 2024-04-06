@@ -189,3 +189,20 @@ class Instance(nx.Graph):
                 # print(i, idxs[0])
             i+= 1
         return total_profit
+
+    def compute_solution_value_with_tol(self, sol, tol=1e-5):
+        total_profit = 0
+
+        for commodity in self.commodities:
+            costs = sol + commodity.c_p_vector
+            com_cost, com_profit = commodity.c_od, 0
+            for i, c in enumerate(costs):
+                if c <= com_cost + tol:
+                    if c < com_cost - tol:
+                        com_profit = sol[i]
+                        com_cost = c
+                    elif sol[i] > com_profit:
+                        com_profit = sol[i]
+                        com_cost = c
+            total_profit += com_profit * commodity.n_users
+        return total_profit

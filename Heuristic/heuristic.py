@@ -9,7 +9,62 @@ from Instance.instance import Instance
 from Solver.solver import GlobalSolver
 
 
+def equal(a, b, tol):
+    return b - tol <= a <= b + tol
 
+
+def lower_equal(a, b, tol):
+    return a <= b + tol
+
+
+def strictly_lower_equal(a, b, tol):
+    return a < b - tol
+
+
+def improve_solution_3(pb: Instance, sol: np.array, tol):
+    improving = True
+    new_sol = sol.copy()
+    while improving:
+        total_profit = 0
+        cost_difference = np.ones(pb.n_paths) * 100
+        cost_difference_idx = []
+
+        for commodity in pb.commodities:
+            costs = new_sol + commodity.c_p_vector
+            com_cost, com_profit = commodity.c_od, 0
+            idx_lowest_cost = pb.n_commodities
+
+            for i, c in enumerate(costs):
+                if lower_equal(c, com_cost, tol):
+                    if strictly_lower_equal(c, com_cost, tol):
+                        com_profit = new_sol[i]
+                        com_cost = c
+                        idx_lowest_cost = i
+                    elif new_sol[i] > com_profit:
+                        com_profit = new_sol[i]
+                        com_cost = c
+                        idx_lowest_cost = i
+            total_profit += com_profit * commodity.n_users
+            if idx_lowest_cost < pb.n_commodities:
+                second_cost = commodity.c_od
+                for i, c in enumerate(costs):
+                    if i != idx_lowest_cost and lower_equal(c, second_cost, tol):
+                        if equal(c, second_cost, tol) and com_profit < new_sol[i]:
+                            second_cost = c
+
+                        elif strictly_lower_equal(c, second_cost, tol):
+                            second_cost = c
+
+                difference = second_cost - com_cost
+                if difference < cost_difference[idx_lowest_cost] - tol:
+                    cost_difference[idx_lowest_cost] = difference
+                    cost_difference_idx.append(idx_lowest_cost)
+        if cost_difference[cost_difference_idx].sum() > 0:
+            new_sol[cost_difference_idx] += cost_difference[cost_difference_idx]
+        else:
+            improving = False
+    new_val = pb.compute_solution_value_with_tol(new_sol, tol)
+    return new_sol, new_val
 
 def improve_solution(pb: Instance, sol: np.array, obj_val, tol=0.0000000000001):
     improving = True
@@ -132,7 +187,6 @@ def improve_solution2(pb: Instance, sol: np.array, obj_val, tol=0.0000000000001)
         new_val_test = sum([new_sol[commodity_path_rank[i][0]] * pb.commodities[i].n_users for i in range(pb.n_commodities)
                             if commodity_path_rank[i][0] < pb.n_paths])
 
-
         new_val = pb.compute_solution_value(new_sol)
 
         # print('\n', profit, path_profit.sum())
@@ -215,87 +269,27 @@ def improve_solution3(pb: Instance, sol: np.array, obj_val, tol=0.0000000000001)
             improving = False
     return sol
 
-
-np.random.seed(0)
-random.seed(0)
-n_paths = 90
-n_commodities = 90
-npp = Instance(n_paths=n_paths, n_commodities=n_commodities)
-
-
-
-solver = GlobalSolver(npp, verbose=True, time_limit=160)
-solver.solve(ub=True)
-
-
-
-
-
-
-
-# for c in npp.commodities:
-#     c.c_od = int(c.c_od)
-#     c.c_p_vector = c.c_p_vector.astype(int)
-# sol = np.loadtxt('test_solution.csv')
-t = time.time()
-population_size = 256
-values = np.array([c.c_od for c in npp.commodities] + [v for p in npp.commodities for v in p.c_p_vector])
-init_sol = np.random.choice(values, size=(population_size, npp.n_paths))
-initial_val = npp.compute_solution_value(init_sol[0])
-print('*************', initial_val)
-new_sol = improve_solution3(npp, init_sol[0], initial_val)
-
-tt = time.time()
 #
-# g.init_values()
-# for i in range(20):
-#     for i in range(4):
-#         g.population[g.pop_size - i - 1] = improve_solution(npp, g.population[i],
-#                                                                         g.values[g.pop_size - i - 1], 1e-9)
-#     g.generation_es()
-#     print(g.best_val)
+# np.random.seed(0)
+# random.seed(0)
+# n_paths = 90
+# n_commodities = 90
+# npp = Instance(n_paths=n_paths, n_commodities=n_commodities)
 #
-# tt = time.time() - t
+# solver = GlobalSolver(npp, verbose=True, time_limit=160)
+# solver.solve(ub=True)
 #
-genetic = GeneticPso(npp, population_size, population_size//2, 0.02, 28, 0,
-                     0, 10000000, 0, 0,
-                     500, verbose=True, n_threads=None, seed=0)
-
-genetic.run(10000)
-print('sol ', npp.compute_solution_value(improve_solution3(npp, genetic.final_population[0], genetic.best_val )))
+# # for c in npp.commodities:
+# #     c.c_od = int(c.c_od)
+# #     c.c_p_vector = c.c_p_vector.astype(int)
+# # sol = np.loadtxt('test_solution.csv')
+# t = time.time()
+# population_size = 256
+# values = np.array([c.c_od for c in npp.commodities] + [v for p in npp.commodities for v in p.c_p_vector])
+# init_sol = np.random.choice(values, size=(population_size, npp.n_paths))
+# initial_val = npp.compute_solution_value(init_sol[0])
+# print('*************', initial_val)
+# new_sol = improve_solution3(npp, init_sol[0], initial_val)
 #
-#
-
-
-#
-genetic_new = GeneticOld(population_size, 0, 0, npp, 0.5, mutation_rate=0.02)
-genetic_new.init_values()
-genetic_new.generation()
-#
-n = 500
-t = time.time()
-print(genetic_new.best_val)
-for i in range(n):
-    # for i in range(4):
-    #     genetic_new.population[genetic_new.pop_size - i - 1] = improve_solution(npp, genetic_new.population[i], genetic_new.values[genetic_new.pop_size - i - 1], 1e-9)
-    genetic_new.generation()
-    if i % 2 == 0:
-        for j in range(genetic_new.offs_size):
-            genetic_new.population[genetic_new.pop_size - j - 1] = improve_solution3(npp, genetic_new.population[j],
-                                                                                     genetic_new.values[genetic_new.pop_size - j - 1], 1e-9)
-
-    print(i, genetic_new.best_val, np.mean(genetic_new.vals), np.std(genetic_new.vals))
-print(genetic_new.best_val, time.time() - t)
-#
-
-
-# # t = time.time()
-# # genetic_new.generation(init_sol)
-# # for i in range(n*2):
-# #     genetic_new.generation()
-# # print(genetic_new.best_val, time.time() - t)
-#
-# np.mean(genetic_new.vals)
-#
-#
-# improve_solution(npp, genetic_new.population[0], genetic_new.best_val, 1e-9)
+# tt = time.time()
+# #

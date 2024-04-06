@@ -3,14 +3,15 @@ import time
 import numpy as np
 
 from CPP.GA.genetic_cpp import GeneticCpp
+from CPP.GAH.genetic_h_cpp import GeneticHCpp
 from Instance.instance import Instance
 
 
 # from heuristic import improve_solution
 
 
-class Genetic:
-    def __init__(self, npp: Instance, pop_size, offs_size, mutation_rate, recombination_size,
+class GeneticHeuristic:
+    def __init__(self, npp: Instance, pop_size, offs_size, mutation_rate, recombination_size, heuristic_every,
                  verbose=True, n_threads=None, seed=None):
         self.solution = None
         self.time = None
@@ -18,6 +19,8 @@ class Genetic:
         self.offs_size = offs_size
         self.mutation_rate = mutation_rate
         self.recombination_size = recombination_size
+        self.heuristic_every = heuristic_every
+
         self.verbose = verbose
         self.seed = seed
         self.num_threads = n_threads
@@ -32,13 +35,14 @@ class Genetic:
         self.final_population = None
         self.final_vals = None
 
-        self.genetic = GeneticCpp(npp.upper_bounds, npp.lower_bounds,
-                                  npp.commodities_tax_free,
-                                  npp.n_users, npp.transfer_costs,
-                                  npp.n_commodities, npp.n_paths,
-                                  self.pop_size, self.offs_size,
-                                  self.mutation_rate, self.recombination_size,
-                                  self.verbose, self.num_threads, self.seed)
+        self.genetic = GeneticHCpp(npp.upper_bounds, npp.lower_bounds,
+                                   npp.commodities_tax_free,
+                                   npp.n_users, npp.transfer_costs,
+                                   npp.n_commodities, npp.n_paths,
+                                   self.pop_size, self.offs_size,
+                                   self.mutation_rate, self.recombination_size,
+                                   self.heuristic_every,
+                                   self.verbose, self.num_threads, self.seed)
 
         self.values = np.array([c.c_od - p for c in self.npp.commodities for p in c.c_p_vector])
 

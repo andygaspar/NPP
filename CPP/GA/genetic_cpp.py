@@ -38,7 +38,7 @@ class GeneticCpp:
         self.lib.get_population_.restype = ndpointer(dtype=ctypes.c_double, shape=(pop_size, self.n_paths))
 
         self.lib.get_vals_.argtypes = [ctypes.c_void_p]
-        self.lib.get_vals_.restype = ndpointer(dtype=ctypes.c_double, shape=(self.n_paths,))
+        self.lib.get_vals_.restype = ndpointer(dtype=ctypes.c_double, shape=(pop_size,))
 
         self.lib.run_genetic_.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.c_int]
 

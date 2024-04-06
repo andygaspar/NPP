@@ -9,13 +9,15 @@
 #include "../PSO/swarm.h"
 
 
-class Genetic {
+class GeneticH {
     public:
     // problem related features
     short pop_size;
     short n_paths;
     short off_size;
     short pop_total_size;
+
+    short heuristic_every;
     
     short n_commodities;
     double tolerance;
@@ -54,13 +56,15 @@ class Genetic {
 
 
 
-    Genetic(double* upper_bounds_, double* lower_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
+    GeneticH(double* upper_bounds_, double* lower_bounds_, double* comm_tax_free, int* n_usr, double* trans_costs, short n_commodities_, short n_paths_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
+    short heuristic_every_,
     short num_threads_, bool verbose_, short seed){
 
     pop_size = pop_size_;
     n_paths = n_paths_;
     off_size = off_size_;
+    heuristic_every = heuristic_every_;
   
 
     pop_total_size = pop_size + off_size;
@@ -144,7 +148,7 @@ class Genetic {
         }
     }
 
-    ~Genetic(){
+    ~GeneticH(){
     }
 
 
@@ -258,11 +262,23 @@ class Genetic {
             
 
             argsort(vals, indices, pop_total_size);
+            if(vals[indices[0]] > best_val) {
+                best_val = vals[indices[0]];
+                no_improvement = 0;
+            }
+            else no_improvement ++;
+
+            if((iter>0 and iter%heuristic_every==0) or iter == iterations - 1){
+                #pragma omp parallel for num_threads(n_threads) default(none) private(th) shared(upper_bounds, population, transfer_costs, commodities_tax_free, a_combs, b_combs, random_order, random_element_order, n_commodities, init_commodity_val, n_paths, recombination_size, generators)
+                for(short i=0; i < pop_size; i++) {
+                    vals[indices[i]] = heuristic(population[indices[i]], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, n_paths, vals[indices[i]]);
+                }
+                argsort(vals, indices, pop_total_size);
                 if(vals[indices[0]] > best_val) {
                     best_val = vals[indices[0]];
                     no_improvement = 0;
+                }
             }
-            else no_improvement ++;
 
             if(no_improvement >= 500) {
                 restart_population();
@@ -292,6 +308,7 @@ class Genetic {
         int i,j;
         double minimal_cost;
         double leader_profit;
+    
 
         for(i=0; i<n_comm; i++) {
 
@@ -322,6 +339,97 @@ class Genetic {
 
 
         return current_run_val;
+    }
+
+    double heuristic(std::vector<double>& p,const std::vector<std::vector<double>> & trans_costs, const std::vector<double> &comm_tax_free, const std::vector<int> n_usr, const short n_comm, const short num_paths, double new_val) {
+        bool improving = true;
+        bool found_improvement = false;
+        bool found_run_improvement;
+        int i, j, idx_lowest_cost;
+        double com_profit;
+        double max_val = pow(10, 6);
+        double minimal_cost, second_cost, difference, val_test;
+        std::vector<double> cost_diffenence = std::vector<double> (num_paths);
+        std::vector<bool> cost_difference_idx = std::vector<bool> (num_paths);
+        std::vector<double> costs = std::vector<double> (num_paths);
+
+        while(improving){
+            found_run_improvement = false;
+            for(j=0; j< num_paths; j++) {
+                cost_diffenence[j] = max_val;
+                cost_difference_idx[j] = false;
+            }
+
+            for(i=0; i<n_comm; i++){
+                for(j=0; j< num_paths; j++) costs[j] = p[j] + trans_costs[i][j];
+                com_profit = 0;
+                idx_lowest_cost = -1;
+                minimal_cost = comm_tax_free[i];
+
+                for(j=0; j< num_paths; j++) {
+
+                    if(costs[j] <= minimal_cost + tolerance) {
+                        if (costs[j] < minimal_cost - tolerance) {
+                            minimal_cost = costs[j];
+                            com_profit = p[j];
+                            idx_lowest_cost = j;
+                        }
+                        else {
+                            if ( p[j] > com_profit) {
+                                minimal_cost = costs[j];
+                                com_profit = p[j];
+                            idx_lowest_cost = j;
+                            }
+                        }
+                    }
+                }
+
+                if(idx_lowest_cost >= 0) {
+                    second_cost = comm_tax_free[i];
+                    for(j=0; j< num_paths; j++) {
+                        if(j!=idx_lowest_cost and costs[j] <= second_cost + tolerance) {
+
+                            if(costs[j] < second_cost - tolerance) {
+                                second_cost = costs[j];
+                                found_run_improvement = true;
+                                }
+                            else{
+                                if(com_profit < p[j]) {
+                                    second_cost = costs[j];
+                                    found_run_improvement = true;
+                                    }
+                            }
+                        }
+                    }
+
+                    difference = second_cost - minimal_cost;
+                    if(difference < cost_diffenence[idx_lowest_cost] - tolerance){
+                        cost_diffenence[idx_lowest_cost] = difference;
+                        cost_difference_idx[idx_lowest_cost] = true;
+                    }
+                }
+            }
+
+            if(found_run_improvement) {
+                found_improvement =true;
+                improving = false;
+                for(j=0; j< num_paths; j++) {
+                    if(cost_difference_idx[j] and cost_diffenence[j] > tolerance ){
+                        p[j] += cost_diffenence[j];
+                        improving = true;
+                    }
+                }
+ 
+                found_run_improvement = false;
+            }
+            else {improving = false;}
+        
+        }
+        if(found_improvement) {
+            new_val = eval(p, trans_costs, comm_tax_free, n_usr, n_comm, num_paths);
+        }
+        return new_val;
+
     }
 
 
