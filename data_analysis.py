@@ -40,3 +40,15 @@ pdf_table=[]
 pdf_table.append(table)
 pdf = SimpleDocTemplate("Docs/dataframe.pdf", pagesize=letter)
 pdf.build(pdf_table)
+
+
+
+df = pd.read_csv('benchmark_results.csv')
+df_1 = pd.read_csv('results.csv')
+
+
+df_1['obj_exact'] = df.obj_exact
+df_1['time_exact'] = df.time_exact
+df_1['mip_GAP'] = df.mip_GAP
+df_1['gah_GAP'] = 1 - df_1.obj_gah/df_1.obj_exact
+df_1['ga_GAP'] = 1 - df_1.obj_ga/df_1.obj_exact
