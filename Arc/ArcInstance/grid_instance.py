@@ -172,16 +172,3 @@ class GridInstance(ArcInstance):
             if a[1] == i:  # ( .., i)  i+
                 entering.append(a)
         return exiting, entering
-
-n_arcs = 104
-dim_grid = (5, 12)
-n_locations = dim_grid[0] * dim_grid[1]
-# toll_proportion = 10
-toll_proportion = [5, 10, 15, 20]
-# n_commodities = 10
-n_commodities = [10, 40, 50, 60]
-
-instance = GridInstance(n_locations, dim_grid, toll_proportion[0], n_commodities[0])
-instance.show()
-
-adj = nx.to_numpy_array(instance.npp)

@@ -19,7 +19,7 @@ def stop(model, where):
 
 class GlobalSolver:
 
-    def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False):
+    def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False, binary=True):
 
         self.instance = instance
         self.m = Model('CVRP')
@@ -42,8 +42,12 @@ class GlobalSolver:
         self.eps = 0
 
         self.p = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities])
-        self.x = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities],
-                                vtype=GRB.BINARY)
+        if binary:
+            self.x = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities],
+                                    vtype=GRB.BINARY)
+        else:
+            self.x = self.m.addVars([(p, k) for p in self.instance.paths for k in self.instance.commodities],
+                                    lb=0, ub=1)
         self.t = self.m.addVars([p for p in self.instance.paths])
         self.current_solution = None
         self.current_val = None

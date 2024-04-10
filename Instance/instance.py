@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-
 class Commodity:
 
     def __init__(self, name, nr_users, com_names, path_names, graph):
@@ -26,7 +25,8 @@ class Commodity:
         self.c_p = {p: graph[self.name][p]['transfer'] for p in path_names}
         self.c_p_vector = np.array(list(self.c_p.values()))
         self.M_p = {p: max([0, self.c_od - self.c_p[p]]) for p in path_names}
-        self.node.update({'n_users': self.n_users, 'type_int': 0, 'c_od': self.c_od, 'N_p': 0, 'n_commodities': len(com_names)})
+        self.node.update(
+            {'n_users': self.n_users, 'type_int': 0, 'c_od': self.c_od, 'N_p': 0, 'n_commodities': len(com_names)})
 
     def __hash__(self):
         return hash(self.name)
@@ -43,7 +43,8 @@ class Path:
         self.cost = None
         self.N_p = max([c.M_p[self.name] for c in commodities])
         self.L_p = min([c.M_p[self.name] for c in commodities])
-        self.node.update({'n_users': 0, 'type_int': 1, 'c_od': 0, 'N_p': self.N_p, 'L_p': self.L_p,'n_commodities': len(commodities)})
+        self.node.update({'n_users': 0, 'type_int': 1, 'c_od': 0, 'N_p': self.N_p, 'L_p': self.L_p,
+                          'n_commodities': len(commodities)})
 
     def __hash__(self):
         return hash(self.name)
@@ -53,7 +54,8 @@ class Path:
 
 
 class Instance(nx.Graph):
-    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seed=None, **attr):
+    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seed=None,
+                 **attr):
         super().__init__(**attr)
         if seed is not None:
             np.random.seed(seed)
@@ -101,7 +103,8 @@ class Instance(nx.Graph):
         plt.show()
 
     def show_original(self):
-        nx.draw(self.original_graph, node_color=[self.original_graph.nodes[n]['color'] for n in self.original_graph.nodes],
+        nx.draw(self.original_graph,
+                node_color=[self.original_graph.nodes[n]['color'] for n in self.original_graph.nodes],
                 edge_color=[self.original_graph[u][v]['color'] for u, v in self.original_graph.edges],
                 with_labels=True, font_size=7)
         plt.show()
@@ -156,7 +159,7 @@ class Instance(nx.Graph):
                                                    index=False, index_label=False, header=False)
             lower_bounds = np.zeros_like(self.upper_bounds)
             pd.DataFrame(lower_bounds).to_csv(folder_name + '/lower_bounds.csv',
-                                                   index=False, index_label=False, header=False)
+                                              index=False, index_label=False, header=False)
             pd.DataFrame(self.n_users).to_csv(folder_name + '/n_users.csv',
                                               index=False, index_label=False, header=False)
 
@@ -187,8 +190,20 @@ class Instance(nx.Graph):
             else:
                 total_profit += s[idxs[0]] * commodity.n_users
                 # print(i, idxs[0])
-            i+= 1
+            i += 1
         return total_profit
+
+    # def compute_solution_value_with_tol(self, sol, tol=1e-5):
+    #     total_profit = 0
+    #     for commodity in self.commodities:
+    #         costs = sol + commodity.c_p_vector
+    #         com_cost, com_profit = commodity.c_od, 0
+    #         for i, c in enumerate(costs):
+    #             if c <= com_cost + tol and sol[i] > com_profit:
+    #                 com_profit = sol[i]
+    #                 com_cost = c
+    #         total_profit += com_profit * commodity.n_users
+    #     return total_profit
 
     def compute_solution_value_with_tol(self, sol, tol=1e-5):
         total_profit = 0
@@ -206,3 +221,5 @@ class Instance(nx.Graph):
                         com_cost = c
             total_profit += com_profit * commodity.n_users
         return total_profit
+
+

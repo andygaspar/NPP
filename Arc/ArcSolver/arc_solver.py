@@ -1,4 +1,6 @@
 # import numpy as np
+import numpy as np
+
 from Arc.ArcInstance.arc_commodity import ArcCommodity
 from Arc.ArcInstance.arc_instance import ArcInstance
 
@@ -8,6 +10,8 @@ from gurobipy import Model, GRB, quicksum  # , Env
 class ArcSolver:
 
     def __init__(self, instance: ArcInstance):
+        self.price_solution = None
+        self.adj_solution = None
         self.best_bound = None
         self.instance = instance
         self.m = Model('CVRP')
@@ -103,11 +107,19 @@ class ArcSolver:
         print('status', self.status)
         self.best_bound = self.m.getAttr('ObjBound')
         print(' bound***** ', self.best_bound)
+        self.adj_solution, self.price_solution = self.get_adj_solution()
         return self.m.objval, self.best_bound
 
     def get_tolls(self):
-        tolls = list(self.T[a].x for a in self.instance.toll_arcs_undirected)
+        tolls = list(self.T[a].x for a in self.instance.toll_arcs)
         return tolls
+
+    def get_adj_solution(self):
+        price_solution = np.zeros((len(self.instance.npp.nodes), len(self.instance.npp.nodes)))
+        for toll in self.instance.toll_arcs:
+            price_solution[toll] = self.T[toll].x
+        adj_solution = self.instance.get_adj() + price_solution
+        return adj_solution, price_solution
 
     # def bfs_simplex(self):
     #     self.set_obj()
