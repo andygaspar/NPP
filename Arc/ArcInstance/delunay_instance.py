@@ -33,19 +33,22 @@ class DelaunayInstance(ArcInstance):
 
         graph = nx.Graph()
         paths = []
+        # pos = {node: [node] for i, node in enumerate(graph.nodes)}
+
+        graph.add_nodes_from([(i, {'pos': tri.points[i]}) for i in range(n_points)])
         for sim in tri.simplices:
             paths.append(np.append(sim, sim[0]))
         for path in paths:
             nx.add_path(graph, path)
 
-        pos = {node: points[i] for i, node in enumerate(graph.nodes)}
 
         # plt.triplot(points[:, 0], points[:, 1], tri.simplices)
         # plt.plot(points[:, 0], points[:, 1], 'o')
         # plt.show()
         #
-        # nx.draw(graph, pos={i: tri.points[i] for i in range(len(pos))}, with_labels=graph.nodes)
-        # plt.show()
+        nx.draw(graph, pos={i: tri.points[i] for i in range(n_points)}, with_labels=graph.nodes)
+        plt.show()
+
         #
         # nx.draw(graph, with_labels=graph.nodes)
         # plt.show()
@@ -55,8 +58,9 @@ class DelaunayInstance(ArcInstance):
         self.n_arcs = len(graph.edges)
 
         for edge in graph.edges:
-            graph.edges[edge]['weight'] = np.linalg.norm(pos[edge[0]]-pos[edge[1]])
+            graph.edges[edge]['weight'] = np.linalg.norm(graph.nodes[edge[0]]['pos'] - graph.nodes[edge[1]]['pos'])
             graph.edges[edge]['color'] = 'k'
+        self.adj_start = nx.to_numpy_array(graph)
 
         # number of tolls from percentage to integer
         # self.n_tolls = round(self.n_arcs / 100 * self.toll_proportion)
@@ -177,9 +181,8 @@ class DelaunayInstance(ArcInstance):
 
         self.adj = nx.to_numpy_array(self.npp)
 
-
     def show(self):
-        nx.draw(self.npp, edge_color=[self.npp[u][v]['color'] for u, v in self.npp.edges],
+        nx.draw(self.npp, pos=[self.npp.nodes[i]['pos'] for i in self.npp.nodes], edge_color=[self.npp[u][v]['color'] for u, v in self.npp.edges],
                 with_labels=True, font_size=7)
         plt.show()
 

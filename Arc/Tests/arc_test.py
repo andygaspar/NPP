@@ -26,7 +26,7 @@ toll_proportion = [5, 10, 15, 20]
 n_commodities = [40, 50, 60]
 
 # instance = DelaunayInstance(n_locations, n_arcs, toll_proportion[0], n_commodities[0])
-instance = GridInstance(n_locations, dim_grid, toll_proportion[2], n_commodities[2])
+instance = GridInstance(n_locations, dim_grid, toll_proportion[1], n_commodities[1])
 
 instance.show()
 
@@ -50,10 +50,16 @@ g.run_cpp(1000, verbose=True, n_threads=16, seed=0)
 pop, vals = g.genetic_cpp.get_results()
 print(solver.time, g.time, solver.obj, g.best_val)
 
-print(solver.solution)
-print(g.solution)
+# print(solver.solution)
+# print(g.solution)
 
 print(instance.compute_obj(solver.adj_solution, solver.mat_solution))
 print(instance.compute_obj(g.adj_solution, g.mat_solution))
 
 
+# a = solver.adj_solution
+# for c in instance.commodities:
+#     print(c.origin, c.destination)
+# aa = g.adj_solution
+
+# s = instance.adj_start

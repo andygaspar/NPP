@@ -26,6 +26,8 @@ class GridInstance(ArcInstance):
 
         graph = nx.grid_graph(dim_grid, periodic=False)
         graph = nx.convert_node_labels_to_integers(graph)
+        nx.draw(graph, with_labels=True)
+        plt.show()
 
         # self.n_locations = dim_grid[0]*dim_grid[1]
         self.n_arcs = len(graph.edges)
