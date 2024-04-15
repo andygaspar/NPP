@@ -1,3 +1,5 @@
+from typing import List
+
 import networkx as nx
 import numpy as np
 from gurobipy import Model, GRB, quicksum
@@ -109,3 +111,12 @@ class ArcCommodity:
 
     def __repr__(self):
         return str(self.origin) + ' -> ' + str(self.destination)
+
+
+class ArcToll:
+
+    def __init__(self, idx: tuple, commodities: List[ArcCommodity]):
+        self.idxs = idx
+        self.N_p = max([c.M_p[self.idxs] for c in commodities])
+        self.L_p = min([c.M_p[self.idxs] for c in commodities])
+

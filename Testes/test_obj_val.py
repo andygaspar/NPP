@@ -4,7 +4,7 @@ import time
 
 import numpy as np
 from Instance.instance import Instance
-from Solver.genetic__heuristic_solver import GeneticHeuristic
+from Solver.genetic_heuristic_solver import GeneticHeuristic
 from Solver.genetic_pso_solver import GeneticPso
 from Solver.genetic_solver import Genetic
 from Solver.solver import GlobalSolver

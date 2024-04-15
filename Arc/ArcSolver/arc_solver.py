@@ -1,4 +1,6 @@
 # import numpy as np
+import time
+
 import numpy as np
 
 from Arc.ArcInstance.arc_commodity import ArcCommodity
@@ -9,10 +11,14 @@ from gurobipy import Model, GRB, quicksum  # , Env
 
 class ArcSolver:
 
-    def __init__(self, instance: ArcInstance):
-        self.price_solution = None
+    def __init__(self, instance: ArcInstance, symmetric_costs = False):
+        self.solution = None
+        self.obj = None
+        self.time = None
+        self.mat_solution = None
         self.adj_solution = None
         self.best_bound = None
+        self.symmetric_costs = symmetric_costs
         self.instance = instance
         self.m = Model('CVRP')
         self.m.modelSense = GRB.MAXIMIZE
@@ -82,6 +88,10 @@ class ArcSolver:
                     self.t[a, k] <= self.T[a]
                 )
 
+        if self.symmetric_costs:
+            for a in self.instance.toll_arcs_undirected:
+                self.m.addConstr(self.T[a] == self.T[(a[1], a[0])])
+
     @staticmethod
     def iterations_on_arc(i, archi):
         exiting = []  # (i, .. )  i-
@@ -94,6 +104,7 @@ class ArcSolver:
         return exiting, entering
 
     def solve(self, time_limit=None, verbose=False):
+        self.time = time.time()
         self.set_obj()
         self.set_constraints()
         if not verbose:
@@ -101,13 +112,16 @@ class ArcSolver:
         if time_limit is not None:
             self.m.Params.timelimit = time_limit
         self.m.optimize()
+        self.time = time.time() - self.time
         print('Global: ', self.m.objval)
 
         self.status = self.status_dict[self.m.status]
+        self.obj = self.m.objval
         print('status', self.status)
         self.best_bound = self.m.getAttr('ObjBound')
         print(' bound***** ', self.best_bound)
-        self.adj_solution, self.price_solution = self.get_adj_solution()
+        self.adj_solution, self.mat_solution = self.get_adj_solution()
+        self.solution = list(self.T[a].x for a in self.instance.toll_arcs)
         return self.m.objval, self.best_bound
 
     def get_tolls(self):

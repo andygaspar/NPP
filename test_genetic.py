@@ -4,7 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from Solver.genetic__heuristic_solver import GeneticHeuristic
+from Solver.genetic_heuristic_solver import GeneticHeuristic
 from Solver.genetic_pso_solver import GeneticPso
 from Instance.instance import Instance
 from Solver.genetic_solver import Genetic
