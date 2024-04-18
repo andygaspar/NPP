@@ -1,10 +1,12 @@
 import itertools
+import random
 import time
 
 import numpy as np
 
 from Arc.ArcInstance.arc_instance import ArcInstance
 from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
+from Arc.Heuristic.arc_heuristic import run_arc_heuristic
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
 from Solver.pso_solver import PsoSolver
@@ -81,10 +83,11 @@ class GeneticArc:
         self.population = self.population[idxs[::-1]]
         self.best_val = max(self.vals)
 
-    def init_values(self):
-        population = np.zeros((self.pop_size, self.n_tolls))
-        for i in range(self.n_tolls):
-            population[:self.pop_size, i] = np.random.uniform(self.lower_bounds[i], self.upper_bounds[i], size=self.pop_size)
+    def init_values(self, restart=False):
+        start = 1 if restart else 0
+        population = np.zeros((self.pop_size - start, self.n_tolls))
+        for i in range(start, self.n_tolls):
+            population[:self.pop_size, i] = np.random.uniform(self.lower_bounds[i], self.upper_bounds[i], size=self.pop_size - start)
         return population
 
     def get_pop_sample(self, n):
@@ -96,9 +99,16 @@ class GeneticArc:
         self.generation(initial_position)
         for i in range(1, iterations):
             self.generation()
+            std = np.std(self.vals[:self.pop_size])
+            if std < 1:
+                self.population[1:self.pop_size] = self.init_values(restart=True)
             if verbose and i % 1 == 0:
                 # print(genetic.best_val, np.std(np.std(genetic.population, axis=0)))
-                print(i, self.best_val, np.mean(self.vals[:self.pop_size]), np.std(self.vals[:self.pop_size]))
+
+                print(i, self.best_val, np.mean(self.vals[:self.pop_size]), std)
+            if i % 10 == 0:
+                for j in range(self.pop_size):
+                    self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(self.population[j]))
             # for j in range(self.pop_size):
             #     print(self.population[j], self.vals[j])
             #
@@ -169,3 +179,49 @@ class GeneticArc:
             code += str(t) + ','
         code = code[:-1] + new_line
         print(code)
+
+
+    def run_cpp_h(self, iterations, verbose, n_threads, seed=None):
+        self.time = time.time()
+
+
+        self.population[:self.pop_size] = self.init_values()
+        every = 300
+
+        self.vals = np.zeros(self.total_pop_size)
+        self.vals[:self.pop_size] = np.array([self.fitness_fun(*self.get_mats(sol)) for sol in self.population[:self.pop_size]])
+        for i in range(iterations//every):
+            self.genetic_cpp = ArcGeneticCpp(self.upper_bounds, self.lower_bounds, self.adj, self.toll_idxs_flat, self.n_users,
+                                             self.origins,
+                                             self.destinations, self.npp.n_commodities,
+                                             self.npp.n_tolls, self.pop_size, self.offs_size, self.mutation_rate, self.recombination_size,
+                                             verbose, n_threads, seed)
+            self.best_val = self.genetic_cpp.run(self.population[: self.pop_size], every)
+            self.population[:self.pop_size], self.vals[:self.pop_size] = self.genetic_cpp.get_results()
+            self.solution = self.population[0]
+            self.adj_solution, self.mat_solution = self.get_mats(self.solution)
+            for j in [0] + random.choices(range(1, self.pop_size), k=9):
+                self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(self.population[j]), 1e-16)
+            idx = np.argsort(self.vals[:self.pop_size])[::-1]
+            self.population[:self.pop_size] = self.population[idx]
+            self.vals[:self.pop_size] = self.vals[idx]
+            curren_val = self.vals[0]
+            t = time.time()
+            l = 0
+            for j in range(1, self.pop_size):
+                if curren_val - 1e-9 <= self.vals[j] <= curren_val + 1e-9:
+                    new_individual = np.zeros(self.n_tolls)
+                    for k in range(self.n_tolls):
+                        new_individual[k] = np.random.uniform(self.lower_bounds[k], self.upper_bounds[k])
+                    self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(new_individual), 1e-16)
+                    l += 1
+                    print(l)
+                else:
+                    curren_val = self.vals[j]
+            print(time.time() - t, l)
+            print(max(self.vals[:self.pop_size]))
+            # print(self.vals[:self.pop_size])
+        self.time = time.time() - self.time
+
+
+

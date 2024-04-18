@@ -226,6 +226,7 @@ class ArcGenetic {
 
             vals[i] = eval(population[i], n_users[th], adj[th], adj_solution[th], tolls_idxs[th], prices_mat[th], dist[th], profit[th], 
                                                     visited[th], origins[th], destinations[th], n_commodities, n_tolls, START_VAL, tolerance);
+            // std::cout<<vals[i]<<std::endl;
         }
         double maxval = 0;
         for(short i=0; i < pop_size; i++) if(vals[i] > maxval) {maxval = vals[i];}

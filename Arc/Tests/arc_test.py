@@ -8,6 +8,7 @@ from Arc.ArcInstance.delunay_instance import DelaunayInstance
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
 from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
+from Arc.Heuristic.arc_heuristic import run_arc_heuristic
 from Arc.genetic_arc import GeneticArc
 
 random.seed(0)
@@ -26,14 +27,14 @@ toll_proportion = [5, 10, 15, 20]
 n_commodities = [40, 50, 60]
 
 # instance = DelaunayInstance(n_locations, n_arcs, toll_proportion[0], n_commodities[0])
-instance = GridInstance(n_locations, dim_grid, toll_proportion[1], n_commodities[1])
+instance = GridInstance(n_locations, dim_grid, toll_proportion[2], n_commodities[2])
 
-instance.show()
+# instance.show()
 
 
 solver = ArcSolver(instance=instance, symmetric_costs=False)
-solver.solve(time_limit=60, verbose=True)  # int(pso.time))
-
+# solver.solve(time_limit=60, verbose=True)  # int(pso.time))
+solver.obj = 3966.
 print(solver.time)
 
 # adj, prices = solver.get_adj_solution()
@@ -42,10 +43,10 @@ print(solver.time)
 
 # print(solver.get_tolls())
 
-g = GeneticArc(64, instance)
-# g.run(3, verbose=True)
+g = GeneticArc(64, instance, offspring_rate=0.2)
+g.run_cpp_h(5000, verbose=True, n_threads=16, seed=0)
 
-g.run_cpp(1000, verbose=True, n_threads=16, seed=0)
+g.run_cpp(10000, verbose=True, n_threads=16, seed=0)
 
 pop, vals = g.genetic_cpp.get_results()
 print(solver.time, g.time, solver.obj, g.best_val)
@@ -53,9 +54,14 @@ print(solver.time, g.time, solver.obj, g.best_val)
 # print(solver.solution)
 # print(g.solution)
 
-print(instance.compute_obj(solver.adj_solution, solver.mat_solution))
+# print(instance.compute_obj(solver.adj_solution, solver.mat_solution))
 print(instance.compute_obj(g.adj_solution, g.mat_solution))
+print(1 - g.best_val/solver.obj)
+print()
 
+print(run_arc_heuristic(instance, g.adj_solution, g.mat_solution)[1])
+def compute_val(inst, sol):
+    return inst.compute_obj(*g.get_mats(sol))
 
 # a = solver.adj_solution
 # for c in instance.commodities:
@@ -63,3 +69,19 @@ print(instance.compute_obj(g.adj_solution, g.mat_solution))
 # aa = g.adj_solution
 
 # s = instance.adj_start
+sol = g.solution.copy()
+best = g.best_val
+for i in range(g.n_tolls):
+    improving = True
+    while improving:
+        s = sol.copy()
+        s[i] += 0.01
+        new_val = compute_val(instance, s)
+        if new_val > best:
+            print(new_val, i,  s[i], instance.tolls[i].N_p)
+            sol = s
+            best = new_val
+        else:
+            improving = False
+
+g.solution
