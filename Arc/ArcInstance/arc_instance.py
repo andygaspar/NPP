@@ -26,7 +26,7 @@ class ArcInstance:
 
     @staticmethod
     def min_dist(dist, profit, visited, tol):
-        min_val = 1000
+        min_val = 100000
         min_index = 0
         max_profit = 0
         for i in range(dist.shape[0]):
@@ -64,9 +64,9 @@ class ArcInstance:
 
         return dist, visited, profit
 
-    def compute_obj(self, adj, prices):
+    def compute_obj(self, adj, prices, tol=1e-9):
         obj = 0
         for commodity in self.commodities:
-            _, _, profit = self.dijkstra(adj, prices, commodity, tol=1e-9)
+            _, _, profit = self.dijkstra(adj, prices, commodity, tol=tol)
             obj += profit[commodity.destination]
         return obj

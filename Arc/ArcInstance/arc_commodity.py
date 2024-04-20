@@ -11,6 +11,7 @@ class ArcCommodity:
         self.origin = origin
         self.destination = destination
         self.n_users = n_users
+        self.name = str(self.origin) + ' -> ' + str(self.destination)
 
         self.cost_free = None
         self.l_free = None
@@ -110,7 +111,7 @@ class ArcCommodity:
         return first, last
 
     def __repr__(self):
-        return str(self.origin) + ' -> ' + str(self.destination)
+        return self.name
 
 
 class ArcToll:

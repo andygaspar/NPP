@@ -1,3 +1,4 @@
+import random
 from typing import List
 import networkx as nx
 import numpy as np
@@ -11,17 +12,19 @@ from Arc.ArcInstance.arc_instance import ArcInstance
 
 
 class DelaunayInstance(ArcInstance):
-    def __init__(self, n_locations, toll_proportion, n_tolls, n_commodities, costs=(5, 35), nr_users=(1, 5), seeds=False):
+    def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
         # costs = (2, 20)
         super().__init__(n_locations, n_commodities)
-        if seeds:
-            np.random.seed(0)
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
 
+        self.name = 'Delaunay'
         self.toll_proportion = toll_proportion  # {5%, 10%, 15%, 20%}
         self.commodities: List[ArcCommodity] = []
         self.costs = costs
         self.nr_users = nr_users
-        self.n_tolls = n_tolls
+        self.n_arcs = n_arcs
         self.toll_arcs = []
         self.free_arcs = []
         self.toll_arcs_undirected = []
@@ -63,7 +66,7 @@ class DelaunayInstance(ArcInstance):
         self.adj_start = nx.to_numpy_array(graph)
 
         # number of tolls from percentage to integer
-        # self.n_tolls = round(self.n_arcs / 100 * self.toll_proportion)
+        # self.n_arcs = round(self.n_arcs / 100 * self.toll_proportion)
 
         origin_destination = list(combinations(graph.nodes, r=2))
 
@@ -78,7 +81,7 @@ class DelaunayInstance(ArcInstance):
         # selecting toll arcs
 
         # first 2/3 of the total
-        two_third_total_tolls = round((self.n_tolls / 3) * 2)
+        two_third_total_tolls = round((self.n_arcs / 3) * 2)
 
         frequency_arcs = {a: 0 for a in self.npp.edges}
         for k in self.commodities:
@@ -127,7 +130,7 @@ class DelaunayInstance(ArcInstance):
                 self.toll_arcs.append((edge[1], edge[0]))
                 n += 1
             else:
-                if n == self.n_tolls:
+                if n == self.n_arcs:
                     break
 
                 if all(a):
@@ -174,7 +177,7 @@ class DelaunayInstance(ArcInstance):
 
         print('Instance:')
         print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
-              self.toll_proportion, '%', '  n tolls = ', self.n_tolls, '  n commodities = ', self.n_commodities)
+              self.toll_proportion, '%', '  n tolls = ', self.n_arcs, '  n commodities = ', self.n_commodities)
 
         self.tolls = [ArcToll(p, self.commodities) for p in self.toll_arcs]
         self.n_tolls = len(self.tolls)

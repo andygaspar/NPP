@@ -1,3 +1,4 @@
+import random
 from typing import List
 import networkx as nx
 import numpy as np
@@ -9,12 +10,14 @@ from Arc.ArcInstance.arc_instance import ArcInstance
 
 
 class GridInstance(ArcInstance):
-    def __init__(self, n_locations, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seeds=False):
+    def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
         # costs = (2, 20)
         super().__init__(n_locations, n_commodities)
-        if seeds:
-            np.random.seed(0)
-        # self.n_arcs = n_arcs
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+        self.n_arcs = n_arcs
+        self.name = 'Grid'
         self.toll_proportion = toll_proportion  # {5%, 10%, 15%, 20%}
         self.commodities: List[ArcCommodity] = []
         self.costs = costs
@@ -27,7 +30,7 @@ class GridInstance(ArcInstance):
         graph = nx.grid_graph(dim_grid, periodic=False)
         graph = nx.convert_node_labels_to_integers(graph)
         nx.draw(graph, with_labels=True)
-        plt.show()
+        # plt.show()
 
         # self.n_locations = dim_grid[0]*dim_grid[1]
         self.n_arcs = len(graph.edges)

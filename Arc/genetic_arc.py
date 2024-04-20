@@ -200,28 +200,23 @@ class GeneticArc:
             self.population[:self.pop_size], self.vals[:self.pop_size] = self.genetic_cpp.get_results()
             self.solution = self.population[0]
             self.adj_solution, self.mat_solution = self.get_mats(self.solution)
-            for j in [0] + random.choices(range(1, self.pop_size), k=9):
+            for j in [0] + random.choices(range(1, self.pop_size), k=5):
                 self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(self.population[j]), 1e-16)
             idx = np.argsort(self.vals[:self.pop_size])[::-1]
             self.population[:self.pop_size] = self.population[idx]
             self.vals[:self.pop_size] = self.vals[idx]
-            curren_val = self.vals[0]
-            t = time.time()
-            l = 0
-            for j in range(1, self.pop_size):
-                if curren_val - 1e-9 <= self.vals[j] <= curren_val + 1e-9:
-                    new_individual = np.zeros(self.n_tolls)
-                    for k in range(self.n_tolls):
-                        new_individual[k] = np.random.uniform(self.lower_bounds[k], self.upper_bounds[k])
-                    self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(new_individual), 1e-16)
-                    l += 1
-                    print(l)
-                else:
-                    curren_val = self.vals[j]
-            print(time.time() - t, l)
+            # curren_val = self.vals[0]
+            # t = time.time()
+            # for j in range(1, self.pop_size):
+            #     if curren_val - 1e-9 <= self.vals[j] <= curren_val + 1e-9:
+            #         new_individual = np.zeros(self.n_tolls)
+            #         for k in range(self.n_tolls):
+            #             new_individual[k] = np.random.uniform(self.lower_bounds[k], self.upper_bounds[k])
+            #         self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(new_individual), 1e-16)
+            #     else:
+            #         curren_val = self.vals[j]
             print(max(self.vals[:self.pop_size]))
             # print(self.vals[:self.pop_size])
+        self.solution = self.population[0]
+        self.adj_solution, self.mat_solution = self.get_mats(self.solution)
         self.time = time.time() - self.time
-
-
-
