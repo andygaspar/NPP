@@ -49,6 +49,19 @@ df_1 = pd.read_csv('results.csv')
 
 df_1['obj_exact'] = df.obj_exact
 df_1['time_exact'] = df.time_exact
-df_1['mip_GAP'] = df.mip_GAP
-df_1['gah_GAP'] = 1 - df_1.obj_gah/df_1.obj_exact
-df_1['ga_GAP'] = 1 - df_1.obj_ga/df_1.obj_exact
+df_1['mip_GAP'] = df.mip_GAP * 100
+df_1['gah_GAP'] = (1 - df_1.obj_gah/df_1.obj_exact) *100
+df_1['ga_GAP'] = (1 - df_1.obj_ga/df_1.obj_exact) *100
+
+df_1 = df_1.astype({'run': int, 'commodities': int, 'paths': int})
+df_1['case'] = df_1.commodities.astype(str) + '_' + df_1.paths.astype(str)
+
+
+df_res = df_1.groupby('case').mean()
+df_res_tab = df_res[['commodities', 'paths', 'time_exact', 'time_gah', 'time_ga', 'gah_GAP', 'ga_GAP', 'mip_GAP']].copy()
+# df_res_tab.status = df_res_tab.status.apply(lambda s: 'time_exact' if s<3 else 'time_limit')
+df_res_tab = df_res_tab.astype({'commodities': int, 'paths': int})
+df_tex = df_res_tab.style.format(decimal=',', thousands='.', precision=3).hide(axis="index")
+print(df_tex.to_latex())
+
+df_tex.index

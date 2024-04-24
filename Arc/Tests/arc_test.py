@@ -47,10 +47,10 @@ for graph in graphs:
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
                 solver.solve(time_limit=3600, verbose=True)  # int(pso.time))
-                df.loc[row] = [run, instance.name, n_t, n_c,solver.obj, solver.time, solver.m.MIPGap, solver.m.status]
+                df.loc[row] = [run, instance.name, n_t, n_c, solver.obj, solver.time, solver.m.MIPGap, solver.m.status]
                 row += 1
 
-df.to_csv('arc_test_solver.csv')
+            df.to_csv('arc_test_solver.csv')
 # solver.obj = 3966.
 # print(solver.time)
 
