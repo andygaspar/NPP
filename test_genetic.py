@@ -24,7 +24,7 @@ columns = ['run', 'commodities', 'paths', 'obj_gah', 'obj_ga', 'time_gah', 'time
 
 POPULATION = 256
 off_size = int(POPULATION / 2)
-ITERATIONS = 2000
+ITERATIONS = 200000
 MUTATION_RATE = 0.02
 
 PSO_EVERY = 100
