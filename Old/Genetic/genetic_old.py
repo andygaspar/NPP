@@ -4,7 +4,7 @@ import time
 import numpy as np
 from Instance.instance import Instance
 # from Net.network_manager import NetworkManager
-from Solver.pso_solver import PsoSolver
+from Path.Solver.pso_solver import PsoSolver
 from CPP.GA.genetic_cpp import GeneticOperators
 
 

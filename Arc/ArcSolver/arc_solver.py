@@ -113,13 +113,10 @@ class ArcSolver:
             self.m.Params.timelimit = time_limit
         self.m.optimize()
         self.time = time.time() - self.time
-        print('Global: ', self.m.objval)
 
         self.status = self.status_dict[self.m.status]
         self.obj = self.m.objval
-        print('status', self.status)
         self.best_bound = self.m.getAttr('ObjBound')
-        print(' bound***** ', self.best_bound)
         self.adj_solution, self.mat_solution = self.get_adj_solution()
         self.solution = list(self.T[a].x for a in self.instance.toll_arcs)
         return self.m.objval, self.best_bound
@@ -135,34 +132,7 @@ class ArcSolver:
         adj_solution = self.instance.get_adj() + price_solution
         return adj_solution, price_solution
 
-    # def bfs_simplex(self):
-    #     self.set_obj()
-    #     self.set_constraints()
-    #     # self.m.Params.IterationLimit = 1
-    #     self.m.Params.timelimit = 1.0
-    #     self.m.optimize()
-    #     print(self.m.status)
-    #     print(self.m.objval)
-
     def print(self):
-        # for p in self.instance.toll_arcs:
-        # self.instance.npp.edges[p]["weight"] += self.T[p].x
-        # print(p, self.instance.npp.edges[p]["weight"])
-
-        # for k in self.instance.commodities:
-        #     print(k)
-        #     found = False
-        #     for p in self.instance.toll_arcs[:self.instance.n_toll_paths]:
-        #         if self.x[p, k].x > 0.9:
-        #             print(p, k.transfer_cost[p] + self.instance.npp.edges[p]["weight"] + self.T[p].x)
-        #             found = True
-        #     for p in self.instance.toll_arcs[-self.instance.n_toll_paths:]:
-        #         if self.x[p, k].x > 0.9:
-        #             print(p, k.transfer_cost[(p[1], p[0])] + self.instance.npp.edges[(p[1], p[0])]["weight"] + self.T[p].x)
-        #             found = True
-        #     if not found:
-        #         print('path without tolls', k.cost_free)
-
         for k in self.instance.commodities:
             print(k)
             for p in self.instance.toll_arcs:

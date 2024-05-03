@@ -7,10 +7,9 @@ import numpy as np
 from Arc.ArcInstance.arc_instance import ArcInstance
 from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
 from Arc.Heuristic.arc_heuristic import run_arc_heuristic
-from Instance.instance import Instance
+
+
 # from Net.network_manager import NetworkManager
-from Solver.pso_solver import PsoSolver
-from CPP.GA.genetic_cpp import GeneticOperators, GeneticCpp
 
 
 class GeneticArc:
