@@ -14,7 +14,7 @@ loc_size = [10]
 comm_size = [10]
 toll_size = [5]
 
-filename = './TestCases/gurobi_benchmark_times.txt'
+filename = 'Old/TestCases/gurobi_benchmark_times.txt'
 solutionname = './TestCases/gurobi_benchmark_solution.txt'
 Path(filename).touch()
 Path(solutionname).touch()
