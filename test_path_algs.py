@@ -33,7 +33,7 @@ solver.solve()
 
 POPULATION = 256
 off_size = int(POPULATION / 2)
-ITERATIONS = 2000
+ITERATIONS = 200000000
 MUTATION_RATE = 0.02
 
 g = Genetic(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, verbose=VERBOSE, n_threads=N_THREADS, seed=run)

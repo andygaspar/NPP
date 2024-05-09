@@ -2,7 +2,7 @@ from typing import List
 
 import networkx as nx
 import numpy as np
-from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll
+from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
 
 
 class ArcInstance:
@@ -19,13 +19,14 @@ class ArcInstance:
         self.free_arcs = None
         self.commodities: List[ArcCommodity] = []
         self.tolls: List[ArcToll] = []
+        self.free: List[Arc] = []
         self.adj = None
 
     def get_adj(self):
         return nx.to_numpy_array(self.npp)
 
     @staticmethod
-    def min_dist(dist, profit, visited, tol):
+    def min_dist_with_profit(dist, profit, visited, tol):
         min_val = 100000
         min_index = 0
         max_profit = 0
@@ -51,7 +52,7 @@ class ArcInstance:
         dist[commodity.origin] = 0
 
         for i in range(adj.shape[0] - 1):
-            idx = self.min_dist(dist, profit, visited, tol)
+            idx = self.min_dist_with_profit(dist, profit, visited, tol)
             visited[idx] = True
             for j in range(adj.shape[0]):
                 if not visited[j] and adj[idx, j] > 0 and dist[idx] != MAX_DIST and dist[idx] + adj[idx, j] <= dist[j] + tol:
@@ -70,3 +71,31 @@ class ArcInstance:
             _, _, profit = self.dijkstra(adj, prices, commodity, tol=tol)
             obj += profit[commodity.destination]
         return obj
+
+    @staticmethod
+    def min_dist(dist, visited, tol):
+        min_val = 100000
+        min_index = 0
+        for i in range(dist.shape[0]):
+            if not visited[i] and dist[i] <= min_val + tol:
+                if dist[i] < min_val - tol:
+                    min_val = dist[i]
+                    min_index = i
+
+        return min_index
+
+    def regular_dijkstra(self, adj, node, tol=1e-9):
+        MAX_DIST = 1000000
+        dist = np.ones(adj.shape[0]) * MAX_DIST
+        visited = np.zeros_like(dist, dtype=bool)
+        dist[node] = 0
+
+        for i in range(adj.shape[0] - 1):
+            idx = self.min_dist(dist, visited, tol)
+            visited[idx] = True
+            for j in range(adj.shape[0]):
+                if not visited[j] and adj[idx, j] > 0 and dist[idx] != MAX_DIST and dist[idx] + adj[idx, j] <= dist[j] + tol:
+                    if dist[idx] + adj[idx, j] < dist[j] - tol:
+                        dist[j] = dist[idx] + adj[idx, j]
+
+        return dist

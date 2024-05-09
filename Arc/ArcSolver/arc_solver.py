@@ -1,4 +1,5 @@
 # import numpy as np
+import copy
 import time
 
 import numpy as np
@@ -28,48 +29,48 @@ class ArcSolver:
 
         self.eps = 1e-2
 
-        self.x = self.m.addVars([(a, k) for a in self.instance.toll_arcs for k in self.instance.commodities],
+        self.x = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities],
                                 vtype=GRB.BINARY)
-        self.y = self.m.addVars([(a, k) for a in self.instance.free_arcs for k in self.instance.commodities])
-        self.t = self.m.addVars([(a, k) for a in self.instance.toll_arcs for k in self.instance.commodities])
-        self.T = self.m.addVars([a for a in self.instance.toll_arcs])
+        self.y = self.m.addVars([(a.idx, k) for a in self.instance.free for k in self.instance.commodities])
+        self.t = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities])
+        self.T = self.m.addVars([a.idx for a in self.instance.tolls])
         self.la = self.m.addVars([(i, k) for i in self.instance.npp.nodes for k in self.instance.commodities])
 
     def set_obj(self):
         k: ArcCommodity
-        self.m.setObjective(quicksum(k.n_users * self.t[a, k]
-                                     for a in self.instance.toll_arcs for k in self.instance.commodities))
+        self.m.setObjective(quicksum(k.n_users * self.t[a.idx, k]
+                                     for a in self.instance.tolls for k in self.instance.commodities))
 
     def set_constraints(self):
         # 1.9b
         for k in self.instance.commodities:
             for j, i in enumerate(self.instance.npp.nodes):
-                exiting_toll, entering_toll = self.iterations_on_arc(i, self.instance.toll_arcs)
-                exiting_free, entering_free = self.iterations_on_arc(i, self.instance.free_arcs)
+                exiting_toll, entering_toll = self.iterations_on_arc(i, self.instance.tolls)
+                exiting_free, entering_free = self.iterations_on_arc(i, self.instance.free)
                 self.m.addConstr(
-                    (quicksum([self.x[a, k] for a in entering_toll]) + quicksum(
-                        self.y[a, k] for a in entering_free)) -  # i+
-                    (quicksum([self.x[a, k] for a in exiting_toll]) + quicksum(
-                        self.y[a, k] for a in exiting_free))  # i-
+                    (quicksum([self.x[a.idx, k] for a in entering_toll]) + quicksum(
+                        self.y[a.idx, k] for a in entering_free)) -  # i+
+                    (quicksum([self.x[a.idx, k] for a in exiting_toll]) + quicksum(
+                        self.y[a.idx, k] for a in exiting_free))  # i-
                     == k.b[j]
                 )
         # 1.9c
         for k in self.instance.commodities:
-            for a in self.instance.toll_arcs:
+            for a in self.instance.tolls:
                 self.m.addConstr(
-                    self.la[a[1], k] - self.la[a[0], k] <= self.instance.npp.edges[a]['weight'] + self.T[a]
+                    self.la[a.idx[1], k] - self.la[a.idx[0], k] <= a.c_a + self.T[a.idx]
                 )
             # 1.9d
-            for a in self.instance.free_arcs:
+            for a in self.instance.free:
                 self.m.addConstr(
-                    self.la[a[1], k] - self.la[a[0], k] <= self.instance.npp.edges[a]['weight']
+                    self.la[a.idx[1], k] - self.la[a.idx[0], k] <= a.c_a
                 )
         # 1.9e
         for k in self.instance.commodities:
             self.m.addConstr(
-                quicksum([(self.instance.npp.edges[a]['weight'] * self.x[a, k]) + self.t[a, k] for a in
-                          self.instance.toll_arcs]) +
-                quicksum([self.instance.npp.edges[a]['weight'] * self.y[a, k] for a in self.instance.free_arcs])
+                quicksum([(a.c_a * self.x[a.idx, k]) + self.t[a.idx, k] for a in
+                          self.instance.tolls]) +
+                quicksum([a.c_a * self.y[a.idx, k] for a in self.instance.free])
                 == self.la[k.destination, k] - self.la[k.origin, k]
             )
 
@@ -77,15 +78,15 @@ class ArcSolver:
 
         # 1.9f, g, h
         for k in self.instance.commodities:
-            for a in self.instance.toll_arcs:
+            for a in self.instance.tolls:
                 self.m.addConstr(
-                    self.t[a, k] <= k.M_p[a] * self.x[a, k]
+                    self.t[a.idx, k] <= k.M_p[a.idx] * self.x[a.idx, k]
                 )
                 self.m.addConstr(
-                    self.T[a] - self.t[a, k] <= self.instance.N_p[a] * (1 - self.x[a, k])
+                    self.T[a.idx] - self.t[a.idx, k] <= self.instance.N_p[a.idx] * (1 - self.x[a.idx, k])
                 )
                 self.m.addConstr(
-                    self.t[a, k] <= self.T[a]
+                    self.t[a.idx, k] <= self.T[a.idx]
                 )
 
         if self.symmetric_costs:
@@ -97,15 +98,17 @@ class ArcSolver:
         exiting = []  # (i, .. )  i-
         entering = []  # ( .., i)  i+
         for a in archi:
-            if a[0] == i:  # (i, .. )  i-
+            if a.idx[0] == i:  # (i, .. )  i-
                 exiting.append(a)
-            if a[1] == i:  # ( .., i)  i+
+            if a.idx[1] == i:  # ( .., i)  i+
                 entering.append(a)
         return exiting, entering
 
-    def solve(self, time_limit=None, verbose=False):
+    def solve(self, time_limit=None, verbose=False, set_bounds=True):
         self.time = time.time()
         self.set_obj()
+        if set_bounds:
+            self.set_bounds()
         self.set_constraints()
         if not verbose:
             self.m.setParam("OutputFlag", 0)
@@ -118,17 +121,17 @@ class ArcSolver:
         self.obj = self.m.objval
         self.best_bound = self.m.getAttr('ObjBound')
         self.adj_solution, self.mat_solution = self.get_adj_solution()
-        self.solution = list(self.T[a].x for a in self.instance.toll_arcs)
+        self.solution = list(self.T[a.idx].x for a in self.instance.tolls)
         return self.m.objval, self.best_bound
 
     def get_tolls(self):
-        tolls = list(self.T[a].x for a in self.instance.toll_arcs)
+        tolls = list(self.T[a.idx].x for a in self.instance.tolls)
         return tolls
 
     def get_adj_solution(self):
         price_solution = np.zeros((len(self.instance.npp.nodes), len(self.instance.npp.nodes)))
-        for toll in self.instance.toll_arcs:
-            price_solution[toll] = self.T[toll].x
+        for a in self.instance.tolls:
+            price_solution[a.idx] = self.T[a.idx].x
         adj_solution = self.instance.get_adj() + price_solution
         return adj_solution, price_solution
 
@@ -142,6 +145,27 @@ class ArcSolver:
             for p in self.instance.free_arcs:
                 if self.y[p, k].x > 0.9:
                     print('y:', p)
+
+    def set_bounds(self):
+        adj = self.instance.get_adj()
+        adj_inf = copy.deepcopy(adj)
+        for a in self.instance.tolls:
+            adj_inf[a.idx[0], a.idx[1]] = 1000000
+
+        for c in self.instance.commodities:
+            dist_0 = self.instance.regular_dijkstra(adj, c.origin)
+            dist_inf = self.instance.regular_dijkstra(adj_inf, c.origin)
+            for a in self.instance.tolls:
+                gamma_t_h_inf = self.instance.regular_dijkstra(adj_inf, a.idx[0])[a.idx[1]]
+                gamma_t_d_inf = self.instance.regular_dijkstra(adj_inf, a.idx[0])[c.destination]
+                gamma_h_d_0 = self.instance.regular_dijkstra(adj, a.idx[1])[c.destination]
+                vals = [gamma_t_h_inf - a.c_a,
+                        dist_inf[a.idx[1]] - dist_0[a.idx[0]] - a.c_a,
+                        gamma_t_d_inf - gamma_h_d_0 - a.c_a,
+                        dist_inf[c.destination] - dist_0[a.idx[0]] - gamma_h_d_0 - a.c_a]
+                c.M_p[a.idx] = max(0, min(vals))
+
+        self.instance.N_p = {a.idx: max([k.M_p[a.idx] for k in self.instance.commodities]) for a in self.instance.tolls}
 
 
 

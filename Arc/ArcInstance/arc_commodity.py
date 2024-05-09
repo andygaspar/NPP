@@ -22,6 +22,9 @@ class ArcCommodity:
         self.M_p = None
         self.b = None
 
+        self.gamma_0 = None
+        self.gamma_inf = None
+
     def set_b(self, graph):
         self.b = self.create_b(graph)
 
@@ -114,10 +117,16 @@ class ArcCommodity:
         return self.name
 
 
-class ArcToll:
+class Arc:
+    def __init__(self, idx: tuple, c_a: float):
+        self.idx = idx
+        self.c_a = c_a
 
-    def __init__(self, idx: tuple, commodities: List[ArcCommodity]):
-        self.idxs = idx
-        self.N_p = max([c.M_p[self.idxs] for c in commodities])
-        self.L_p = min([c.M_p[self.idxs] for c in commodities])
+
+class ArcToll(Arc):
+
+    def __init__(self, idx: tuple, commodities: List[ArcCommodity], c_a: float):
+        super().__init__(idx, c_a)
+        self.N_p = max([c.M_p[self.idx] for c in commodities])
+        # self.L_p = min([c.M_p[self.idxs] for c in commodities])
 
