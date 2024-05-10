@@ -54,7 +54,7 @@ class Path:
 
 
 class Instance(nx.Graph):
-    def __init__(self, n_paths, n_commodities, cr_free=(20, 30), cr_transfer=(5, 15), nr_users=(1, 10), seed=None,
+    def __init__(self, n_paths, n_commodities, partial=True, cr_transfer=(1, 20), nr_users=(1, 10), seed=None,
                  **attr):
         super().__init__(**attr)
         if seed is not None:
@@ -65,7 +65,8 @@ class Instance(nx.Graph):
         self.commodities: List[Commodity]
         self.paths: List[Path]
         self.users = []
-        self.cr_free = cr_free
+        self.partial = partial
+        self.cr_free = (20, 30) if partial else (20, 30)
         self.cr_transfer = cr_transfer
         self.nr_users = nr_users
 
