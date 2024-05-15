@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from Arc.ArcInstance.del_test import DelaunayInstanceTest
 from Arc.ArcInstance.delunay_instance import DelaunayInstance
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
@@ -26,28 +27,38 @@ n_locations = dim_grid[0] * dim_grid[1]
 # toll_proportion = 10
 toll_proportion = [5, 10, 15, 20]
 # n_commodities = 10
-n_commodities = [40, 50, 60]
-graphs = [GridInstance, DelaunayInstance]
+n_commodities = [10, 50, 60]
+graphs = [DelaunayInstance, GridInstance]
 
 # instance = DelaunayInstance(n_locations, n_arcs, dim_grid, toll_proportion[0], n_commodities[0])
 # instance = GridInstance(n_locations, n_arcs, dim_grid, toll_proportion[2], n_commodities[2])
 
 # instance.show()
-columns = ['run', 'graphs', 'toll_pr', 'n_com', 'obj', 'time', 'gap', 'status']
+columns = ['run', 'graphs', 'toll_pr', 'n_com', 'g_obj', 'g_time', 'exact_obj', 'exact_time', 'MIP_gap', 'status']
 row = 0
 df = pd.DataFrame(columns=columns)
 for graph in graphs:
     for n_c in n_commodities:
-        for n_t in toll_proportion:
+        for t_p in toll_proportion:
             for run in range(10):
-                print("\nProblem",  n_c, n_t, run)
                 random.seed(run)
                 np.random.seed(run)
-                instance = graph(n_locations, n_arcs, dim_grid, n_t, n_c, seed=run)
+                instance = graph(n_locations, n_arcs, dim_grid, t_p, n_c, seed=run)
+                print("\nProblem ", instance.name, n_c, t_p, run)
+                instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
                 solver.solve(time_limit=3600, verbose=True)  # int(pso.time))
-                df.loc[row] = [run, instance.name, n_t, n_c, solver.obj, solver.time, solver.m.MIPGap, solver.m.status]
+
+                ITERATIONS = 1000
+                POPULATION_SIZE = 128
+
+                g = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=0.2)
+                g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=0)
+
+                print(g.time, solver.time, g.best_val, solver.obj, 1 - g.best_val / solver.obj)
+
+                df.loc[row] = [run, instance.name, t_p, n_c, g.best_val, g.time, solver.obj, solver.time, solver.m.MIPGap, solver.m.status]
                 row += 1
 
             df.to_csv('arc_test_solver.csv')

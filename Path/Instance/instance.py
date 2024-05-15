@@ -78,7 +78,7 @@ class Instance(nx.Graph):
 
         for i in range(n_commodities):
             for j in range(i + 1, n_commodities):
-                self.add_edge(com_names[i], com_names[j], color='y', transfer=np.random.uniform(*cr_free))
+                self.add_edge(com_names[i], com_names[j], color='y', transfer=np.random.uniform(*self.cr_free))
 
         for i in range(self.n_commodities):
             for j in range(self.n_paths):

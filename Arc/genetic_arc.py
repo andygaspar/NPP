@@ -178,8 +178,6 @@ class GeneticArc:
             code += str(t) + ','
         code = code[:-1] + new_line
         print(code)
-
-
     def run_cpp_h(self, iterations, verbose, n_threads, seed=None):
         self.time = time.time()
 

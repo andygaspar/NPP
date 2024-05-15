@@ -50,7 +50,7 @@ class DelaunayInstance(ArcInstance):
         # plt.show()
         #
         nx.draw(graph, pos={i: tri.points[i] for i in range(n_points)}, with_labels=graph.nodes)
-        plt.show()
+        # plt.show()
 
         #
         # nx.draw(graph, with_labels=graph.nodes)
@@ -66,7 +66,7 @@ class DelaunayInstance(ArcInstance):
         self.adj_start = nx.to_numpy_array(graph)
 
         # number of tolls from percentage to integer
-        # self.n_arcs = round(self.n_arcs / 100 * self.toll_proportion)
+        self.n_arcs = round(self.n_arcs / 100 * self.toll_proportion)
 
         origin_destination = list(combinations(graph.nodes, r=2))
 
