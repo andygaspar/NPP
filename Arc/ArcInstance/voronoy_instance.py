@@ -9,14 +9,14 @@ import scipy
 from gurobipy import Model, GRB, quicksum
 
 from Arc.ArcInstance.arc_instance import ArcInstance
-from Arc.ArcInstance.arc_commodity import ArcCommodity
+from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
 
 
 class VoronoiInstance(ArcInstance):
-    def __init__(self, n_locations, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5),
-                 seeds=False):
+    def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5),
+                 seed=False):
         # costs = (2, 20)
-        if seeds:
+        if seed:
             np.random.seed(0)
         super().__init__(n_locations, n_commodities)  # {20, 30, 40}
         # self.n_arcs = n_arcs
@@ -174,6 +174,12 @@ class VoronoiInstance(ArcInstance):
         self.N_p = {p: max([k.M_p[p] for k in self.commodities]) for p in self.toll_arcs}
 
         self.n_users = np.array([comm.n_users for comm in self.commodities])
+
+        self.tolls = [ArcToll(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
+        self.free = [Arc(a, self.npp.edges[a]['weight']) for a in self.free_arcs]
+        self.n_tolls = len(self.tolls)
+
+        self.adj = nx.to_numpy_array(self.npp)
 
         print('Instance:')
         print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',

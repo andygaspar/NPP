@@ -5,18 +5,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import combinations
 
-from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll
+from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
 from Arc.ArcInstance.arc_instance import ArcInstance
 
 
 class GridInstance(ArcInstance):
-    def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
+    def __init__(self, n_locations, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
         # costs = (2, 20)
         super().__init__(n_locations, n_commodities)
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
-        self.n_arcs = n_arcs
         self.name = 'Grid'
         self.toll_proportion = toll_proportion  # {5%, 10%, 15%, 20%}
         self.commodities: List[ArcCommodity] = []
@@ -158,7 +157,8 @@ class GridInstance(ArcInstance):
 
         self.n_users = np.array([comm.n_users for comm in self.commodities])
 
-        self.tolls = [ArcToll(p, self.commodities) for p in self.toll_arcs]
+        self.tolls = [ArcToll(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
+        self.free = [Arc(a, self.npp.edges[a]['weight']) for a in self.free_arcs]
         self.n_tolls = len(self.tolls)
 
         self.adj = nx.to_numpy_array(self.npp)

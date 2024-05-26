@@ -7,7 +7,7 @@ from itertools import combinations
 
 import scipy
 
-from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll
+from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
 from Arc.ArcInstance.arc_instance import ArcInstance
 
 
@@ -50,7 +50,7 @@ class DelaunayInstance(ArcInstance):
         # plt.show()
         #
         nx.draw(graph, pos={i: tri.points[i] for i in range(n_points)}, with_labels=graph.nodes)
-        plt.show()
+        # plt.show()
 
         #
         # nx.draw(graph, with_labels=graph.nodes)
@@ -66,7 +66,7 @@ class DelaunayInstance(ArcInstance):
         self.adj_start = nx.to_numpy_array(graph)
 
         # number of tolls from percentage to integer
-        # self.n_arcs = round(self.n_arcs / 100 * self.toll_proportion)
+        self.n_arcs = round(self.n_arcs / 100 * self.toll_proportion)
 
         origin_destination = list(combinations(graph.nodes, r=2))
 
@@ -179,7 +179,9 @@ class DelaunayInstance(ArcInstance):
         print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
               self.toll_proportion, '%', '  n tolls = ', self.n_arcs, '  n commodities = ', self.n_commodities)
 
-        self.tolls = [ArcToll(p, self.commodities) for p in self.toll_arcs]
+
+        self.tolls = [ArcToll(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
+        self.free = [Arc(a, self.npp.edges[a]['weight']) for a in self.free_arcs]
         self.n_tolls = len(self.tolls)
 
         self.adj = nx.to_numpy_array(self.npp)

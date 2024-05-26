@@ -7,11 +7,9 @@ import numpy as np
 from Arc.ArcInstance.arc_instance import ArcInstance
 from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
 from Arc.Heuristic.arc_heuristic import run_arc_heuristic
-from Arc.Heuristic.arc_heuristic2 import run_arc_heuristic2
-from Instance.instance import Instance
+
+
 # from Net.network_manager import NetworkManager
-from Solver.pso_solver import PsoSolver
-from CPP.GA.genetic_cpp import GeneticOperators, GeneticCpp
 
 
 class GeneticArc:
@@ -31,7 +29,7 @@ class GeneticArc:
         self.upper_bounds = np.array([p.N_p for p in npp.tolls])
         # self.lower_bounds = np.array([p.L_p for p in npp.tolls])
         self.lower_bounds = np.zeros_like(self.upper_bounds)
-        self.tolls_idxs = [p.idxs for p in npp.tolls]
+        self.tolls_idxs = [p.idx for p in npp.tolls]
         self.toll_idxs_flat = np.array(self.tolls_idxs).T.flatten()
         self.origins = np.array([commodity.origin for commodity in self.npp.commodities])
         self.destinations = np.array([commodity.destination for commodity in self.npp.commodities])
@@ -55,7 +53,7 @@ class GeneticArc:
 
     def get_mats(self, sol):
         for i in range(self.n_tolls):
-            self.prices[self.npp.tolls[i].idxs] = sol[i]
+            self.prices[self.npp.tolls[i].idx] = sol[i]
         adj = self.adj + self.prices
 
         return adj, self.prices
@@ -180,8 +178,6 @@ class GeneticArc:
             code += str(t) + ','
         code = code[:-1] + new_line
         print(code)
-
-
     def run_cpp_h(self, iterations, verbose, n_threads, seed=None):
         self.time = time.time()
 
@@ -202,7 +198,7 @@ class GeneticArc:
             self.solution = self.population[0]
             self.adj_solution, self.mat_solution = self.get_mats(self.solution)
             for j in [0] + random.choices(range(1, self.pop_size), k=5):
-                self.population[j], self.vals[j] = run_arc_heuristic2(self.npp, *self.get_mats(self.population[j]), 1e-16)
+                self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(self.population[j]), 1e-16)
             idx = np.argsort(self.vals[:self.pop_size])[::-1]
             self.population[:self.pop_size] = self.population[idx]
             self.vals[:self.pop_size] = self.vals[idx]
