@@ -54,7 +54,6 @@ for partial in [True, False]:
                 npp = Instance(n_paths=n_paths, n_commodities=n_commodities, partial=partial)
                 solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
                 solver.solve()
-                # print(npp.compute_solution_value(solver.solution_array), solver.obj, 'sol')
 
                 recombination_size = int(n_paths / 2)
 

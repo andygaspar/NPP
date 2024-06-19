@@ -299,8 +299,7 @@ class ArcGenetic {
 
             if(no_improvement >= 500) {
                 restart_population();
-                //std::cout<<"restarted"<<std::endl;
-                
+                //std::cout<<"restarted"<<std::endl;                
                 no_improvement = 0;
             }
 
