@@ -1,3 +1,4 @@
+import copy
 from typing import List
 
 import networkx as nx
@@ -24,6 +25,21 @@ class ArcInstance:
 
     def get_adj(self):
         return nx.to_numpy_array(self.npp)
+
+    def get_mats(self):
+        adj = copy.deepcopy(self.get_adj())
+        prices = np.zeros_like(adj)
+        for t in self.tolls:
+            prices[t.idx[0], t.idx[1]] = adj[t.idx[0], t.idx[1]]
+
+        return adj, prices
+
+    def get_bool_mats(self):
+        path_prices = np.zeros_like(self.adj, dtype=bool)
+        for edge in self.toll_arcs:
+            path_prices[edge[0], edge[1]] = True
+            path_prices[edge[1], edge[0]] = True
+        return self.adj.astype(bool), path_prices
 
     @staticmethod
     def min_dist_with_profit(dist, profit, visited, tol):
@@ -71,6 +87,10 @@ class ArcInstance:
             _, _, profit = self.dijkstra(adj, prices, commodity, tol=tol)
             obj += profit[commodity.destination]
         return obj
+
+    def compute_obj_from_price(self, prices, tol=1e-9):
+        adj = self.adj + prices
+        return self.compute_obj(adj, prices, tol=tol)
 
     @staticmethod
     def min_dist(dist, visited, tol):

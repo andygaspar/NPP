@@ -1,7 +1,9 @@
+import copy
 import itertools
 import random
 import time
 
+import networkx as nx
 import numpy as np
 
 from Arc.ArcInstance.arc_instance import ArcInstance
@@ -25,7 +27,7 @@ class GeneticArc:
         self.total_pop_size = self.pop_size + self.offs_size
 
         self.n_tolls = npp.n_tolls
-        self.npp = npp
+        self.npp = copy.deepcopy(npp)
         self.upper_bounds = np.array([p.N_p for p in npp.tolls])
         # self.lower_bounds = np.array([p.L_p for p in npp.tolls])
         self.lower_bounds = np.zeros_like(self.upper_bounds)
@@ -126,6 +128,10 @@ class GeneticArc:
         self.population, self.vals = self.genetic_cpp.get_results()
         self.solution = self.population[0]
         self.adj_solution, self.mat_solution = self.get_mats(self.solution)
+        self.npp.npp = nx.from_numpy_array(self.adj_solution)
+        for c in self.npp.commodities:
+            c.solution_path = nx.shortest_path(self.npp.npp, c.origin, c.destination, weight='weight')
+            c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
         self.time = time.time() - self.time
 
         # (self, upper_bounds, lower_bounds, adj, tolls_idxs, n_users: np.array, origins, destinations,
