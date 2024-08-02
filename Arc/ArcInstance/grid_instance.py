@@ -34,6 +34,9 @@ class GridInstance(ArcInstance):
         # self.n_locations = dim_grid[0]*dim_grid[1]
         self.n_arcs = len(graph.edges)
 
+        self.n_nodes = len(graph.nodes)
+        self.n_edges = len(graph.edges)
+
         # ottanta_perc_archi = round(self.n_arcs/100 * 80)
         # i = 0
 
@@ -162,6 +165,7 @@ class GridInstance(ArcInstance):
         self.n_tolls = len(self.tolls)
 
         self.adj = nx.to_numpy_array(self.npp)
+        self.edges_idx = dict((zip(self.free_arcs + self.toll_arcs, range(len(self.free_arcs) + len(self.toll_arcs)))))
 
         # print('Instance:')
         # print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
@@ -195,3 +199,11 @@ class GridInstance(ArcInstance):
             if a[1] == i:  # ( .., i)  i+
                 entering.append(a)
         return exiting, entering
+
+
+    def get_adj(self):
+        path_prices = np.zeros_like(self.adj, dtype=bool)
+        for edge in self.toll_arcs:
+            path_prices[edge[0], edge[1]] = True
+            path_prices[edge[1], edge[0]] = True
+        return self.adj.astype(bool), path_prices

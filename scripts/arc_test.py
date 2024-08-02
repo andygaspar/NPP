@@ -21,7 +21,6 @@ os.system("Arc/Arc_GA/install_arc.sh")
 
 n_arcs = 104
 dim_grid = (5, 12)
-# 5 *12
 # dim_grid = (3, 4)
 n_locations = dim_grid[0] * dim_grid[1]
 # toll_proportion = 10
@@ -45,16 +44,16 @@ for graph in graphs:
                 np.random.seed(run)
                 instance = graph(n_locations, n_arcs, dim_grid, t_p, n_c, seed=run)
                 print("\nProblem ", instance.name, n_c, t_p, run)
-                instance.show()
+                # instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
-                solver.solve(time_limit=3600, verbose=True)  # int(pso.time))
+                solver.solve(time_limit=3, verbose=False)  # int(pso.time))
 
                 ITERATIONS = 1000
                 POPULATION_SIZE = 128
 
                 g = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=0.2)
-                g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=0)
+                g.run_cpp(ITERATIONS, verbose=False, n_threads=16, seed=0)
 
                 print(g.time, solver.time, g.best_val, solver.obj, 1 - g.best_val / solver.obj)
 
