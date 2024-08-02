@@ -1,3 +1,4 @@
+import copy
 from typing import List
 
 import networkx as nx
@@ -24,6 +25,14 @@ class ArcInstance:
 
     def get_adj(self):
         return nx.to_numpy_array(self.npp)
+
+    def get_mats(self):
+        adj = copy.deepcopy(self.get_adj())
+        prices = np.zeros_like(adj)
+        for t in self.tolls:
+            prices[t.idx[0], t.idx[1]] = adj[t.idx[0], t.idx[1]]
+
+        return adj, prices
 
     @staticmethod
     def min_dist_with_profit(dist, profit, visited, tol):
