@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from Arc.ArcInstance.del_test import DelaunayInstanceTest
+# from Arc.ArcInstance.del_test import DelaunayInstanceTest
 from Arc.ArcInstance.delunay_instance import DelaunayInstance
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
@@ -45,10 +45,10 @@ for graph in graphs:
                 np.random.seed(run)
                 instance = graph(n_locations, n_arcs, dim_grid, t_p, n_c, seed=run)
                 print("\nProblem ", instance.name, n_c, t_p, run)
-                instance.show()
+                # instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
-                solver.solve(time_limit=3600, verbose=True)  # int(pso.time))
+                solver.solve(time_limit=3, verbose=True)  # int(pso.time))
 
                 ITERATIONS = 1000
                 POPULATION_SIZE = 128
@@ -56,12 +56,12 @@ for graph in graphs:
                 g = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=0.2)
                 g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=0)
 
-                print(g.time, solver.time, g.best_val, solver.obj, 1 - g.best_val / solver.obj)
+                print(g.time, solver.time, g.best_val, solver.obj, g.best_val / solver.obj)
 
                 df.loc[row] = [run, instance.name, t_p, n_c, g.best_val, g.time, solver.obj, solver.time, solver.m.MIPGap, solver.m.status]
                 row += 1
 
-            df.to_csv('arc_test_solver.csv')
+            # df.to_csv('arc_test_solver.csv')
 # solver.obj = 3966.
 # print(solver.time)
 

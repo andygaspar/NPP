@@ -20,7 +20,7 @@ class ArcSolver:
         self.adj_solution = None
         self.best_bound = None
         self.symmetric_costs = symmetric_costs
-        self.instance = instance
+        self.instance = copy.deepcopy(instance)
         self.m = Model('CVRP')
         self.m.modelSense = GRB.MAXIMIZE
         self.status_dict = {1: 'LOADED', 2: 'OPTIMAL', 3: 'INFEASIBLE', 4: 'INF_OR_UNBD', 5: 'UNBOUNDED',

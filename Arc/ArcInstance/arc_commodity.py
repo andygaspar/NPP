@@ -12,6 +12,8 @@ class ArcCommodity:
         self.destination = destination
         self.n_users = n_users
         self.name = str(self.origin) + ' -> ' + str(self.destination)
+        self.solution_path = None
+        self.solution_edges = None
 
         self.cost_free = None
         self.l_free = None
