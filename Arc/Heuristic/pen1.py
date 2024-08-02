@@ -78,3 +78,6 @@ pen1.addConstr((c + T) @ x + d @ y - lam @ b == 0)
 pen1.optimize()
 
 print(np.round(y.x))
+
+
+print("hello")
