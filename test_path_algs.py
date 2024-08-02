@@ -1,9 +1,6 @@
 import os
 import random
-
 import numpy as np
-import pandas as pd
-
 from Path.Solver.genetic_heuristic_solver import GeneticHeuristic
 from Path.Instance.instance import Instance
 from Path.Solver.genetic_pso_solver import GeneticPso

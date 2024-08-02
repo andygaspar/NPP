@@ -36,7 +36,7 @@ NO_UPDATE_LIM = 300
 
 H_EVERY = 10
 
-TIME_LIMIT = 60 * 60
+TIME_LIMIT = 20
 VERBOSE = False
 N_THREADS = None
 row = 0
@@ -44,8 +44,8 @@ run = 0
 
 df = pd.DataFrame(columns=columns)
 for partial in [True, False]:
-    for n_commodities in [20, 56, 90]:
-        for n_paths in [20, 56, 90]:
+    for n_commodities in [180, 20, 56, 90]:
+        for n_paths in [180, 20, 56, 90]:
             for run in range(10):
                 print("\nProblem", n_commodities, n_paths, run)
                 random.seed(run)
@@ -54,7 +54,6 @@ for partial in [True, False]:
                 npp = Instance(n_paths=n_paths, n_commodities=n_commodities, partial=partial)
                 solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
                 solver.solve()
-                # print(npp.compute_solution_value(solver.solution_array), solver.obj, 'sol')
 
                 recombination_size = int(n_paths / 2)
 

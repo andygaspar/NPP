@@ -19,7 +19,7 @@ def stop(model, where):
 
 class GlobalSolver:
 
-    def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False, binary=True):
+    def __init__(self, instance: Instance, time_limit=None, min_sol_num=None, verbose=False, binary=True, tol=1e-9):
 
         self.instance = instance
         self.m = Model('CVRP')
@@ -29,10 +29,10 @@ class GlobalSolver:
             self.m.setParam('TimeLimit', time_limit)
         self.m._time_limit = time_limit
         self.m._min_sol_num = min_sol_num
-        tol = 1e-9
+        self.tol = tol
         self.m.setParam("ScaleFlag", 0)
-        self.m.setParam("OptimalityTol", tol)
-        self.m.setParam("FeasibilityTol", tol)
+        self.m.setParam("OptimalityTol", self.tol)
+        self.m.setParam("FeasibilityTol", self.tol)
 
 
 

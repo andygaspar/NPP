@@ -10,7 +10,7 @@ from Arc.ArcInstance.arc_instance import ArcInstance
 
 
 class GridInstance(ArcInstance):
-    def __init__(self, n_locations, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
+    def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
         # costs = (2, 20)
         super().__init__(n_locations, n_commodities)
         if seed is not None:
@@ -28,11 +28,14 @@ class GridInstance(ArcInstance):
 
         graph = nx.grid_graph(dim_grid, periodic=False)
         graph = nx.convert_node_labels_to_integers(graph)
-        nx.draw(graph, with_labels=True)
+        # nx.draw(graph, with_labels=True)
         # plt.show()
 
         # self.n_locations = dim_grid[0]*dim_grid[1]
         self.n_arcs = len(graph.edges)
+
+        self.n_nodes = len(graph.nodes)
+        self.n_edges = len(graph.edges)
 
         # ottanta_perc_archi = round(self.n_arcs/100 * 80)
         # i = 0
@@ -162,15 +165,29 @@ class GridInstance(ArcInstance):
         self.n_tolls = len(self.tolls)
 
         self.adj = nx.to_numpy_array(self.npp)
+        self.edges_idx = dict((zip(self.free_arcs + self.toll_arcs, range(len(self.free_arcs) + len(self.toll_arcs)))))
 
         # print('Instance:')
         # print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
         #       self.toll_proportion, '%', '  n tolls', self.n_tolls, '  n commodities = ', self.n_commodities)
 
-    def show(self):
-        nx.draw(self.npp, edge_color=[self.npp[u][v]['color'] for u, v in self.npp.edges],
-                with_labels=True, font_size=7)
-        plt.show()
+    def show(self, edge_color=True, with_labels=True, edge_weight=False, width=5, file=None):
+        plt.rcParams["figure.figsize"] = (15, 10)
+        # plt.rcParams["font.size"] = 20
+        pos = nx.spring_layout(self.npp)  # pos = nx.nx_agraph.graphviz_layout(G)
+        edge_color = [self.npp[u][v]['color'] for u, v in self.npp.edges] if edge_color else None
+        nx.draw(self.npp, pos=pos, edge_color=edge_color,
+                with_labels=with_labels, font_size=22, width=width)
+        if edge_weight:
+            labels = nx.get_edge_attributes(self.npp, 'weight')
+            for l in labels.keys():
+                labels[l] = round(labels[l], 2)
+            nx.draw_networkx_edge_labels(self.npp, pos, edge_labels=labels, font_size=15)
+        if file is not None:
+            plt.tight_layout()
+            plt.savefig(file, transparent=True)
+        else:
+            plt.show()
 
     @staticmethod
     def iterations_on_arc(i, arcs):
@@ -182,3 +199,11 @@ class GridInstance(ArcInstance):
             if a[1] == i:  # ( .., i)  i+
                 entering.append(a)
         return exiting, entering
+
+
+    def get_adj(self):
+        path_prices = np.zeros_like(self.adj, dtype=bool)
+        for edge in self.toll_arcs:
+            path_prices[edge[0], edge[1]] = True
+            path_prices[edge[1], edge[0]] = True
+        return self.adj.astype(bool), path_prices
