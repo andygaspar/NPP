@@ -10,7 +10,7 @@ from Arc.ArcInstance.grid_instance import GridInstance
 random.seed(0)
 np.random.seed(0)
 
-os.system("Arc/Arc_GA/install_arc.sh")
+# os.system("Arc/Arc_GA/install_arc.sh")
 
 n_arcs = 104
 dim_grid = (5, 12)
