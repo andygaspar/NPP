@@ -87,7 +87,6 @@ for edge in instance.edges_idx.keys():
 
 
 
-
 np.round(1.20385479e+02)
 
 M = 1
