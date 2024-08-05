@@ -13,7 +13,7 @@ from Arc.genetic_arc import GeneticArc
 random.seed(0)
 np.random.seed(0)
 
-# os.system("Arc/Arc_GA/install_arc.sh")
+os.system("Arc/Arc_GA/install_arc.sh")
 200/20
 n_arcs = 104
 # dim_grid = (5, 12)
@@ -30,8 +30,6 @@ n_commodities = [10, 50, 60]
 
 # instance.show()
 row = 0
-
-
 
 instance = GridInstance(n_locations, n_arcs, dim_grid, 20, 60, seed=0)
 print(instance.n_edges)
