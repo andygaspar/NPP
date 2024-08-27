@@ -11,6 +11,8 @@ class ArcInstance:
     def __init__(self, n_locations, n_commodities):
         self.n_locations = n_locations
         self.n_commodities = n_commodities
+        self.n_nodes = None
+        self.edges_idx = None
         self.users = []
         self.n_tolls = None
         self.npp = None

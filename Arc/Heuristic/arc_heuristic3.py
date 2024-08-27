@@ -68,7 +68,7 @@ def retrive_commodity_tolls(instance: ArcInstance, commodity: ArcCommodity, prev
     return commodity_tolls
 
 
-def run_arc_heuristic2(instance: ArcInstance, adj, prices, tol=1e-9):
+def run_arc_heuristic3(instance: ArcInstance, adj, prices, tol=1e-9):
     improving = True
     toll_idx = dict(zip(instance.toll_arcs, range(instance.n_tolls)))
     idx_to_tall = dict(zip(range(instance.n_tolls), instance.toll_arcs))

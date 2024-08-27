@@ -174,11 +174,11 @@ class DelaunayInstance(ArcInstance):
         self.N_p = {p: max([k.M_p[p] for k in self.commodities]) for p in self.toll_arcs}
 
         self.n_users = np.array([comm.n_users for comm in self.commodities])
-
-        print('Instance:')
-        print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
-              self.toll_proportion, '%', '  n tolls = ', self.n_arcs, '  n commodities = ', self.n_commodities)
-
+        #
+        # print('Instance:')
+        # print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
+        #       self.toll_proportion, '%', '  n tolls = ', self.n_arcs, '  n commodities = ', self.n_commodities)
+        #
 
         self.tolls = [ArcToll(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
         self.free = [Arc(a, self.npp.edges[a]['weight']) for a in self.free_arcs]

@@ -110,40 +110,40 @@ class Instance(nx.Graph):
                 with_labels=True, font_size=7)
         plt.show()
 
-    def make_torch_graph(self, solution=None):
-        for com in self.commodities:
-            self.graph.nodes[com.name]['x'] = [com.n_users, com.cost_free, 0, self.n_commodities]
-            self.graph.nodes[com.name]['y'] = 0
-        for i, toll in enumerate(self.tolls):
-            self.graph.nodes[toll.name]['x'] = [0, 0, toll.N_p, self.n_commodities]
-            self.graph.nodes[toll.name]['y'] = solution[i] if solution is not None else 0
-        data_homo = torch_geometric.utils.convert.from_networkx(self.graph,
-                                                                group_node_attrs=['type_int', 'n_users',
-                                                                                  'free_path',
-                                                                                  'N_p', 'n_commodities'],
-                                                                group_edge_attrs=['transfer'])
-        return data_homo
+    # def make_torch_graph(self, solution=None):
+    #     for com in self.commodities:
+    #         self.graph.nodes[com.name]['x'] = [com.n_users, com.cost_free, 0, self.n_commodities]
+    #         self.graph.nodes[com.name]['y'] = 0
+    #     for i, toll in enumerate(self.tolls):
+    #         self.graph.nodes[toll.name]['x'] = [0, 0, toll.N_p, self.n_commodities]
+    #         self.graph.nodes[toll.name]['y'] = solution[i] if solution is not None else 0
+    #     data_homo = torch_geometric.utils.convert.from_networkx(self.graph,
+    #                                                             group_node_attrs=['type_int', 'n_users',
+    #                                                                               'free_path',
+    #                                                                               'N_p', 'n_commodities'],
+    #                                                             group_edge_attrs=['transfer'])
+    #     return data_homo
 
-    def make_torch_hetero_graph(self, solution):
-        for com in self.commodities:
-            self.graph.nodes[com.name]['x'] = [com.n_users, com.cost_free, 0]
-            self.graph.nodes[com.name]['y'] = 0
-        for i, toll in enumerate(self.tolls):
-            self.graph.nodes[toll.name]['x'] = [0, 0, toll.N_p]
-            self.graph.nodes[toll.name]['y'] = solution[i]
-
-        data_homo = self.make_torch_graph(solution)
-        data_hetero = HeteroData()
-        data_hetero['commodities'].x = data_homo.x[:8, 1:3]
-        data_hetero['tolls'].x = data_homo.x[self.n_commodities:, -1]
-        data_hetero['tolls'].y = data_homo.y[self.n_commodities:]
-
-        comm_tolls_idxs = torch.where(data_homo.edge_index[0] < self.n_commodities)[0]
-        from_comm = data_homo.edge_index[0][comm_tolls_idxs]
-        to_tolls = data_homo.edge_index[1][comm_tolls_idxs] - self.n_commodities
-        data_hetero['commodities', 'transfer', 'tolls'].edge_index = torch.stack([from_comm, to_tolls])
-        data_hetero['commodities', 'transfer', 'tolls'].edge_attr = data_homo.edge_attr[comm_tolls_idxs]
-        return data_hetero
+    # def make_torch_hetero_graph(self, solution):
+    #     for com in self.commodities:
+    #         self.graph.nodes[com.name]['x'] = [com.n_users, com.cost_free, 0]
+    #         self.graph.nodes[com.name]['y'] = 0
+    #     for i, toll in enumerate(self.tolls):
+    #         self.graph.nodes[toll.name]['x'] = [0, 0, toll.N_p]
+    #         self.graph.nodes[toll.name]['y'] = solution[i]
+    #
+    #     data_homo = self.make_torch_graph(solution)
+    #     data_hetero = HeteroData()
+    #     data_hetero['commodities'].x = data_homo.x[:8, 1:3]
+    #     data_hetero['tolls'].x = data_homo.x[self.n_commodities:, -1]
+    #     data_hetero['tolls'].y = data_homo.y[self.n_commodities:]
+    #
+    #     comm_tolls_idxs = torch.where(data_homo.edge_index[0] < self.n_commodities)[0]
+    #     from_comm = data_homo.edge_index[0][comm_tolls_idxs]
+    #     to_tolls = data_homo.edge_index[1][comm_tolls_idxs] - self.n_commodities
+    #     data_hetero['commodities', 'transfer', 'tolls'].edge_index = torch.stack([from_comm, to_tolls])
+    #     data_hetero['commodities', 'transfer', 'tolls'].edge_attr = data_homo.edge_attr[comm_tolls_idxs]
+    #     return data_hetero
 
     def save_problem(self, folder_name=None):
         comm: Commodity
