@@ -35,6 +35,9 @@ class GeneticHCpp:
         self.lib.get_gen_best_val_.argtypes = [ctypes.c_void_p]
         self.lib.get_gen_best_val_.restype = ctypes.c_double
 
+        self.lib.get_h_iterations.argtypes = [ctypes.c_void_p]
+        self.lib.get_h_iterations.restype = ctypes.c_int
+
         self.lib.get_population_.argtypes = [ctypes.c_void_p]
         self.lib.get_population_.restype = ndpointer(dtype=ctypes.c_double, shape=(pop_size, self.n_paths))
 
@@ -66,7 +69,8 @@ class GeneticHCpp:
         return self.lib.get_gen_best_val_(ctypes.c_void_p(self.genetic))
 
     def get_results(self):
-        a = self.lib.get_population_(ctypes.c_void_p(self.genetic))
-        b = self.lib.get_vals_(ctypes.c_void_p(self.genetic))
-        return a, b
+        pop = self.lib.get_population_(ctypes.c_void_p(self.genetic))
+        vals = self.lib.get_vals_(ctypes.c_void_p(self.genetic))
+        h_iterations = self.lib.get_h_iterations(ctypes.c_void_p(self.genetic))
+        return pop, vals, h_iterations
 

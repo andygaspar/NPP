@@ -16,21 +16,14 @@ os.system("Path/CPP/install.sh")
 columns = ['run', 'commodities', 'paths',
            'obj_exact', 'obj_h', 'obj_ga',
            'GAP_h', 'GAP_ga', 'mip_GAP', 'status',
-           'time_exact', 'time_h', 'time_ga', 'partial']
+           'time_exact', 'time_h', 'time_ga', 'h_iter', 'partial']
 
 # columns = ['run', 'commodities', 'paths', 'obj_gah', 'obj_ga', 'time_gah', 'time_ga']
 
-POPULATION = 128
+POPULATION = 1280
 off_size = int(POPULATION / 2)
-ITERATIONS = 20000
+ITERATIONS = 1000
 MUTATION_RATE = 0.02
-
-# PSO_EVERY = 100
-# PSO_SIZE = 4
-# PSO_SELECTION = 4
-# PSO_ITERATIONS = 20000
-# PSO_FINAL_ITERATIONS = 1000
-# NO_UPDATE_LIM = 300
 
 H_EVERY = 100
 
@@ -40,7 +33,7 @@ N_THREADS = None
 row = 0
 run = 0
 
-file_name = 'Results/path_results_' + str(POPULATION) + '_' + str(ITERATIONS) + '.csv'
+file_name = 'Results/path_results_' + str(POPULATION) + '_' + str(ITERATIONS) + '_mutation.csv'
 
 df = pd.DataFrame(columns=columns)
 for partial in [True, False]:
@@ -73,12 +66,12 @@ for partial in [True, False]:
 
                 gap_g_h = 1 - genetic_h.best_val / solver.obj
                 gap_g = 1 - g.best_val / solver.obj
-                print(partial, n_commodities, n_paths, run)
+                print(partial, n_commodities, n_paths, run, genetic_h.heuristic_iterations)
                 print(genetic_h.time, solver.time, genetic_h.best_val, solver.obj, 1 - genetic_h.best_val / solver.obj, '\n')
                 df.loc[row] = [run, n_commodities, n_paths,
                                solver.obj, genetic_h.best_val, g.best_val,
                                gap_g_h, gap_g, solver.final_gap, solver.m.status,
-                               solver.time, genetic_h.time, g.time, partial]
+                               solver.time, genetic_h.time, g.time, genetic_h.heuristic_iterations, partial]
 
                 # print(genetic_h.time, g.time, genetic_h.best_val, g.best_val)
                 #

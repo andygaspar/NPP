@@ -1,3 +1,7 @@
+#ifndef UTILS
+#define UTILS
+
+
 #include <vector>
 #include <functional>
 #include <random>
@@ -8,6 +12,7 @@ bool compare(std::array<double,2> a, std::array<double,2> b) { return a[1] > b[1
 std::vector<std::array<double,2>> create_list(double* results_l,double* results_h, int num) {
     std::vector<std::array<double,2>> list(num);
     for (int i=0;i<num;++i){
+        
         list[i][0]=i;
         list[i][1]=results_h[i]-results_l[i];
     }
@@ -78,5 +83,8 @@ double get_std(std::vector<double> &vect, std::vector<int> &indices,  int size) 
     for(int i=0; i<size; i++) var += pow(mean - vect[indices[i]],2);
     return sqrt(var/size);
 }
+
+#endif
+
 
 

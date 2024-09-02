@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <cstdlib>
 #include "utils_.h"
+#include "Heuristic/heuristic.h"
 
 
 class ArcGeneticHeuristic {
@@ -70,7 +71,7 @@ class ArcGeneticHeuristic {
     ArcGeneticHeuristic(double* upper_bounds_, double* lower_bounds_, double* adj_, int adj_size_, int* tolls_idxs_, int* n_usr, int* origins_, int* destinations_, short n_commodities_, short n_tolls_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
     short num_threads_, bool verbose_, short seed){
-
+        std::cout<<"here"<<std::endl;
     pop_size = pop_size_;
     n_tolls = n_tolls_;
     off_size = off_size_;
@@ -182,6 +183,12 @@ class ArcGeneticHeuristic {
     for(int i=0; i<n_threads; i++){
         for(int j=0; j<n_tolls; j++) lower_bounds[i][j] = lower_bounds_[j];
         }
+
+
+
+    Heuristic cc = Heuristic(origins[0], destinations[0], n_users[0], adj[0], tolls_idxs[0]);
+
+
     }
 
     ~ArcGeneticHeuristic(){
@@ -321,7 +328,7 @@ class ArcGeneticHeuristic {
     void npp_dijkstra(std::vector<std::vector<double>> &adj_sol, std::vector<std::vector<double>> &price,  std::vector<double>& distance, std::vector<double>& profit_, std::vector<bool>& visited_, 
     const int origin, const int comm_n_users, const double start_max_val, const double tol){
 
-        for (int i = 0; i < distance.size(); i++) {
+        for (size_t i = 0; i < distance.size(); i++) {
             distance[i] = START_VAL;
             visited_[i] = false;
             profit_[i] = 0;
@@ -331,11 +338,11 @@ class ArcGeneticHeuristic {
     
         // Distance of source vertex from itself is always 0
         distance[origin] = 0;
-        int j, min_index;
+        size_t j, min_index;
         double min_distance, max_profit;
     
         // Find shortest path for all vertices
-        for (int count = 0; count < distance.size() - 1; count++) {
+        for (size_t count = 0; count < distance.size() - 1; count++) {
 
             min_distance = start_max_val; 
             max_profit = 0;
@@ -450,6 +457,7 @@ class ArcGeneticHeuristic {
 
     double heuristic(std::vector<std::vector<double>> &adj_sol, std::vector<std::vector<double>> &price,  std::vector<double>& distance, std::vector<double>& profit_, std::vector<bool>& visited_, 
                     const int origin, const int comm_n_users, const double start_max_val, const double tol) {
+                        return 0;
         
     }
  
