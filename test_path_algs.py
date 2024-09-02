@@ -16,16 +16,21 @@ N_THREADS = None
 row = 0
 run = 0
 
-n_commodities = 20
-n_paths = 20
+n_commodities = 2
+n_paths = 2
 recombination_size = int(n_paths / 2)
 
 random.seed(run)
 np.random.seed(run)
 
 npp = Instance(n_paths=n_paths, n_commodities=n_commodities)
+npp.show()
 solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
 solver.solve()
+
+
+98/180
+
 
 
 POPULATION = 256

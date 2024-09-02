@@ -6,7 +6,7 @@
 #include <string>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "arc_genetic.h"
+#include "arc_genetic_h.h"
 // #include "instance.h"
 
 
@@ -109,7 +109,7 @@ int main(){
     //             100, num_threads, verbose, seed);
 
 
-    ArcGenetic g(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, 
+    ArcGeneticHeuristic g(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, 
                 origins_, destinations_, n_commodities, n_tolls, 
                 pop_size, off_size, mutation_rate, recombination_size, 
                 num_threads, verbose, seed);

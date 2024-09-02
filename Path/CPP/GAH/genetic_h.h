@@ -46,6 +46,7 @@ class GeneticH {
     std::vector<std::vector<int>> n_users;
     std::vector<std::vector<double>> upper_bounds;
     std::vector<std::vector<double>> lower_bounds;
+    std::vector<int> heuristic_iterations;
 
     bool verbose;
     std::vector<std::default_random_engine> generators;
@@ -65,6 +66,8 @@ class GeneticH {
     n_paths = n_paths_;
     off_size = off_size_;
     heuristic_every = heuristic_every_;
+
+    heuristic_iterations = std::vector<int> (num_threads_, 0);
   
 
     pop_total_size = pop_size + off_size;
@@ -271,7 +274,8 @@ class GeneticH {
             if((iter>0 and iter%heuristic_every==0) or iter == iterations - 1){
                 #pragma omp parallel for num_threads(n_threads) default(none) private(th) shared(upper_bounds, population, transfer_costs, commodities_tax_free, a_combs, b_combs, random_order, random_element_order, n_commodities, init_commodity_val, n_paths, recombination_size, generators, tolerance)
                 for(short i=0; i < pop_size; i++) {
-                    vals[indices[i]] = heuristic(population[indices[i]], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, n_paths, vals[indices[i]], tolerance);
+                    th = omp_get_thread_num();
+                    vals[indices[i]] = heuristic(population[indices[i]], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, n_paths, vals[indices[i]], th, tolerance);
                 }
                 argsort(vals, indices, pop_total_size);
                 if(vals[indices[0]] > best_val) {
@@ -342,7 +346,7 @@ class GeneticH {
         return current_run_val;
     }
 
-    double heuristic(std::vector<double>& p,const std::vector<std::vector<double>> & trans_costs, const std::vector<double> &comm_tax_free, const std::vector<int>& n_usr, const short n_comm, const short num_paths, double new_val, double tol) {
+    double heuristic(std::vector<double>& p,const std::vector<std::vector<double>> & trans_costs, const std::vector<double> &comm_tax_free, const std::vector<int>& n_usr, const short n_comm, const short num_paths, double new_val, short th, double tol) {
         bool improving = true;
         bool found_improvement = false;
         bool found_run_improvement;
@@ -424,7 +428,8 @@ class GeneticH {
                 found_run_improvement = false;
             }
             else {improving = false;}
-        
+
+        // heuristic_iterations[th] ++;
         }
         if(found_improvement) {
             new_val = eval(p, trans_costs, comm_tax_free, n_usr, n_comm, num_paths, tol);

@@ -68,11 +68,11 @@ int main(){
     // After function call
     
     // std::srand(std::time(0));
-    short n_paths = 20;
+    short n_paths = 56;
     short n_commodities = 20;
-    short pop_size = 256;
+    short pop_size = 128;
     short off_size = pop_size/2;
-    int iterations = 1000;
+    int iterations = 10000;
     short recombination_size = n_paths/2;
     double mutation_rate = 0.02;
 

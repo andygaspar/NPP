@@ -12,6 +12,7 @@ from Path.Instance.instance import Instance
 class GeneticHeuristic:
     def __init__(self, npp: Instance, pop_size, offs_size, mutation_rate, recombination_size, heuristic_every,
                  verbose=True, n_threads=None, seed=None):
+        self.heuristic_iterations = None
         self.solution = None
         self.time = None
         self.pop_size = pop_size
@@ -50,7 +51,7 @@ class GeneticHeuristic:
         init_population = self.init_values() if init_population is None else init_population
         self.best_val = self.genetic.run(init_population, iterations)
         self.time = time.time() - self.time
-        self.final_population, self.final_vals = self.genetic.get_results()
+        self.final_population, self.final_vals, self.heuristic_iterations = self.genetic.get_results()
         self.solution = self.final_population[0]
 
     def init_values(self):

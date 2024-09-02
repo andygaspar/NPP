@@ -34,6 +34,8 @@ class GlobalSolver:
         self.m.setParam("OptimalityTol", self.tol)
         self.m.setParam("FeasibilityTol", self.tol)
 
+        self.final_gap = 0
+
 
 
         # self.m.setParam('Method', 2) ###################testare == 2 !!!!!!!!!!!!111c
@@ -124,6 +126,7 @@ class GlobalSolver:
             self.solution[p] = self.t[p].x
         self.solution_array = np.array([self.t[p].x for p in self.instance.paths])
         self.obj = self.m.objVal
+        self.final_gap = self.m.MIPGap
 
     def print_model(self):
         # for p in self.instance.paths:

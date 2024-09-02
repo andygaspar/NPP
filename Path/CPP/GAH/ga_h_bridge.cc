@@ -18,6 +18,7 @@ extern "C" {
     double get_gen_best_val_(GeneticH* g) {return g -> get_best_val();}
     double* get_population_ (GeneticH* g) {return g -> get_population();}
     double* get_vals_ (GeneticH* g) {return g-> get_vals();}
+    int get_h_iterations (GeneticH* g) {int iter = 0; for(int th=0; th < g->n_threads; th++) iter += g->heuristic_iterations[th]; return iter; }
     void destroy(GeneticH* g) {delete g;}
 
 }
