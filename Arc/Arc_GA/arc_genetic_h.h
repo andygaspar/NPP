@@ -55,6 +55,7 @@ class ArcGeneticHeuristic {
     std::vector<std::vector<double>> dist;
     std::vector<std::vector<bool>> visited;
     std::vector<std::vector<double>> profit;
+    Heuristic heuristic;
 
 
     double START_VAL = pow(10, 5);
@@ -71,7 +72,7 @@ class ArcGeneticHeuristic {
     ArcGeneticHeuristic(double* upper_bounds_, double* lower_bounds_, double* adj_, int adj_size_, int* tolls_idxs_, int* n_usr, int* origins_, int* destinations_, short n_commodities_, short n_tolls_, 
     short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
     short num_threads_, bool verbose_, short seed){
-        std::cout<<"here"<<std::endl;
+
     pop_size = pop_size_;
     n_tolls = n_tolls_;
     off_size = off_size_;
@@ -186,7 +187,7 @@ class ArcGeneticHeuristic {
 
 
 
-    Heuristic cc = Heuristic(origins[0], destinations[0], n_users[0], adj[0], tolls_idxs[0]);
+    heuristic = Heuristic(origins[0], destinations[0], n_users[0], adj[0], tolls_idxs[0]);
 
 
     }
@@ -295,6 +296,9 @@ class ArcGeneticHeuristic {
                                                     visited[th], origins[th], destinations[th], n_commodities, n_tolls, START_VAL, tolerance);
                 }
             
+            if(iter % 80 == 0){
+                heuristic.run(population[0]);
+            }
 
             argsort(vals, indices, pop_total_size);
                 if(vals[indices[0]] > best_val) {
@@ -455,11 +459,11 @@ class ArcGeneticHeuristic {
     }
 
 
-    double heuristic(std::vector<std::vector<double>> &adj_sol, std::vector<std::vector<double>> &price,  std::vector<double>& distance, std::vector<double>& profit_, std::vector<bool>& visited_, 
-                    const int origin, const int comm_n_users, const double start_max_val, const double tol) {
-                        return 0;
+    // double heuristic(std::vector<std::vector<double>> &adj_sol, std::vector<std::vector<double>> &price,  std::vector<double>& distance, std::vector<double>& profit_, std::vector<bool>& visited_, 
+    //                 const int origin, const int comm_n_users, const double start_max_val, const double tol) {
+    //                     return 0;
         
-    }
+    // }
  
 
 

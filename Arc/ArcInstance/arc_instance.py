@@ -1,4 +1,5 @@
 import copy
+import os
 from typing import List
 
 import networkx as nx
@@ -121,3 +122,19 @@ class ArcInstance:
                         dist[j] = dist[idx] + adj[idx, j]
 
         return dist
+
+
+    def save_problem(self, pb_name):
+        folder = 'Arc/Arc_GA/Problems/' + pb_name
+        os.mkdir(folder)
+        np.savetxt(folder + '/ub.csv', np.array([p.N_p for p in self.tolls]), fmt='%.18f')
+        np.savetxt(folder + '/lb.csv', np.zeros(self.n_tolls), fmt='%.18f')
+        np.savetxt(folder + '/adj.csv', self.adj, fmt='%.18f')
+        np.savetxt(folder + '/adj_size.csv', np.array([self.adj.shape[0]]), fmt='%d')
+        np.savetxt(folder + '/toll_idxs.csv', np.array([p.idx for p in self.tolls]).T.flatten(), fmt='%d')
+        np.savetxt(folder + '/n_users.csv', np.array([commodity.n_users for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/origins.csv', np.array([commodity.origin for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/destinations.csv', np.array([commodity.destination for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/origins.csv', np.array([commodity.origin for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/n_com.csv', np.array([self.n_commodities]), fmt='%d')
+        np.savetxt(folder + '/n_tolls.csv', np.array([self.n_tolls]), fmt='%d')

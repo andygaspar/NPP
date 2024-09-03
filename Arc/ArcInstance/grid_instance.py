@@ -174,7 +174,15 @@ class GridInstance(ArcInstance):
     def show(self, edge_color=True, with_labels=True, edge_weight=False, width=5, file=None):
         plt.rcParams["figure.figsize"] = (15, 10)
         # plt.rcParams["font.size"] = 20
-        pos = nx.spring_layout(self.npp)  # pos = nx.nx_agraph.graphviz_layout(G)
+        # pos = nx.nx_agraph.graphviz_layout(self.npp)
+
+        pos = {}
+        node = 0
+        for i in range(self.dim_grid[1]):
+            for j in range(self.dim_grid[0]):
+                pos[node] = np.array([i * 0.1,  j * 0.1])
+                node += 1
+
         edge_color = [self.npp[u][v]['color'] for u, v in self.npp.edges] if edge_color else None
         nx.draw(self.npp, pos=pos, edge_color=edge_color,
                 with_labels=with_labels, font_size=22, width=width)

@@ -21,7 +21,7 @@ np.random.seed(0)
 n_arcs = 104
 # dim_grid = (5, 12)
 # dim_grid = (4, 3)
-dim_grid = (3, 8)
+dim_grid = (3, 4)
 # 5 *12
 
 # dim_grid = (20, 10)
@@ -39,11 +39,13 @@ n_commodities = [10, 50, 60]
 # 2681 10 60
 row = 0
 
-instance = GridInstance(n_locations, n_arcs, dim_grid, 10, 60, seed=0)
+instance = GridInstance(n_locations, n_arcs, dim_grid, 5, 3, seed=0)
+instance.show()
+instance.save_problem('test1')
 solver = ArcSolver(instance=instance, symmetric_costs=False)
 # solver.solve(time_limit=60, verbose=True)  # int(pso.time))
 # print(solver.obj, solver.status)
-
+os.getcwd()
 solver.obj = 2681
 h = HeuristicNew(instance)
 # h.run()

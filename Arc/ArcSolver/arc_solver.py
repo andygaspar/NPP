@@ -2,6 +2,7 @@
 import copy
 import time
 
+import networkx as nx
 import numpy as np
 
 from Arc.ArcInstance.arc_commodity import ArcCommodity
@@ -21,6 +22,8 @@ class ArcSolver:
         self.best_bound = None
         self.symmetric_costs = symmetric_costs
         self.instance = copy.deepcopy(instance)
+        self.adj = self.instance.get_adj().copy()
+        self.prices = np.zeros_like(self.instance.get_adj())
         self.m = Model('CVRP')
         self.m.modelSense = GRB.MAXIMIZE
         self.status_dict = {1: 'LOADED', 2: 'OPTIMAL', 3: 'INFEASIBLE', 4: 'INF_OR_UNBD', 5: 'UNBOUNDED',
@@ -122,6 +125,12 @@ class ArcSolver:
         self.best_bound = self.m.getAttr('ObjBound')
         self.adj_solution, self.mat_solution = self.get_adj_solution()
         self.solution = list(self.T[a.idx].x for a in self.instance.tolls)
+        self.adj_solution, self.mat_solution = self.get_mats(self.solution)
+        self.instance.npp = nx.from_numpy_array(self.adj_solution)
+        for c in self.instance.commodities:
+            c.solution_path = nx.shortest_path(self.instance.npp, c.origin, c.destination, weight='weight')
+            c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
+        self.time = time.time() - self.time
         return self.m.objval, self.best_bound
 
     def get_tolls(self):
@@ -135,7 +144,7 @@ class ArcSolver:
         adj_solution = self.instance.get_adj() + price_solution
         return adj_solution, price_solution
 
-    def print(self):
+    def print_(self):
         for k in self.instance.commodities:
             print(k)
             for p in self.instance.toll_arcs:
@@ -167,7 +176,12 @@ class ArcSolver:
 
         self.instance.N_p = {a.idx: max([k.M_p[a.idx] for k in self.instance.commodities]) for a in self.instance.tolls}
 
+    def get_mats(self, sol):
+        for i in range(self.instance.n_tolls):
+            self.prices[self.instance.tolls[i].idx] = sol[i]
+        adj = self.adj + self.prices
 
+        return adj, self.prices
 
 
 
