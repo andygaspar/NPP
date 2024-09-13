@@ -6,7 +6,7 @@
 #include <string>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "arc_genetic_h.h"
+#include "arc_genetic_h2.h"
 // #include "instance.h"
 
 
@@ -76,61 +76,26 @@ void printMatrix(T* matrix, int size) {
 
 int main(){
     using namespace std::chrono;
-    // FileReader fr{"TestCases/comm_10_tolls_10"};
-    // After function call
-    
-    // std::srand(std::time(0));
-    
 
 
-    // static double adj_[] = {0.0,26.455680991172585,0.0,21.464405117819744,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,26.455680991172585,0.0,21.346495489906907,0.0,23.082901282149315,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,21.346495489906907,0.0,0.0,0.0,8.854821990083572,0.0,0.0,0.0,0.0,0.0,0.0,21.464405117819744,0.0,0.0,0.0,18.127616337880774,0.0,24.376823391999682,0.0,0.0,0.0,0.0,0.0,0.0,23.082901282149315,0.0,18.127616337880774,0.0,33.90988281503088,0.0,31.753190023462395,0.0,0.0,0.0,0.0,0.0,0.0,8.854821990083572,0.0,33.90988281503088,0.0,0.0,0.0,8.251622782386665,0.0,0.0,0.0,0.0,0.0,0.0,24.376823391999682,0.0,0.0,0.0,20.866847592587135,0.0,28.75175114247994,0.0,0.0,0.0,0.0,0.0,0.0,31.753190023462395,0.0,20.866847592587135,0.0,32.76789914877983,0.0,22.04133683281797,0.0,0.0,0.0,0.0,0.0,0.0,8.251622782386665,0.0,32.76789914877983,0.0,0.0,0.0,7.1310817459366085,0.0,0.0,0.0,0.0,0.0,0.0,28.75175114247994,0.0,0.0,0.0,7.613878991046221,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,22.04133683281797,0.0,7.613878991046221,0.0,5.606551923209771,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7.1310817459366085,0.0,5.606551923209771,0.0};
-    // int adj_size = 12;
-    // double upper_bounds_[] = {90.17934920488645,90.17934920488645,69.48445759700354,69.48445759700354};
-    // int toll_idxs_[]= {5,8,2,5,8,5,5,2};
-    // int origins_[]= {5,5,2,1,4,0,9,3,1,2,1,3,0,5,0,6,2,0,7,4,0,7,6,1,3,0,8,2,3,0,1,0,3,4,7,3,5,4,1,1,1,0,6,1,2,4,8,4,0,6};
-    // int destinations_[]= {8,11,11,10,8,2,10,9,2,8,4,8,1,7,8,10,5,7,11,11,4,10,9,9,4,3,9,4,11,11,3,10,6,10,8,10,10,6,7,5,11,5,11,6,3,7,10,5,6,7};
-    // int n_users_[]= {1,4,4,3,1,2,4,4,1,4,3,3,1,2,3,1,4,2,3,1,2,2,3,3,4,3,2,2,4,3,4,1,4,4,4,2,2,2,2,1,3,2,1,1,3,2,4,4,3,3};
+    std::string file_name = "test_g_10_40";
+    short n_commodities = read_size("Problems/" + file_name + "/n_com.csv");;
+    short n_tolls = read_size("Problems/" + file_name + "/n_tolls.csv");;
+    int adj_size = read_size("Problems/" + file_name + "/adj_size.csv");
+    double*  adj = readMatrixFromFile<double> ("Problems/" + file_name + "/adj.csv", adj_size);
+    double* upper_bounds = readMatrixFromFile<double> ("Problems/" + file_name + "/ub.csv", n_tolls);
+    int* toll_idxs= readMatrixFromFile<int> ("Problems/" + file_name + "/toll_idxs.csv", 2*n_tolls);
+    int* origins = readMatrixFromFile<int> ("Problems/" + file_name + "/origins.csv", n_commodities);
+    int* destinations = readMatrixFromFile<int> ("Problems/" + file_name + "/destinations.csv", n_commodities);
+    int* n_users = readMatrixFromFile<int> ("Problems/" + file_name + "/n_users.csv", n_commodities);
+    for(short i=0; i < n_tolls; i++) upper_bounds[i] *= 2;
 
-    short n_commodities = read_size("Problems/test1/n_com.csv");;
-    short n_tolls = read_size("Problems/test1/n_tolls.csv");;
-    int adj_size = read_size("Problems/test1/adj_size.csv");
-    double*  adj = readMatrixFromFile<double> ("Problems/test1/adj.csv", adj_size);
-    double* upper_bounds = readMatrixFromFile<double> ("Problems/test1/ub.csv", n_tolls);
-    int* toll_idxs= readMatrixFromFile<int> ("Problems/test1/toll_idxs.csv", 2*n_tolls);
-    int* origins = readMatrixFromFile<int> ("Problems/test1/origins.csv", n_commodities);
-    int* destinations = readMatrixFromFile<int> ("Problems/test1/destinations.csv", n_commodities);
-    int* n_users = readMatrixFromFile<int> ("Problems/test1/n_users.csv", n_commodities);
-
-
-
-    // int*  toll_idxs = new int[n_tolls*2];
-    // for(int i=0; i < n_tolls*2; i++){
-    //     toll_idxs[i] = toll_idxs_[i];
-    // }
-
-
-    // int*  origins = new int[n_commodities];
-    // for(int i=0; i < n_commodities; i++){
-    //     origins[i] = origins_[i];
-    // }
-
-
-    // int*  destinations = new int[n_commodities];
-    // for(int i=0; i < n_commodities; i++){
-    //     destinations[i] = destinations_[i];
-    // }
-
-    // int*  n_users = new int[n_commodities];
-    // for(int i=0; i < n_commodities; i++){
-    //     n_users[i] = n_users_[i];
-    // }
-
-
-    short pop_size = 64;
+    short pop_size = 128;
     short off_size = pop_size/2;
-    int iterations = 100;
+    int iterations = 10000;
+    int heuristic_every = 100;
     short recombination_size = n_tolls/2;
-    double mutation_rate = 0.02;
+    double mutation_rate = 0.1;
 
 
     short num_threads = 16;
@@ -159,7 +124,7 @@ int main(){
 
     ArcGeneticHeuristic g(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, 
                 origins, destinations, n_commodities, n_tolls, 
-                pop_size, off_size, mutation_rate, recombination_size, 
+                pop_size, off_size, mutation_rate, recombination_size, heuristic_every,
                 num_threads, verbose, seed);
 
     // double* population = get_random_population(fr.upper_bounds, pop_size, n_paths);

@@ -141,6 +141,26 @@ class GeneticArc:
         # pop_size, offs_size, mutation_rate, recombination_size,
         # verbose, n_threads=None, seed=None)
 
+    def run_cpp_h_new(self, iterations, verbose, n_threads, seed=None):
+        self.time = time.time()
+
+        self.genetic_cpp = ArcGeneticCppHeuristic(self.upper_bounds, self.lower_bounds, self.adj, self.toll_idxs_flat, self.n_users,
+                                                  self.origins,
+                                                  self.destinations, self.npp.n_commodities,
+                                                  self.npp.n_tolls, self.pop_size, self.offs_size, self.mutation_rate,
+                                                  self.recombination_size,
+                                                  verbose, n_threads, seed)
+        initial_position = self.init_values()
+        self.best_val = self.genetic_cpp.run(initial_position, iterations)
+        self.population, self.vals = self.genetic_cpp.get_results()
+        self.solution = self.population[0]
+        self.adj_solution, self.prices = self.get_mats(self.solution)
+        self.npp.npp = nx.from_numpy_array(self.adj_solution)
+        for c in self.npp.commodities:
+            c.solution_path = nx.shortest_path(self.npp.npp, c.origin, c.destination, weight='weight')
+            c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
+        self.time = time.time() - self.time
+
     def generate_cpp(self):
         new_line = '};\n'
 
@@ -186,6 +206,7 @@ class GeneticArc:
             code += str(t) + ','
         code = code[:-1] + new_line
         print(code)
+
     def run_cpp_h(self, iterations, verbose, n_threads, seed=None, old=True):
         self.time = time.time()
 
@@ -196,7 +217,7 @@ class GeneticArc:
 
         self.vals = np.zeros(self.total_pop_size)
         self.vals[:self.pop_size] = np.array([self.fitness_fun(*self.get_mats(sol)) for sol in self.population[:self.pop_size]])
-        for i in range(iterations//every):
+        for i in range(iterations // every):
             self.genetic_cpp = ArcGeneticCpp(self.upper_bounds, self.lower_bounds, self.adj, self.toll_idxs_flat, self.n_users,
                                              self.origins,
                                              self.destinations, self.npp.n_commodities,
@@ -227,13 +248,15 @@ class GeneticArc:
         self.adj_solution, self.prices = self.get_mats(self.solution)
         self.time = time.time() - self.time
 
-    def run_cpp_heuristic(self, iterations, verbose, n_threads, seed=None):
+    def run_cpp_heuristic(self, iterations, dijkstra_every, verbose, n_threads, seed=None):
         self.time = time.time()
 
-        self.genetic_cpp = ArcGeneticCppHeuristic(self.upper_bounds, self.lower_bounds, self.adj, self.toll_idxs_flat, self.n_users, self.origins,
-                                         self.destinations, self.npp.n_commodities,
-                                         self.npp.n_tolls, self.pop_size, self.offs_size, self.mutation_rate, self.recombination_size,
-                                         verbose, n_threads, seed)
+        self.genetic_cpp = ArcGeneticCppHeuristic(self.upper_bounds, self.lower_bounds, self.adj, self.toll_idxs_flat, self.n_users,
+                                                  self.origins,
+                                                  self.destinations, self.npp.n_commodities,
+                                                  self.npp.n_tolls, self.pop_size, self.offs_size, self.mutation_rate,
+                                                  self.recombination_size, dijkstra_every,
+                                                  verbose, n_threads, seed)
         initial_position = self.init_values()
         self.best_val = self.genetic_cpp.run(initial_position, iterations)
         self.population, self.vals = self.genetic_cpp.get_results()

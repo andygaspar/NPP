@@ -8,6 +8,7 @@ import gurobipy as gb
 from gurobipy import GRB
 
 from Arc.ArcInstance.arc_instance import ArcInstance
+from Arc.ArcInstance.delunay_instance import DelaunayInstance
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
 from Arc.Heuristic.arc_heuristic import run_arc_heuristic
@@ -19,9 +20,9 @@ np.random.seed(0)
 
 # os.system("Arc/Arc_GA/install_arc.sh")
 n_arcs = 104
-# dim_grid = (5, 12)
+dim_grid = (10, 24)
 # dim_grid = (4, 3)
-dim_grid = (3, 4)
+# dim_grid = (5, 8)
 # 5 *12
 
 # dim_grid = (20, 10)
@@ -39,11 +40,21 @@ n_commodities = [10, 50, 60]
 # 2681 10 60
 row = 0
 
-instance = GridInstance(n_locations, n_arcs, dim_grid, 5, 3, seed=0)
+tp = 10
+nc = 40
+ins = 'g'
+
+
+if ins == 'g':
+    instance = GridInstance(n_locations, n_arcs, dim_grid, tp, nc, seed=0)
+else:
+    instance = DelaunayInstance(n_locations, n_arcs, dim_grid, tp, nc, seed=0)
 instance.show()
-instance.save_problem('test1')
+# for c in instance.commodities:
+#     print(c)
+# instance.save_problem('test_' + ins + '_' + str(tp) + '_' + str(nc))
 solver = ArcSolver(instance=instance, symmetric_costs=False)
-# solver.solve(time_limit=60, verbose=True)  # int(pso.time))
+solver.solve(time_limit=20, verbose=True)  # int(pso.time))
 # print(solver.obj, solver.status)
 os.getcwd()
 solver.obj = 2681
@@ -52,23 +63,25 @@ h = HeuristicNew(instance)
 # print('h', h.obj)
 
 g = GeneticArc(128, instance, offspring_rate=0.2, mutation_rate=0.1)
-tot_time = 0
-for i in range(100):
-    g.run_cpp(10, verbose=False, n_threads=16)
-    t = time.time()
-    h.run(g.prices, g.best_val)
-    tot_time += time.time() - t
-    # print(g.best_val, h.obj, tot_time)
-print(tot_time, 'time')
+# tot_time = 0
+# for i in range(100):
+#     g.run_cpp(10, verbose=False, n_threads=16)
+#     t = time.time()
+#     h.run(g.prices, g.best_val)
+#     tot_time += time.time() - t
+#     # print(g.best_val, h.obj, tot_time)
+# print(tot_time, 'time')
 g.run_cpp(10000, verbose=True, n_threads=16)
 h.run(g.prices, g.best_val)
-print(g.best_val, h.obj, tot_time, (1 - g.best_val/solver.obj) * 100, (1 - h.obj/solver.obj) * 100)
+print(g.best_val, h.obj, g.time(), (1 - g.best_val/solver.obj) * 100, (1 - h.obj/solver.obj) * 100)
 
 
 7451/7469
 7451/7492
 (1 - 7451/7554)*100
 (1 - 7492/7554)*100
+
+(1 - 8265/8409)*100
 
 # print(solver.time)
 #
@@ -125,3 +138,4 @@ print(g.best_val, h.obj, tot_time, (1 - g.best_val/solver.obj) * 100, (1 - h.obj
 #             best = new_val
 #         else:
 #             improving = False
+

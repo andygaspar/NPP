@@ -7,7 +7,7 @@
 #include <omp.h>
 #include <cstdlib>
 #include "utils_.h"
-#include "Heuristic/heuristic.h"
+#include "Heuristic/commodity2.h"
 
 
 class ArcGeneticHeuristic {
@@ -55,8 +55,10 @@ class ArcGeneticHeuristic {
     std::vector<std::vector<double>> dist;
     std::vector<std::vector<bool>> visited;
     std::vector<std::vector<double>> profit;
-    Heuristic heuristic;
-    int heuristic_every;
+    std::vector<std::vector<Commodity>> commodities;
+    short dijkstra_every;
+
+    std::vector<std::map<std::vector<std::vector<int>>, Path>> path_dicts;
 
 
     double START_VAL = pow(10, 5);
@@ -65,13 +67,14 @@ class ArcGeneticHeuristic {
     std::vector<std::default_random_engine> generators;
 
     double best_val;
+    std::vector<double> best_sol;
 
     int no_improvement;
 
 
 
     ArcGeneticHeuristic(double* upper_bounds_, double* lower_bounds_, double* adj_, int adj_size_, int* tolls_idxs_, int* n_usr, int* origins_, int* destinations_, short n_commodities_, short n_tolls_, 
-    short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, int h_every,
+    short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, short d_every,
     short num_threads_, bool verbose_, short seed){
 
     pop_size = pop_size_;
@@ -83,6 +86,7 @@ class ArcGeneticHeuristic {
 
     no_improvement = 0;
     best_val = 0;
+    best_sol = std::vector<double> (n_tolls, 0);
     tolerance = pow(10, -16);
 
     
@@ -188,8 +192,13 @@ class ArcGeneticHeuristic {
 
 
 
-    heuristic = Heuristic(origins[0], destinations[0], n_users[0], adj[0], tolls_idxs[0]);
-    heuristic_every = h_every;
+    commodities= std::vector<std::vector<Commodity>> (n_threads, std::vector<Commodity> (n_commodities));
+    for(int i=0; i<n_threads; i++){
+        for(int j=0; j<n_commodities; j++) commodities[i][j]= Commodity(origins[0][j], destinations[0][j], n_users[0][j], adj[0], tolls_idxs[0]);
+    }
+    dijkstra_every = d_every;
+
+    path_dicts = std::vector<std::map<std::vector<std::vector<int>>, Path>>  (n_commodities);
 
 
     }
@@ -279,30 +288,57 @@ class ArcGeneticHeuristic {
         size_t k;
         int j, p;
         double std;
+        short th;
+        double val;
+        int c;
+
+        // init dijkstra
+        #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
+        for(short i=0; i < pop_size; i++) {
+            val = 0;
+            th = omp_get_thread_num();
+            for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
+            vals[i] = val;
+        }
+
+        update_paths();
         
         double m_rate = mutation_rate;
 
         for(int iter= 0; iter<iterations; iter ++) {
         
-            short th;
+         
             reshuffle_element_order(random_order);
             // print_pop();
-            #pragma omp parallel for num_threads(n_threads) private(th) 
+            #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
             for(short i=0; i < off_size; i++) {
                 th = omp_get_thread_num();
                 generate(population[indices[a_combs[random_order[i]]]], 
                         population[indices[b_combs[random_order[i]]]], 
                         population[indices[pop_size + i]], 
                         upper_bounds[th], lower_bounds[th], random_element_order[th], mutation_rate, n_tolls, recombination_size, generators[th]);
-                vals[indices[pop_size + i]] = eval(population[indices[pop_size + i]], n_users[th], adj[th], adj_solution[th], tolls_idxs[th], prices_mat[th], dist[th], profit[th], 
-                                                    visited[th], origins[th], destinations[th], n_commodities, n_tolls, START_VAL, tolerance);
+                    val=0;
+                    for(c = 0; c<n_commodities; c++) val += commodities[th][c].eval(population[indices[pop_size + i]]);
+                    vals[indices[pop_size + i]] = val;
                 }
+            
+            if((iter>0)  and (iter % dijkstra_every == 0)) {
+                #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
+                for(short i=0; i < pop_total_size; i++) {
+                    val = 0;
+                    th = omp_get_thread_num();
+                    for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
+                    vals[i] = val;
+                }
+                update_paths();
     
-            if((iter>0)  and (iter % heuristic_every == 0)){
-                std::cout<<"best val befor h "<<vals[indices[0]]<<std::endl;
-                for(short i=0; i < off_size; i++) heuristic.run(population[indices[ i]], &vals[indices[ i]]);
-                // std::cout<<"best val after h "<<vals[indices[0]]<<std::endl;
             }
+            
+            // if((iter>0)  and (iter % dijkstra_every == 0)){
+            //     std::cout<<"best val befor h "<<vals[indices[0]]<<std::endl;
+            //     for(short i=0; i < off_size; i++) heuristic.run(population[indices[ i]], &vals[indices[ i]]);
+            //     // std::cout<<"best val after h "<<vals[indices[0]]<<std::endl;
+            // }
 
             argsort(vals, indices, pop_total_size);
             if(vals[indices[0]] > best_val) {
@@ -326,9 +362,23 @@ class ArcGeneticHeuristic {
             std = get_std(vals, indices, pop_size);
             // double mean = get_mean(vals, indices, pop_size);
             if(verbose and  iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals, indices, pop_size)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
-            if(std < 0.0000001) {restart_population(); std::cout<< " restarted "<<std<<std::endl;
+            if(std < 0.0000001) {restart_population();} //; std::cout<< " restarted "<<std<<std::endl;
             // for(short i=0; i < pop_total_size; i++) heuristic.run(population[indices[i]], &vals[indices[i]]);
-            }
+            //}
+        }
+
+        #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
+        for(short i=0; i < pop_total_size; i++) {
+            val = 0;
+            th = omp_get_thread_num();
+            for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
+            vals[i] = val;
+        }
+
+        argsort(vals, indices, pop_total_size);
+        if(vals[indices[0]] > best_val) {
+            best_val = vals[indices[0]];
+            no_improvement = 0;
         }
 
         // print_vector(population[indices[12]]);
@@ -340,6 +390,27 @@ class ArcGeneticHeuristic {
 
         
     }
+
+
+    void update_paths(){
+
+        for(int j=0; j<n_commodities; j++) {
+            for(int i=0; i< n_threads; i++) {
+                for(auto & path: commodities[i][j].paths) {
+                    if(path_dicts[j].find(path -> path)==path_dicts[j].end()){
+                        path_dicts[j][path -> path] = *path;
+                    }
+                }
+            }
+        }
+        for(int j=0; j<n_commodities; j++) {
+            for(int i=0; i< n_threads; i++){
+                commodities[i][j].add_paths(path_dicts[j]);
+            }
+            
+        }
+    }
+
 
     void npp_dijkstra(std::vector<std::vector<double>> &adj_sol, std::vector<std::vector<double>> &price,  std::vector<double>& distance, std::vector<double>& profit_, std::vector<bool>& visited_, 
     const int origin, const int comm_n_users, const double start_max_val, const double tol){

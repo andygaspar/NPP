@@ -20,6 +20,8 @@ class ArcSolver:
         self.mat_solution = None
         self.adj_solution = None
         self.best_bound = None
+        self.gap = 0
+        self.status = 0
         self.symmetric_costs = symmetric_costs
         self.instance = copy.deepcopy(instance)
         self.adj = self.instance.get_adj().copy()
@@ -28,7 +30,6 @@ class ArcSolver:
         self.m.modelSense = GRB.MAXIMIZE
         self.status_dict = {1: 'LOADED', 2: 'OPTIMAL', 3: 'INFEASIBLE', 4: 'INF_OR_UNBD', 5: 'UNBOUNDED',
                             6: 'CUTOFF', 7: 'ITERATION_LIMIT', 8: 'NODE_LIMIT', 9: 'TIME_LIMIT'}
-        self.status = None
 
         self.eps = 1e-2
 
@@ -127,6 +128,7 @@ class ArcSolver:
         self.solution = list(self.T[a.idx].x for a in self.instance.tolls)
         self.adj_solution, self.mat_solution = self.get_mats(self.solution)
         self.instance.npp = nx.from_numpy_array(self.adj_solution)
+        self.gap = self.m.MIPGap
         for c in self.instance.commodities:
             c.solution_path = nx.shortest_path(self.instance.npp, c.origin, c.destination, weight='weight')
             c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
