@@ -6,7 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 
-df = pd.read_csv('Results/arc_results.csv')
+df = pd.read_csv('Results/ArcResults/arc_results.csv')
 # df_gap = pd.read_csv('Results/benchmark_results.csv')
 # df["mip_GAP"] = df_gap.mip_GAP
 # df["obj_exact"] = df_gap.obj_exact

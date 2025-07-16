@@ -19,12 +19,15 @@ np.random.seed(0)
 os.system("Arc/Arc_GA/install_arc.sh")
 
 n_arcs = 3*4
-# 5 *12
-dim_grid = (3, 4)
+# 5 *12100
+
+n = 20
+n_arcs = n ** 2
+dim_grid = (n, n)
 n_locations = dim_grid[0] * dim_grid[1]
 
-toll_proportion = 5
-n_commodities = 10
+toll_proportion = 15
+n_commodities = 30
 
 
 columns = ['run', 'graphs', 'toll_pr', 'n_com', 'obj', 'time', 'gap', 'status']
@@ -38,12 +41,15 @@ instance = GridInstance(n_locations, n_arcs, dim_grid, toll_proportion, n_commod
 instance.show()
 
 solver = ArcSolver(instance=instance, symmetric_costs=False)
-solver.solve(time_limit=3600, verbose=True)  # int(pso.time))
+solver.solve(time_limit=20, verbose=True)  # int(pso.time))
 
-ITERATIONS = 100
+ITERATIONS = 10000
 
-g = GeneticArc(64, instance, offspring_rate=0.2)
-g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=0)
+g = GeneticArc(1024, instance, offspring_rate=0.2)
+g.run_cpp_heuristic(ITERATIONS, dijkstra_every=50, verbose=True, n_threads=16, seed=0)
 
 print(g.time, solver.time)
 print(g.best_val, solver.obj)
+
+print(solver.incumbent.times)
+print(solver.incumbent.sol_list)

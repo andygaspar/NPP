@@ -9,6 +9,18 @@ from Arc.ArcInstance.arc_commodity import ArcCommodity
 from Arc.ArcInstance.arc_instance import ArcInstance
 
 from gurobipy import Model, GRB, quicksum  # , Env
+from functools import partial
+
+class Incumbent:
+    def __init__(self):
+        self.times = []
+        self.sol_list = []
+
+
+def add_current_sol(model: Model, where, incumbent_obj):
+    if where == GRB.Callback.MIPSOL:
+        incumbent_obj.sol_list.append(model.cbGet(GRB.Callback.MIPSOL_OBJ))
+        incumbent_obj.times.append(time.time() - model._start_time)
 
 
 class ArcSolver:
@@ -31,7 +43,7 @@ class ArcSolver:
         self.status_dict = {1: 'LOADED', 2: 'OPTIMAL', 3: 'INFEASIBLE', 4: 'INF_OR_UNBD', 5: 'UNBOUNDED',
                             6: 'CUTOFF', 7: 'ITERATION_LIMIT', 8: 'NODE_LIMIT', 9: 'TIME_LIMIT'}
 
-        self.eps = 1e-2
+        self.tol = 1e-9
 
         self.x = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities],
                                 vtype=GRB.BINARY)
@@ -39,6 +51,10 @@ class ArcSolver:
         self.t = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities])
         self.T = self.m.addVars([a.idx for a in self.instance.tolls])
         self.la = self.m.addVars([(i, k) for i in self.instance.npp.nodes for k in self.instance.commodities])
+        self.m.setParam("OptimalityTol", self.tol)
+        self.m.setParam("FeasibilityTol", self.tol)
+
+        self.incumbent = Incumbent()
 
     def set_obj(self):
         k: ArcCommodity
@@ -118,7 +134,10 @@ class ArcSolver:
             self.m.setParam("OutputFlag", 0)
         if time_limit is not None:
             self.m.Params.timelimit = time_limit
-        self.m.optimize()
+
+        callback = partial(add_current_sol, incumbent_obj=self.incumbent)
+        self.m._start_time = time.time()
+        self.m.optimize(callback)
         self.time = time.time() - self.time
 
         self.status = self.status_dict[self.m.status]
@@ -132,7 +151,6 @@ class ArcSolver:
         for c in self.instance.commodities:
             c.solution_path = nx.shortest_path(self.instance.npp, c.origin, c.destination, weight='weight')
             c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
-        self.time = time.time() - self.time
         return self.m.objval, self.best_bound
 
     def get_tolls(self):

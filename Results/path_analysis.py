@@ -135,4 +135,5 @@ plt.ylabel('EXECUTION TIME')
 plt.tight_layout()
 plt.show()
 
-
+plt.plot([1,2,3], [1, 2,3])
+plt.show()

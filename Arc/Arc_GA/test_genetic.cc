@@ -78,7 +78,7 @@ int main(){
     using namespace std::chrono;
 
 
-    std::string file_name = "test_g_10_40";
+    std::string file_name = "test4";
     short n_commodities = read_size("Problems/" + file_name + "/n_com.csv");;
     short n_tolls = read_size("Problems/" + file_name + "/n_tolls.csv");;
     int adj_size = read_size("Problems/" + file_name + "/adj_size.csv");
@@ -93,7 +93,7 @@ int main(){
     short pop_size = 128;
     short off_size = pop_size/2;
     int iterations = 10000;
-    int heuristic_every = 100;
+    int heuristic_every = 2000;
     short recombination_size = n_tolls/2;
     double mutation_rate = 0.1;
 

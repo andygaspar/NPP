@@ -331,6 +331,11 @@ class ArcGeneticHeuristic {
                     vals[i] = val;
                 }
                 update_paths();
+                //int max_path_size = 0;
+                //for(c = 0; c<n_commodities; c++){
+                //    if(commodities[0][c].paths.size() > max_path_size ) max_path_size = commodities[0][c].paths.size();
+                //}
+                //std::cout<<"max size "<<max_path_size<<std::endl;
     
             }
             

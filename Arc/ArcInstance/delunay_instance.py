@@ -202,3 +202,7 @@ class DelaunayInstance(ArcInstance):
                 entering.append(a)
         return exiting, entering
 
+
+
+d = DelaunayInstance(10, 10 ,10, 0.2, 9)
+d.show()

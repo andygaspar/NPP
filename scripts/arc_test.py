@@ -26,16 +26,16 @@ dim_grid = (10, 12)
 # dim_grid = (3, 4)
 n_locations = (dim_grid[0] - 1) * (dim_grid[1] - 2)
 # toll_proportion = 10
-toll_proportion = [10] # [10, 15, 20] #
+toll_proportion = [10, 20]#[10, 15, 20] #
 # n_commodities = 10
-n_commodities = [40] # [40, 60, 80]
+n_commodities = [40, 80]#[40, 60, 80]
 graphs = [DelaunayInstance, GridInstance]
 
 free_path_distribution = []
 TIMELIMIT = 3600
 
-ITERATIONS = 20000
-POPULATION_SIZE = 256
+ITERATIONS = 10000
+POPULATION_SIZE = 128
 DIJKSTRA_EVERY = 100
 
 OFFSPRING_RATE = 0.5
@@ -60,8 +60,9 @@ for graph in graphs:
                 # instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
-                # solver.solve(time_limit=TIMELIMIT, verbose=False)  # int(pso.time))
-                solver.obj = 1
+                solver.solve(time_limit=TIMELIMIT, verbose=False)  # int(pso.time))
+                # solver.obj = 1
+                print(solver.time)
 
                 g = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=OFFSPRING_RATE, mutation_rate=MUTATION_RATE)
                 g.run_cpp(ITERATIONS, verbose=False, n_threads=16, seed=run)
@@ -78,8 +79,9 @@ for graph in graphs:
                 df.loc[row] = [run, instance.name, t_p, n_c, g.best_val, g.time, gh.best_val, gh.time, solver.obj, solver.time, solver.gap,
                                solver.status]
                 row += 1
+            df.to_csv('Results/ArcResults/arc_results_8x12.csv', index=False)
 
-            df.to_csv('Results/ArcResults/arc_results_1' + str(POPULATION_SIZE) + '_' + str(ITERATIONS) + '.csv', index=False)
+            # df.to_csv('Results/ArcResults/arc_results_1' + str(POPULATION_SIZE) + '_' + str(ITERATIONS) + '.csv', index=False)
 
 # import pandas as pd
 #
