@@ -66,6 +66,7 @@ class ArcNewInstance:
         self.npp = self.set_instance(g)
         self.set_commodities_bound()
         self.set_tolls()
+        self.n_tolls *= 2
 
     def get_adj(self):
         return nx.to_numpy_array(self.npp)
@@ -201,12 +202,13 @@ class ArcNewInstance:
 
         return dist, visited, profit
 
-    def draw_instance(self, pos):
+    def draw_instance(self, pos, show_cost=False):
         plt.rcParams['figure.figsize'] = (12, 8)
         edge_color = [self.npp.edges[e]['color'] for e in self.npp.edges]
-        labels = {e: self.npp.edges[e]['weight'] for e in self.npp.edges}
         nx.draw(self.npp, pos=pos, with_labels=True, edge_color=edge_color)
-        nx.draw_networkx_edge_labels(self.npp, pos=pos, edge_labels=labels)
+        if show_cost:
+            labels = {e: "{:.2f}".format(self.npp.edges[e]['weight']) for e in self.npp.edges}
+            nx.draw_networkx_edge_labels(self.npp, pos=pos, edge_labels=labels)
         plt.show()
 
 
@@ -223,9 +225,9 @@ class GridInstance(ArcNewInstance):
         g = nx.relabel_nodes(g, mapping, copy=False)
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
 
-    def draw(self):
+    def draw(self, show_cost=False):
         pos = {node: self.npp.nodes[node]['pos'] for node in self.npp.nodes()}
-        self.draw_instance(pos)
+        self.draw_instance(pos, show_cost=show_cost)
 
 
 class DelaunayInstance(ArcNewInstance):
@@ -244,8 +246,8 @@ class DelaunayInstance(ArcNewInstance):
         g.add_edges_from(edges)
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
 
-    def draw(self):
-        self.draw_instance(self.points)
+    def draw(self, show_cost=False):
+        self.draw_instance(self.points, show_cost=show_cost)
 
 
 class VoronoiNewInstance(ArcNewInstance):
@@ -265,7 +267,7 @@ class VoronoiNewInstance(ArcNewInstance):
         g.add_edges_from(edges)
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
 
-    def draw(self):
-        self.draw_instance(self.vertices)
+    def draw(self, show_cost=False):
+        self.draw_instance(self.vertices, show_cost=show_cost)
 
 

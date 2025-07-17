@@ -125,7 +125,7 @@ class GeneticArc:
                                          self.destinations, self.npp.n_commodities,
                                          self.npp.n_tolls, self.pop_size, self.offs_size, self.mutation_rate, self.recombination_size,
                                          verbose, n_threads, seed)
-        initial_position = self.init_values()
+        initial_position = np.ascontiguousarray(self.init_values())
         self.best_val = self.genetic_cpp.run(initial_position, iterations)
         self.population, self.vals = self.genetic_cpp.get_results()
         self.solution = self.population[0]

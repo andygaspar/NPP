@@ -17,12 +17,12 @@ os.system("Arc/Arc_GA/install_arc.sh")
 n_arcs = 3*4
 # 5 *12100
 
-n = 3
-n_arcs = n ** 2
+n = 5
+# n_arcs = 5 ** 2
 dim_grid = (n, n)
 n_locations = dim_grid[0] * dim_grid[1]
 
-toll_proportion = 15
+toll_proportion = 20
 n_commodities = 30
 
 
@@ -41,8 +41,11 @@ solver.solve(time_limit=5, verbose=True)  # int(pso.time))
 
 ITERATIONS = 10000
 
-g = GeneticArc(1024, instance, offspring_rate=0.2)
+g = GeneticArc(128, instance, offspring_rate=0.2)
 g.run_cpp_heuristic(ITERATIONS, dijkstra_every=50, verbose=True, n_threads=16, seed=0)
+
+g = GeneticArc(128, instance, offspring_rate=0.2)
+g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=0)
 
 print(g.time, solver.time)
 print(g.best_val, solver.obj)
