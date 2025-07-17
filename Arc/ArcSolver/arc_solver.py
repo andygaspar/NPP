@@ -127,9 +127,14 @@ class ArcSolver:
     def solve(self, time_limit=None, verbose=False, set_bounds=True):
         self.time = time.time()
         self.set_obj()
+        print('bound start')
         if set_bounds:
             self.set_bounds()
+        print('bound end')
+
         self.set_constraints()
+        print('constraint')
+
         if not verbose:
             self.m.setParam("OutputFlag", 0)
         if time_limit is not None:

@@ -7,7 +7,7 @@
 #include <omp.h>
 #include <cstdlib>
 #include "utils_.h"
-#include "Heuristic/commodity2.h"
+#include "Path/commodity2.h"
 
 
 class ArcGeneticHeuristic {
@@ -284,7 +284,7 @@ class ArcGeneticHeuristic {
 
     void run(double* init_pop, int iterations){
         init_population(init_pop);
-
+        std::cout<<"#########################"<<std::endl<<"#######################"<<std::endl;
         size_t k;
         int j, p;
         double std;

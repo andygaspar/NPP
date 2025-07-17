@@ -5,12 +5,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from Arc.ArcInstance.delunay_instance import DelaunayInstance
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
-from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
-from Arc.Heuristic.arc_heuristic import run_arc_heuristic
-from Arc.Heuristic.arc_heuristic2 import run_arc_heuristic2
 from Arc.genetic_arc import GeneticArc
 
 random.seed(0)
@@ -21,7 +17,7 @@ os.system("Arc/Arc_GA/install_arc.sh")
 n_arcs = 3*4
 # 5 *12100
 
-n = 20
+n = 3
 n_arcs = n ** 2
 dim_grid = (n, n)
 n_locations = dim_grid[0] * dim_grid[1]
@@ -41,7 +37,7 @@ instance = GridInstance(n_locations, n_arcs, dim_grid, toll_proportion, n_commod
 instance.show()
 
 solver = ArcSolver(instance=instance, symmetric_costs=False)
-solver.solve(time_limit=20, verbose=True)  # int(pso.time))
+solver.solve(time_limit=5, verbose=True)  # int(pso.time))
 
 ITERATIONS = 10000
 
