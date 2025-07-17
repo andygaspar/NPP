@@ -25,7 +25,7 @@ class ArcNewCommodity:
         o, d = self.origin, self.destination
         for toll in tolls:
             c_a = g_inf.edges[toll]['weight']
-            h, t = toll
+            t, h = toll
             b1 = g_inf.edges[toll]['gamma_ht'] - c_a
             b2 = get_cost(g_inf, (o, h)) - get_cost(g_zero, (o, t)) - c_a
             b3 = get_cost(g_inf, (o, d)) - get_cost(g_zero, (o, t)) - c_a - get_cost(g_zero, (h, d))
@@ -105,7 +105,6 @@ class ArcNewInstance:
             g.edges[e]['counter'] = 0
             g.edges[e]['color'] = 'blue'
             g.edges[e]['price'] = 0
-            g.edges[e]['cost'] = g.edges[e]['weight']
 
         shortest_paths = []
 
@@ -149,6 +148,8 @@ class ArcNewInstance:
             g.edges[e]['weight'] /= 2
             g.edges[e]['color'] = 'red'
 
+        for e in edges:
+            g.edges[e]['cost'] = g.edges[e]['weight']
         g = nx.to_directed(g)
 
         return g
@@ -203,7 +204,9 @@ class ArcNewInstance:
     def draw_instance(self, pos):
         plt.rcParams['figure.figsize'] = (12, 8)
         edge_color = [self.npp.edges[e]['color'] for e in self.npp.edges]
+        labels = {e: self.npp.edges[e]['weight'] for e in self.npp.edges}
         nx.draw(self.npp, pos=pos, with_labels=True, edge_color=edge_color)
+        nx.draw_networkx_edge_labels(self.npp, pos=pos, edge_labels=labels)
         plt.show()
 
 
