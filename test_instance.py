@@ -21,6 +21,9 @@ class ArcNewCommodity:
         self.name = str(self.origin) + ' -> ' + str(self.destination)
         self.M_p = {}
 
+        self.solution_edges = None
+        self.solution_path = None
+
     def compute_bounds(self, g_zero: nx.Graph, g_inf: nx.Graph, tolls):
         o, d = self.origin, self.destination
         for toll in tolls:
@@ -54,7 +57,7 @@ class ArcToll(Arc):
 
 class ArcNewInstance:
 
-    def __init__(self, n_commodities, toll_proportion, n_nodes, g: nx.Graph):
+    def __init__(self, n_commodities, toll_proportion, n_nodes, g: nx.Graph, preset_graph=False):
         self.n_commodities = n_commodities
         self.toll_proportion = toll_proportion
         self.n_nodes = n_nodes
@@ -63,13 +66,25 @@ class ArcNewInstance:
         self.arc_tolls: List[tuple] = []
         self.tolls: List[ArcToll] = []
         self.free: List[Arc] = []
-        self.npp = self.set_instance(g)
+        if not preset_graph:
+            self.npp = self.set_instance(g)
+        else:
+            self.npp = g
+            self.load_graph(self.npp)
         self.set_commodities_bound()
         self.set_tolls()
-        self.n_tolls *= 2
+
+    def load_graph(self, g: nx.Graph):
+        for k in g._commodities:
+            self.commodities.append(ArcNewCommodity(*k))
+
+        for edge in g.edges():
+            if g.edges[edge]['toll']:
+                self.arc_tolls.append(edge)
+        self.n_tolls = len(self.arc_tolls)
 
     def get_adj(self):
-        return nx.to_numpy_array(self.npp)
+        return nx.to_numpy_array(self.npp, nodelist=range(self.n_nodes))
 
     def set_commodities_bound(self):
         g_inf = self.npp.copy()
@@ -152,6 +167,7 @@ class ArcNewInstance:
         for e in edges:
             g.edges[e]['cost'] = g.edges[e]['weight']
         g = nx.to_directed(g)
+        self.n_tolls *= 2
 
         return g
 
@@ -202,14 +218,23 @@ class ArcNewInstance:
 
         return dist, visited, profit
 
-    def draw_instance(self, pos, show_cost=False):
+    def draw(self, show_cost=False):
         plt.rcParams['figure.figsize'] = (12, 8)
+        pos = {node: self.npp.nodes[node]['pos'] for node in self.npp.nodes()}
         edge_color = [self.npp.edges[e]['color'] for e in self.npp.edges]
         nx.draw(self.npp, pos=pos, with_labels=True, edge_color=edge_color)
         if show_cost:
             labels = {e: "{:.2f}".format(self.npp.edges[e]['weight']) for e in self.npp.edges}
             nx.draw_networkx_edge_labels(self.npp, pos=pos, edge_labels=labels)
         plt.show()
+
+    def save_instance(self, filename):
+        commodities = [(k.origin, k.destination, k.n_users) for k in self.commodities]
+        self.npp._commodities = commodities
+        self.npp._toll_proportion = self.toll_proportion
+        import pickle
+        with open(filename, 'wb') as f:
+            pickle.dump(self.npp, f)
 
 
 class GridInstance(ArcNewInstance):
@@ -224,10 +249,6 @@ class GridInstance(ArcNewInstance):
             mapping[node] = i
         g = nx.relabel_nodes(g, mapping, copy=False)
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
-
-    def draw(self, show_cost=False):
-        pos = {node: self.npp.nodes[node]['pos'] for node in self.npp.nodes()}
-        self.draw_instance(pos, show_cost=show_cost)
 
 
 class DelaunayInstance(ArcNewInstance):
@@ -244,10 +265,9 @@ class DelaunayInstance(ArcNewInstance):
 
         g = nx.Graph()
         g.add_edges_from(edges)
+        for node in g.nodes:
+            g.nodes[node]['pos'] = self.points[node]
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
-
-    def draw(self, show_cost=False):
-        self.draw_instance(self.points, show_cost=show_cost)
 
 
 class VoronoiNewInstance(ArcNewInstance):
@@ -265,9 +285,12 @@ class VoronoiNewInstance(ArcNewInstance):
 
         g = nx.Graph()
         g.add_edges_from(edges)
+        for node in g.nodes:
+            g.nodes[node]['pos'] = self.vertices[node]
         super().__init__(n_commodities, toll_proportion, n_nodes, g)
 
-    def draw(self, show_cost=False):
-        self.draw_instance(self.vertices, show_cost=show_cost)
+
+def instance_from_graph(g: nx.Graph):
+    return ArcNewInstance(len(g._commodites), g._toll_proportion, len(g.nodes), g, preset_graph=True)
 
 

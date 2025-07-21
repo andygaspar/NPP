@@ -130,9 +130,12 @@ class GeneticArc:
         self.population, self.vals = self.genetic_cpp.get_results()
         self.solution = self.population[0]
         self.adj_solution, self.prices = self.get_mats(self.solution)
-        self.npp.npp = nx.from_numpy_array(self.adj_solution)
+            # self.npp.npp = nx.from_numpy_array(self.adj_solution)
+        for i, toll in enumerate(self.tolls_idxs):
+            self.npp.npp.edges[toll]['price'] = self.solution[i]
+            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[i]
         for c in self.npp.commodities:
-            c.solution_path = nx.shortest_path(self.npp.npp, c.origin, c.destination, weight='weight')
+            c.solution_path = nx.shortest_path(self.npp.npp, c.origin, c.destination, weight='cost')
             c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
         self.time = time.time() - self.time
 

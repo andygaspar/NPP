@@ -171,6 +171,13 @@ class GridInstance(ArcInstance):
         # print('n locations = ', self.n_locations, '   n arcs = ', self.n_arcs*2, '  toll proportion = ',
         #       self.toll_proportion, '%', '  n tolls', self.n_tolls, '  n commodities = ', self.n_commodities)
 
+
+        node = 0
+        for i in range(self.dim_grid[1]):
+            for j in range(self.dim_grid[0]):
+                self.npp.nodes[node]['pos'] = np.array([i * 0.1,  j * 0.1])
+                node += 1
+
     def show(self, edge_color=True, with_labels=True, edge_weight=False, width=5, file=None):
         plt.rcParams["figure.figsize"] = (15, 10)
         # plt.rcParams["font.size"] = 20

@@ -284,7 +284,6 @@ class ArcGeneticHeuristic {
 
     void run(double* init_pop, int iterations){
         init_population(init_pop);
-        std::cout<<"#########################"<<std::endl<<"#######################"<<std::endl;
         size_t k;
         int j, p;
         double std;
@@ -322,7 +321,7 @@ class ArcGeneticHeuristic {
                     vals[indices[pop_size + i]] = val;
                 }
             
-            if((iter>0)  and (iter % dijkstra_every == 0)) {
+            if((iter>20)  and (iter % dijkstra_every == 0)) {
                 #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
                 for(short i=0; i < pop_total_size; i++) {
                     val = 0;
@@ -353,10 +352,6 @@ class ArcGeneticHeuristic {
             else no_improvement ++;
 
 
-
-
-
-
             if(no_improvement >= 500) {
                 restart_population();
                 //std::cout<<"restarted"<<std::endl;
@@ -364,12 +359,16 @@ class ArcGeneticHeuristic {
                 no_improvement = 0;
             }
 
-            std = get_std(vals, indices, pop_size);
-            // double mean = get_mean(vals, indices, pop_size);
-            if(verbose and  iter%100 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals, indices, pop_size)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
-            if(std < 0.0000001) {restart_population();} //; std::cout<< " restarted "<<std<<std::endl;
-            // for(short i=0; i < pop_total_size; i++) heuristic.run(population[indices[i]], &vals[indices[i]]);
-            //}
+            if(iter% 100 == 0){
+                std = get_std(vals, indices, pop_size);
+                // double mean = get_mean(vals, indices, pop_size);
+                if(verbose and  iter%1000 == 0 and iter > 0) std::cout<<"iteration "<< iter<<"    "<<vals[indices[0]]<<"   mean " <<get_mean(vals, indices, pop_size)<<"   std " <<std<<"   no impr " <<no_improvement<<std::endl;
+                if(std < 0.0000001) {restart_population();} //; std::cout<< " restarted "<<std<<std::endl;
+                // for(short i=0; i < pop_total_size; i++) heuristic.run(population[indices[i]], &vals[indices[i]]);
+                //}
+
+            }
+
         }
 
         #pragma omp parallel for num_threads(n_threads) private(th, val, c) 

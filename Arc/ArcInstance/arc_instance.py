@@ -12,6 +12,7 @@ class ArcInstance:
     def __init__(self, n_locations, n_commodities):
         self.n_locations = n_locations
         self.n_commodities = n_commodities
+        self.toll_proportion = None
         self.n_nodes = None
         self.edges_idx = None
         self.users = []
@@ -138,3 +139,17 @@ class ArcInstance:
         np.savetxt(folder + '/origins.csv', np.array([commodity.origin for commodity in self.commodities]), fmt='%d')
         np.savetxt(folder + '/n_com.csv', np.array([self.n_commodities]), fmt='%d')
         np.savetxt(folder + '/n_tolls.csv', np.array([self.n_tolls]), fmt='%d')
+
+    def save_instance(self, filename):
+        commodities = [(k.origin, k.destination, k.n_users) for k in self.commodities]
+        self.npp._commodities = commodities
+        self.npp._toll_proportion = self.toll_proportion
+        for toll in self.tolls:
+            self.npp.edges[toll.idx]['toll'] = True
+            self.npp.edges[toll.idx]['cost'] = self.npp.edges[toll.idx]['weight']
+        for edge in self.free_arcs:
+            self.npp.edges[edge]['toll'] = False
+            self.npp.edges[edge]['cost'] = self.npp.edges[edge]['weight']
+        import pickle
+        with open(filename, 'wb') as f:
+            pickle.dump(self.npp, f)
