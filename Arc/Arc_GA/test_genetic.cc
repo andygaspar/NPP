@@ -122,11 +122,11 @@ int main(){
     //             pop_size, off_size, mutation_rate, n_paths/2, 
     //             100, num_threads, verbose, seed);
     
-    ArcGenetic gg(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, origins, destinations, n_commodities, n_tolls, 
-                    pop_size, off_size, mutation_rate, recombination_size, 
-                    num_threads, verbose, seed);
+    // ArcGenetic gg(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, origins, destinations, n_commodities, n_tolls, 
+    //                 pop_size, off_size, mutation_rate, recombination_size, 
+    //                 num_threads, verbose, seed);
 
-    gg.run(population,iterations);
+    // gg.run(population,iterations);
 
 
     ArcGeneticHeuristic g(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, 
@@ -143,7 +143,7 @@ int main(){
     //             pop_size, off_size, mutation_rate, fr.n_paths/2, 
     //             pso_size, pso_selection, pso_every,pso_iterations, pso_final_iterations, pso_no_update, num_threads, verbose, seed);
     // auto start = high_resolution_clock::now();
-    // g.run(population,iterations);
+    g.run(population,iterations);
     // auto stop = high_resolution_clock::now();
     // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     // std::cout << "duration th "<<num_threads<<" "<<duration.count()/1000. << std::endl;

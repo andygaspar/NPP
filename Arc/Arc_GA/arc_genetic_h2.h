@@ -268,11 +268,12 @@ class ArcGeneticHeuristic {
             std::uniform_real_distribution<double> distribution_;
             std::uniform_real_distribution<double> distribution_mutation(0., 1.);
             for(i=0; i<num_paths; i++) {
-                
-                if(distribution_mutation(generators[th]) < m_rate) {
-                    std::uniform_real_distribution<double> distribution_(l_bounds[i], u_bounds[i]);
-                    child[i] = distribution_(generators[th]);
-                    }
+                if(u_bounds[i] > 0){
+                    if(distribution_mutation(generators[th]) < m_rate) {
+                        std::uniform_real_distribution<double> distribution_(l_bounds[i], u_bounds[i]);
+                        child[i] = distribution_(generators[th]);
+                        }
+                }
             }
 
             // for(i=0; i<n_tolls; i++) {if(get_rand(0., 1.) < mutation_rate) child[i] = get_rand(0., u_bounds[i]);}
@@ -284,7 +285,7 @@ class ArcGeneticHeuristic {
 
     void run(double* init_pop, int iterations){
         init_population(init_pop);
-        print_pop();
+        // print_pop();
         size_t k;
         int j, p;
         double std;
@@ -391,7 +392,7 @@ class ArcGeneticHeuristic {
         best_val = vals[indices[0]];
         if(verbose) std::cout<<"final iteration "<<best_val<<std::endl;
         
-        print_pop();
+        // print_pop();
 
         
     }
@@ -537,8 +538,11 @@ class ArcGeneticHeuristic {
             std::uniform_real_distribution<double> distribution;       
             th = omp_get_thread_num();
             for(int j=0; j < n_tolls; j++) {
-                distribution = std::uniform_real_distribution<double> (lower_bounds[th][i], upper_bounds[th][j]);
-                population[indices[i]][j] = distribution(generators[th]);
+                if(upper_bounds[th][j] >0) {
+                    distribution = std::uniform_real_distribution<double> (lower_bounds[th][j], upper_bounds[th][j]);
+                    population[indices[i]][j] = distribution(generators[th]);
+                }
+
             }
             vals[indices[i]] = eval(population[indices[i]], n_users[th], adj[th], adj_solution[th], tolls_idxs[th], prices_mat[th], dist[th], profit[th], 
                                                     visited[th], origins[th], destinations[th], n_commodities, n_tolls, START_VAL, tolerance);

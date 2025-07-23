@@ -10,12 +10,6 @@ extern "C" {
                             short pop_size_, short off_size_, double mutation_rate_, short recombination_size_, 
                             short num_threads_, bool verbose_, short seed) {
 
-            std::cout<<recombination_size_<<std::endl;
-for(int j=0; j<n_commodities_; j++) std::cout<<n_usr[j]<<std::endl;
-    // for(int j=0; j<adj_size_; j++){
-    //     for(int i=0; i<adj_size_; i++) std::cout<<adj_[j* adj_size_  + i]<<" ";
-    //     std::cout<<std::endl;
-    // }
         return new ArcGenetic(upper_bounds_, lower_bounds_, adj_, adj_size_, tolls_idxs_, n_usr, origins_, destinations_, n_commodities_, n_tolls_, 
                                 pop_size_, off_size_, mutation_rate_, recombination_size_, 
                                 num_threads_, verbose_, seed);
