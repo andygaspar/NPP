@@ -343,7 +343,7 @@ class Genetic {
             std::uniform_real_distribution<double> distribution;       
             th = omp_get_thread_num();
             for(int j=0; j < n_paths; j++) {
-                distribution = std::uniform_real_distribution<double> (lower_bounds[th][i], upper_bounds[th][j]);
+                distribution = std::uniform_real_distribution<double> (lower_bounds[th][j], upper_bounds[th][j]);
                 population[indices[i]][j] = distribution(generators[th]);
             }
             vals[indices[i]] = eval(population[indices[i]], transfer_costs[th], commodities_tax_free[th], n_users[th], n_commodities, n_paths, tolerance);

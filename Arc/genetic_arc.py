@@ -58,7 +58,7 @@ class GeneticArc:
         prices = np.zeros_like(self.adj)
         for i in range(self.n_tolls):
             prices[self.npp.tolls[i].idx] = sol[i]
-        adj = self.adj + self.prices
+        adj = self.adj + prices
 
         return adj, prices
 
@@ -128,15 +128,13 @@ class GeneticArc:
         initial_position = np.ascontiguousarray(self.init_values())
         self.best_val = self.genetic_cpp.run(initial_position, iterations)
         self.population, self.vals = self.genetic_cpp.get_results()
-        self.solution = self.population[0]
-        self.adj_solution, self.prices = self.get_mats(self.solution)
+        self.solution = dict(zip(self.tolls_idxs, self.population[0]))
+        self.adj_solution, self.prices = self.get_mats(self.population[0])
             # self.npp.npp = nx.from_numpy_array(self.adj_solution)
         for i, toll in enumerate(self.tolls_idxs):
-            self.npp.npp.edges[toll]['price'] = self.solution[i]
-            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[i]
-        for c in self.npp.commodities:
-            c.solution_path = nx.shortest_path(self.npp.npp, c.origin, c.destination, weight='cost')
-            c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
+            self.npp.npp.edges[toll]['price'] = self.solution[toll]
+            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[toll]
+        self.npp.assign_paths(self.adj_solution, self.prices)
         self.time = time.time() - self.time
 
         # (self, upper_bounds, lower_bounds, adj, tolls_idxs, n_users: np.array, origins, destinations,

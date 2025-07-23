@@ -1,3 +1,4 @@
+import os
 import random
 import time
 from typing import List
@@ -73,6 +74,7 @@ class ArcNewInstance:
             self.load_graph(self.npp)
         self.set_commodities_bound()
         self.set_tolls()
+        self.adj = nx.to_numpy_array(self.npp, range(self.n_nodes))
 
     def load_graph(self, g: nx.Graph):
         for k in g._commodities:
@@ -171,12 +173,21 @@ class ArcNewInstance:
 
         return g
 
-    def compute_obj(self, adj, prices, tol=1e-9):
+    def compute_obj(self, adj_sol, prices, tol=1e-9):
         obj = 0
         for commodity in self.commodities:
-            _, _, profit = self.dijkstra(adj, prices, commodity, tol=tol)
+            _, _, profit, path = self.dijkstra(adj_sol, prices, commodity, tol=tol)
             obj += profit[commodity.destination]
         return obj
+
+    def assign_paths(self, adj_sol, prices, tol=1e-9):
+        for commodity in self.commodities:
+            _, _, profit, path = self.dijkstra(adj_sol, prices, commodity, tol=tol)
+            commodity.solution_path = path
+            commodity.solution_edges = [(path[0], path[1])]
+            for i in range(1, len(path) - 1):
+                commodity.solution_edges.append((path[i], path[i + 1]))
+
 
     @staticmethod
     def min_dist_with_profit(dist, profit, visited, tol):
@@ -203,7 +214,7 @@ class ArcNewInstance:
         profit = np.zeros_like(dist)
 
         dist[commodity.origin] = 0
-
+        prev = np.zeros(adj.shape[0], dtype=int)
         for i in range(adj.shape[0] - 1):
             idx = self.min_dist_with_profit(dist, profit, visited, tol)
             visited[idx] = True
@@ -212,11 +223,16 @@ class ArcNewInstance:
                     if dist[idx] + adj[idx, j] < dist[j] - tol:
                         dist[j] = dist[idx] + adj[idx, j]
                         profit[j] = profit[idx] + prices[idx, j] * commodity.n_users
+                        prev[j] = idx
                     elif profit[idx] + prices[idx, j] * commodity.n_users > profit[j]:
                         dist[j] = dist[idx] + adj[idx, j]
                         profit[j] = profit[idx] + prices[idx, j] * commodity.n_users
-
-        return dist, visited, profit
+                        prev[j] = idx
+        path = [commodity.destination]
+        while path[-1] != commodity.origin:
+            path.append(prev[path[-1]])
+        path = path[::-1]
+        return dist, visited, profit, path
 
     def draw(self, show_cost=False):
         plt.rcParams['figure.figsize'] = (12, 8)
@@ -235,6 +251,21 @@ class ArcNewInstance:
         import pickle
         with open(filename, 'wb') as f:
             pickle.dump(self.npp, f)
+
+    def save_problem(self, pb_name):
+        folder = 'Arc/Arc_GA/Problems/' + pb_name
+        os.mkdir(folder)
+        np.savetxt(folder + '/ub.csv', np.array([p.N_p for p in self.tolls]), fmt='%.18f')
+        np.savetxt(folder + '/lb.csv', np.zeros(self.n_tolls), fmt='%.18f')
+        np.savetxt(folder + '/adj.csv', self.adj, fmt='%.18f')
+        np.savetxt(folder + '/adj_size.csv', np.array([self.adj.shape[0]]), fmt='%d')
+        np.savetxt(folder + '/toll_idxs.csv', np.array([p.idx for p in self.tolls]).T.flatten(), fmt='%d')
+        np.savetxt(folder + '/n_users.csv', np.array([commodity.n_users for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/origins.csv', np.array([commodity.origin for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/destinations.csv', np.array([commodity.destination for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/origins.csv', np.array([commodity.origin for commodity in self.commodities]), fmt='%d')
+        np.savetxt(folder + '/n_com.csv', np.array([self.n_commodities]), fmt='%d')
+        np.savetxt(folder + '/n_tolls.csv', np.array([self.n_tolls]), fmt='%d')
 
 
 class GridInstance(ArcNewInstance):

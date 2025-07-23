@@ -284,6 +284,7 @@ class ArcGeneticHeuristic {
 
     void run(double* init_pop, int iterations){
         init_population(init_pop);
+        print_pop();
         size_t k;
         int j, p;
         double std;
@@ -390,7 +391,7 @@ class ArcGeneticHeuristic {
         best_val = vals[indices[0]];
         if(verbose) std::cout<<"final iteration "<<best_val<<std::endl;
         
-        
+        print_pop();
 
         
     }

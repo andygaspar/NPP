@@ -7,6 +7,7 @@
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include "arc_genetic_h2.h"
+#include "arc_genetic.h"
 // #include "instance.h"
 
 
@@ -78,7 +79,7 @@ int main(){
     using namespace std::chrono;
 
 
-    std::string file_name = "test4";
+    std::string file_name = "debug_test";
     short n_commodities = read_size("Problems/" + file_name + "/n_com.csv");;
     short n_tolls = read_size("Problems/" + file_name + "/n_tolls.csv");;
     int adj_size = read_size("Problems/" + file_name + "/adj_size.csv");
@@ -88,21 +89,21 @@ int main(){
     int* origins = readMatrixFromFile<int> ("Problems/" + file_name + "/origins.csv", n_commodities);
     int* destinations = readMatrixFromFile<int> ("Problems/" + file_name + "/destinations.csv", n_commodities);
     int* n_users = readMatrixFromFile<int> ("Problems/" + file_name + "/n_users.csv", n_commodities);
-    for(short i=0; i < n_tolls; i++) upper_bounds[i] *= 2;
+    // for(short i=0; i < n_tolls; i++) upper_bounds[i] *= 2;
 
-    short pop_size = 128;
+    short pop_size = 64;
     short off_size = pop_size/2;
-    int iterations = 10000;
+    int iterations = 50;
     int heuristic_every = 2000;
     short recombination_size = n_tolls/2;
-    double mutation_rate = 0.1;
+    double mutation_rate = 0.2;
 
 
     short num_threads = 16;
 
     bool verbose = true;
 
-    short seed = 1; 
+    short seed = -1; 
 
 
 
@@ -120,13 +121,20 @@ int main(){
     // ArcGenetic g(upper_bounds, lower_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,
     //             pop_size, off_size, mutation_rate, n_paths/2, 
     //             100, num_threads, verbose, seed);
+    
+    ArcGenetic gg(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, origins, destinations, n_commodities, n_tolls, 
+                    pop_size, off_size, mutation_rate, recombination_size, 
+                    num_threads, verbose, seed);
+
+    gg.run(population,iterations);
 
 
     ArcGeneticHeuristic g(upper_bounds, lower_bounds, adj, adj_size, toll_idxs, n_users, 
                 origins, destinations, n_commodities, n_tolls, 
                 pop_size, off_size, mutation_rate, recombination_size, heuristic_every,
                 num_threads, verbose, seed);
-
+    
+    
     // double* population = get_random_population(fr.upper_bounds, pop_size, n_paths);
     // double* children = new double[n_paths * off_size];
 
@@ -134,11 +142,11 @@ int main(){
     // Genetic g(fr.upper_bounds, fr.commodities_tax_free, fr.n_users, fr.transfer_costs, fr.n_commodities, fr.n_paths,
     //             pop_size, off_size, mutation_rate, fr.n_paths/2, 
     //             pso_size, pso_selection, pso_every,pso_iterations, pso_final_iterations, pso_no_update, num_threads, verbose, seed);
-    auto start = high_resolution_clock::now();
-    g.run(population,iterations);
-    auto stop = high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "duration th "<<num_threads<<" "<<duration.count()/1000. << std::endl;
+    // auto start = high_resolution_clock::now();
+    // g.run(population,iterations);
+    // auto stop = high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    // std::cout << "duration th "<<num_threads<<" "<<duration.count()/1000. << std::endl;
 
 
 
