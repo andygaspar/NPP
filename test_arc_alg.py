@@ -9,7 +9,7 @@ import pandas as pd
 from Arc.ArcInstance.grid_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
 from Arc.genetic_arc import GeneticArc
-from test_instance import ArcNewInstance
+from test_np_solver import ArcNewInstance
 from test_solver import ArcSolverNew
 
 random.seed(0)

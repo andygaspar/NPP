@@ -5,7 +5,7 @@ import numpy as np
 from gurobipy import Model, GRB, quicksum
 
 
-class ArcCommodity:
+class ArcCommodityOld:
     def __init__(self, origin, destination, n_users):
 
         self.origin = origin
@@ -119,15 +119,15 @@ class ArcCommodity:
         return self.name
 
 
-class Arc:
+class ArcOld:
     def __init__(self, idx: tuple, c_a: float):
         self.idx = idx
         self.c_a = c_a
 
 
-class ArcToll(Arc):
+class ArcTollOld(Arc):
 
-    def __init__(self, idx: tuple, commodities: List[ArcCommodity], c_a: float):
+    def __init__(self, idx: tuple, commodities: List[ArcCommodityOld], c_a: float):
         super().__init__(idx, c_a)
         self.N_p = max([c.M_p[self.idx] for c in commodities])
         # self.L_p = min([c.M_p[self.idxs] for c in commodities])

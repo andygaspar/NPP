@@ -1,3 +1,14 @@
+import random
+import time
+
+import numpy as np
+
+from Arc.ArcInstance.arc_instance import DelaunayInstance
+from Arc.ArcSolver.arc_solver import ArcSolver
+from Arc.genetic_arc import GeneticArc
+
+
+
 # import numpy as np
 import copy
 import os
@@ -27,7 +38,7 @@ def add_current_sol(model: Model, where, incumbent_obj):
         incumbent_obj.times.append(time.time() - model._start_time)
 
 
-class ArcSolver:
+class ArcSolverNp:
 
     def __init__(self, instance: ArcInstance, symmetric_costs = False):
         self.solution = None
@@ -216,3 +227,69 @@ class ArcSolver:
                     profit += self.T[e.idx].x * k.n_users
         print(profit)
 
+
+
+# os.system("Arc/Arc_GA/install_arc.sh")
+time.sleep(2)
+random.seed(0)
+np.random.seed(0)
+
+N = 144
+# N = 25
+
+COMMODITIES = 30
+# COMMODITIES = 2
+
+TOLL_PROPORTION = 0.2
+
+grid = DelaunayInstance(COMMODITIES, TOLL_PROPORTION, N)
+# grid = GridInstance(COMMODITIES, TOLL_PROPORTION, N)
+print(len(grid.npp.edges))
+# grid.save_problem('debug_test')
+# grid.draw(show_cost=True)
+
+ITERATIONS = 100
+
+# problem = ArcSolverNew(grid)
+# problem.solve(verbose=True, time_limit=60)
+
+g2 = GeneticArc(128, grid, mutation_rate=0.02)
+g2.run_cpp_heuristic(ITERATIONS, dijkstra_every=100, verbose=True, n_threads=16, seed=0)
+print(grid.compute_obj(g2.adj_solution, g2.prices))
+p = ArcSolver(g2.npp)
+p.solve_max_price(g2.solution)
+
+
+# g = GeneticArc(64, grid, mutation_rate=0.02)
+# g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=1)
+#
+# print(grid.compute_obj(g.adj_solution, g.prices))
+# print(grid.compute_obj(problem.adj_solution, problem.prices))
+# p = ArcSolverNew(g.npp)
+# p.solve_max_price(g.solution)
+
+
+
+#
+
+
+#
+# obj_sol = grid.compute_obj(*problem.get_mats())
+#
+# print(problem.obj, g.best_val, g2.best_val, obj_sol)
+#
+
+
+# delaunay = DelaunayInstance(COMMODITIES, TOLL_PROPORTION, N)
+# delaunay.draw()
+# problem = ArcSolverNew(delaunay)
+# problem.solve()
+#
+# voronoi = VoronoiNewInstance(COMMODITIES, TOLL_PROPORTION, N)
+# voronoi.draw()
+# problem = ArcSolverNew(voronoi)
+# problem.solve(verbose=True)
+
+#
+# for var in problem.T:
+#     print(problem.T[var].x)

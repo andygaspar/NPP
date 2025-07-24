@@ -5,11 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import combinations
 
-from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
-from Arc.ArcInstance.arc_instance import ArcInstance
+from Old.OldArcInstance.arc_commodity_old import ArcCommodityOld, ArcTollOld, ArcOld
+from Old.OldArcInstance.arc_instance_old import ArcInstanceOld
 
 
-class GridInstance(ArcInstance):
+class GridInstance(ArcInstanceOld):
     def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5), seed=None):
         # costs = (2, 20)
         super().__init__(n_locations, n_commodities)
@@ -18,7 +18,7 @@ class GridInstance(ArcInstance):
             np.random.seed(seed)
         self.name = 'Grid'
         self.toll_proportion = toll_proportion  # {5%, 10%, 15%, 20%}
-        self.commodities: List[ArcCommodity] = []
+        self.commodities: List[ArcCommodityOld] = []
         self.costs = costs
         self.nr_users = nr_users
         self.toll_arcs = []
@@ -58,7 +58,7 @@ class GridInstance(ArcInstance):
         for i in range(self.n_commodities):
             o_d = origin_destination.pop(np.random.choice(range(len(origin_destination))))
             n_users = np.random.choice(range(*self.nr_users))
-            self.commodities.append(ArcCommodity(*o_d, n_users))
+            self.commodities.append(ArcCommodityOld(*o_d, n_users))
 
         # making it "bidirectional"
         self.npp = graph.to_directed()

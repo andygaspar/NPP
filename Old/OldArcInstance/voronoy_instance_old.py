@@ -8,11 +8,11 @@ from itertools import combinations
 import scipy
 from gurobipy import Model, GRB, quicksum
 
-from Arc.ArcInstance.arc_instance import ArcInstance
-from Arc.ArcInstance.arc_commodity import ArcCommodity, ArcToll, Arc
+from Old.OldArcInstance.arc_instance_old import ArcInstanceOld
+from Old.OldArcInstance.arc_commodity_old import ArcCommodityOld, ArcTollOld, ArcOld
 
 
-class VoronoiInstance(ArcInstance):
+class VoronoiInstance(ArcInstanceOld):
     def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5),
                  seed=False):
         # costs = (2, 20)
@@ -21,7 +21,7 @@ class VoronoiInstance(ArcInstance):
         super().__init__(n_locations, n_commodities)  # {20, 30, 40}
         # self.n_arcs = n_arcs
         self.toll_proportion = toll_proportion  # {5%, 10%, 15%, 20%}
-        self.commodities: List[ArcCommodity] = []
+        self.commodities: List[ArcCommodityOld] = []
         self.costs = costs
         self.nr_users = nr_users
         self.toll_arcs = []
@@ -74,7 +74,7 @@ class VoronoiInstance(ArcInstance):
         for i in range(self.n_commodities):
             o_d = origin_destination.pop(np.random.choice(range(len(origin_destination))))
             n_users = np.random.choice(range(*self.nr_users))
-            self.commodities.append(ArcCommodity(*o_d, n_users))
+            self.commodities.append(ArcCommodityOld(*o_d, n_users))
 
         # making it "bidirectional"
         self.npp = graph.to_directed()
@@ -175,8 +175,8 @@ class VoronoiInstance(ArcInstance):
 
         self.n_users = np.array([comm.n_users for comm in self.commodities])
 
-        self.tolls = [ArcToll(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
-        self.free = [Arc(a, self.npp.edges[a]['weight']) for a in self.free_arcs]
+        self.tolls = [ArcTollOld(a, self.commodities, self.npp.edges[a]['weight']) for a in self.toll_arcs]
+        self.free = [ArcOld(a, self.npp.edges[a]['weight']) for a in self.free_arcs]
         self.n_tolls = len(self.tolls)
 
         self.adj = nx.to_numpy_array(self.npp)

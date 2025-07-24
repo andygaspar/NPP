@@ -1,7 +1,6 @@
 import numpy as np
 
-from Arc.ArcInstance.arc_commodity import ArcCommodity
-from Arc.ArcInstance.arc_instance import ArcInstance
+from Arc.ArcInstance.arc_instance import ArcInstance, ArcCommodity
 
 
 def min_cost(cost, profit, visited, tol):
