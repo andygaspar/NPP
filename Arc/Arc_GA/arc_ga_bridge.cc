@@ -30,7 +30,7 @@ extern "C" {
                                 num_threads_, verbose_, seed);
     }
 
-    void run_arc_genetic_h_(ArcGeneticHeuristic* g, double* population, int iterations) {g -> run(population,iterations);}
+    void run_arc_genetic_h_(ArcGeneticHeuristic* g, double* population, int iterations) {                std::cout<<"#####"<<std::endl;g -> run(population,iterations);}
     double get_gen_best_val_h_(ArcGeneticHeuristic* g) {return g -> get_best_val();}
     double* get_population_h_(ArcGeneticHeuristic* g) {return g -> get_population();}
     double* get_vals_h_ (ArcGeneticHeuristic* g) {return g-> get_vals();}

@@ -42,7 +42,7 @@ POPULATION_SIZE = 128
 # instance.show()
 
 instance = graphs[0](n_locations, n_arcs, dim_grid, 5, 3,  seed=0)
-print("\nProblem ", instance.name, 3, 5, 0, len(instance.npp.edges))
+print("\nProblem ", instance.name, 3, 5, 0, len(instance.g.edges))
 # instance.show()
 
 

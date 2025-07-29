@@ -56,7 +56,7 @@ for graph in graphs:
                 random.seed(run)
                 np.random.seed(run)
                 instance = graph(n_locations, n_arcs, dim_grid, t_p, n_c, seed=run)
-                print("\nProblem ", instance.name, n_c, t_p, run, len(instance.npp.edges))
+                print("\nProblem ", instance.name, n_c, t_p, run, len(instance.g.edges))
                 # instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)

@@ -80,9 +80,9 @@ print([i.idx for i in instance.tolls])
 for edge in instance.edges_idx.keys():
     if edge in instance.toll_arcs:
         print(instance.edges_idx[edge])
-        c[instance.edges_idx[edge]] = instance.npp.edges[edge]['weight']
+        c[instance.edges_idx[edge]] = instance.g.edges[edge]['weight']
     else:
-        d[instance.edges_idx[edge]] = instance.npp.edges[edge]['weight']
+        d[instance.edges_idx[edge]] = instance.g.edges[edge]['weight']
 
 
 

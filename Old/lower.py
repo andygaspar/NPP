@@ -20,7 +20,7 @@ class LowerSolver:
     def set_obj(self):
         self.m.setObjective(
             quicksum(
-                k.n_users * (quicksum((k.c_p[p] + self.instance.npp.edges[p]['weight']) * self.x[p, k] for p in
+                k.n_users * (quicksum((k.c_p[p] + self.instance.g.edges[p]['weight']) * self.x[p, k] for p in
                                       self.instance.toll_paths) + k.cost_free * self.x_od[k]) for k in self.instance.commodities)
         )
 
@@ -41,7 +41,7 @@ class LowerSolver:
             found = False
             for p in self.instance.toll_paths:
                 if self.x[p, k].x > 0.9:
-                    print(k, p, k.c_p[p] + self.instance.npp.edges[p]["weight"])
+                    print(k, p, k.c_p[p] + self.instance.g.edges[p]["weight"])
                     found = True
             if not found:
                 print(k, 'c_od', k.cost_free)

@@ -76,7 +76,7 @@ class DelaunayInstance(ArcInstance):
             self.commodities.append(ArcCommodity(*o_d, n_users))
 
         # making it "bidirectional"
-        self.npp: nx.Graph
+        self.g: nx.Graph
         self.npp = graph.to_directed()
         # selecting toll arcs
 

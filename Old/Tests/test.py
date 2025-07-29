@@ -35,10 +35,10 @@ for n_commodities in [20]:
             np.random.seed(run)
 
             npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=run)
-            # npp.show_original()
-            # npp.show()
-            # npp.save_problem()
-            # npp.show()
+            # g.show_original()
+            # g.show()
+            # g.save_problem()
+            # g.show()
 
             solver = GlobalSolver(npp, verbose=True, time_limit=TIME_LIMIT)
             solver.solve()
@@ -70,7 +70,7 @@ for n_commodities in [20]:
     # print(solver.solution_array)
     # print(pso.best)
     # print(solver.get_prices())
-    # print(npp.n_toll_paths)
+    # print(g.n_toll_paths)
     # stats = pso.get_stats()
 # df.to_csv('test_old.csv', index=False)
 '''

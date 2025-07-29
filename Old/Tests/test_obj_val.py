@@ -16,21 +16,21 @@ tol = 1e-9
 os.system("CPP/install.sh")
 
 npp = Instance(n_paths=n_paths, n_commodities=n_commodities)
-# solver = GlobalSolver(npp, verbose=VERBOSE)
+# solver = GlobalSolver(g, verbose=VERBOSE)
 # solver.solve()
 #
 # print(solver.obj)
 
-# print(npp.compute_solution_value_with_tol(solver.solution_array, tol=tol))
-# print(npp.compute_solution_value(solver.solution_array))
+# print(g.compute_solution_value_with_tol(solver.solution_array, tol=tol))
+# print(g.compute_solution_value(solver.solution_array))
 
 
 # t = solver.solution_array
 #
 # costs = np.zeros((n_commodities, n_paths + 1))
 # idxs = np.zeros(n_commodities, dtype=int)
-# for i, commodity in enumerate(npp.commodities):
-#     p = np.array([solver.p[path, commodity].x for path in npp.paths])
+# for i, commodity in enumerate(g.commodities):
+#     p = np.array([solver.p[path, commodity].x for path in g.paths])
 #     idx = np.argmax(p)
 #     costs[i, :-1] = t + commodity.c_p_vector
 #     costs[i, -1] = commodity.c_od
@@ -57,7 +57,7 @@ run = 0
 
 recombination_size = int(n_paths / 2)
 
-# genetic = GeneticPso(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
+# genetic = GeneticPso(g, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
 #                      PSO_SELECTION, PSO_EVERY, PSO_ITERATIONS, PSO_FINAL_ITERATIONS,
 #                      NO_UPDATE_LIM, verbose=VERBOSE, n_threads=N_THREADS, seed=run)
 #
@@ -70,16 +70,16 @@ print(g.time, g.best_val)
 # new_pop = np.zeros_like(g.final_population)
 # v = np.zeros(g.pop_size)
 # for i, p in enumerate(g.final_population):
-#     new_pop[i], v[i] = improve_solution_3(npp, p, tol=tol)
+#     new_pop[i], v[i] = improve_solution_3(g, p, tol=tol)
 # print(max(v))
 #
 # t = time.time()
-# gg = Genetic(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, verbose=VERBOSE, n_threads=N_THREADS, seed=run)
+# gg = Genetic(g, POPULATION, off_size, MUTATION_RATE, recombination_size, verbose=VERBOSE, n_threads=N_THREADS, seed=run)
 #
 # gg.run(1000)
 # v = np.zeros(g.pop_size)
 # for i, p in enumerate(g.final_population):
-#     new_pop[i], v[i] = improve_solution_3(npp, p, tol=tol)
+#     new_pop[i], v[i] = improve_solution_3(g, p, tol=tol)
 # gg.run(1000, new_pop)
 # print(time.time() - t, gg.best_val)
 

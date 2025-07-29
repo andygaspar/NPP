@@ -268,22 +268,22 @@ def improve_solution3(pb: Instance, sol: np.array, obj_val, tol=0.0000000000001)
 # random.seed(0)
 # n_paths = 90
 # n_commodities = 90
-# npp = Instance(n_paths=n_paths, n_commodities=n_commodities)
+# g = Instance(n_paths=n_paths, n_commodities=n_commodities)
 #
-# solver = GlobalSolver(npp, verbose=True, time_limit=160)
+# solver = GlobalSolver(g, verbose=True, time_limit=160)
 # solver.solve(ub=True)
 #
-# # for c in npp.commodities:
+# # for c in g.commodities:
 # #     c.c_od = int(c.c_od)
 # #     c.c_p_vector = c.c_p_vector.astype(int)
 # # sol = np.loadtxt('test_solution.csv')
 # t = time.time()
 # population_size = 256
-# values = np.array([c.c_od for c in npp.commodities] + [v for p in npp.commodities for v in p.c_p_vector])
-# init_sol = np.random.choice(values, size=(population_size, npp.n_paths))
-# initial_val = npp.compute_solution_value(init_sol[0])
+# values = np.array([c.c_od for c in g.commodities] + [v for p in g.commodities for v in p.c_p_vector])
+# init_sol = np.random.choice(values, size=(population_size, g.n_paths))
+# initial_val = g.compute_solution_value(init_sol[0])
 # print('*************', initial_val)
-# new_sol = improve_solution3(npp, init_sol[0], initial_val)
+# new_sol = improve_solution3(g, init_sol[0], initial_val)
 #
 # tt = time.time()
 # #

@@ -19,8 +19,8 @@ class PsoSolver:
         self.path_costs = path_costs
         self.lower_solver = LowerSolverAggregated2(npp, n_particles)
         self.lower_solver.set_up()
-        # self.swarm = Swarm(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
-        #                    npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, N_PARTS=N_PARTS,
+        # self.swarm = Swarm(g.commodities_tax_free, g.n_users, g.transfer_costs, g.upper_bounds,
+        #                    g.n_commodities, g.n_toll_paths, n_particles, n_iterations, N_PARTS=N_PARTS,
         #                    n_cut=n_cut, N_DIV=N_DIV, n_u_l=n_u_l, normalised=normalised, verbose=verbose)
         self.swarm = Swarm(npp.commodities_tax_free, npp.n_users, npp.transfer_costs, npp.upper_bounds,
                            npp.n_commodities, npp.n_toll_paths, n_particles, n_iterations, n_u_l=n_u_l)
@@ -47,7 +47,7 @@ class PsoSolver:
         self.swarm.run(init_sol, vel_init, ub, lb)
 
         self.best, self.best_val = self.swarm.get_best()
-        # print(self.npp.upper_bounds)
+        # print(self.g.upper_bounds)
         print(self.best * self.npp.upper_bounds)
         # print("final ", self.best)
 

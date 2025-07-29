@@ -30,7 +30,7 @@ class GeneticArc:
         self.n_tolls = npp.n_tolls
         self.npp = copy.deepcopy(npp)
         self.upper_bounds = np.array([p.N_p for p in npp.tolls])
-        # self.lower_bounds = np.array([p.L_p for p in npp.tolls])
+        # self.lower_bounds = np.array([p.L_p for p in g.tolls])
         self.lower_bounds = np.zeros_like(self.upper_bounds)
         self.tolls_idxs = [p.idx for p in npp.tolls]
         self.toll_idxs_flat = np.array(self.tolls_idxs).T.flatten()
@@ -125,8 +125,8 @@ class GeneticArc:
         self.solution = dict(zip(self.tolls_idxs, self.population[0]))
         self.adj_solution, self.prices = self.get_mats(self.population[0])
         for i, toll in enumerate(self.tolls_idxs):
-            self.npp.npp.edges[toll]['price'] = self.solution[toll]
-            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[toll]
+            self.npp.g.edges[toll]['price'] = self.solution[toll]
+            self.npp.g.edges[toll]['cost'] = self.npp.g.edges[toll]['weight'] + self.solution[toll]
         self.npp.assign_paths(self.adj_solution, self.prices)
         self.time = time.time() - self.time
 
@@ -146,8 +146,8 @@ class GeneticArc:
         self.adj_solution, self.prices = self.get_mats(self.solution)
         self.solution = dict(zip(self.tolls_idxs, self.population[0]))
         for i, toll in enumerate(self.tolls_idxs):
-            self.npp.npp.edges[toll]['price'] = self.solution[toll]
-            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[toll]
+            self.npp.g.edges[toll]['price'] = self.solution[toll]
+            self.npp.g.edges[toll]['cost'] = self.npp.g.edges[toll]['weight'] + self.solution[toll]
         self.npp.assign_paths(self.adj_solution, self.prices)
         self.time = time.time() - self.time
 
@@ -229,7 +229,7 @@ class GeneticArc:
             #         new_individual = np.zeros(self.n_tolls)
             #         for k in range(self.n_tolls):
             #             new_individual[k] = np.random.uniform(self.lower_bounds[k], self.upper_bounds[k])
-            #         self.population[j], self.vals[j] = run_arc_heuristic(self.npp, *self.get_mats(new_individual), 1e-16)
+            #         self.population[j], self.vals[j] = run_arc_heuristic(self.g, *self.get_mats(new_individual), 1e-16)
             #     else:
             #         curren_val = self.vals[j]
             print(max(self.vals[:self.pop_size]))
@@ -254,7 +254,7 @@ class GeneticArc:
         self.adj_solution, self.prices = self.get_mats(self.solution)
         self.solution = dict(zip(self.tolls_idxs, self.population[0]))
         for i, toll in enumerate(self.tolls_idxs):
-            self.npp.npp.edges[toll]['price'] = self.solution[toll]
-            self.npp.npp.edges[toll]['cost'] = self.npp.npp.edges[toll]['weight'] + self.solution[toll]
+            self.npp.g.edges[toll]['price'] = self.solution[toll]
+            self.npp.g.edges[toll]['cost'] = self.npp.g.edges[toll]['weight'] + self.solution[toll]
         self.npp.assign_paths(self.adj_solution, self.prices)
         self.time = time.time() - self.time

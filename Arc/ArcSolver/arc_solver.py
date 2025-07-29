@@ -29,7 +29,7 @@ def add_current_sol(model: Model, where, incumbent_obj):
 
 class ArcSolver:
 
-    def __init__(self, instance: ArcInstance, symmetric_costs = False):
+    def __init__(self, instance: ArcInstance, symmetric_costs=False):
         self.solution = None
         self.obj = None
         self.time = None
@@ -55,7 +55,7 @@ class ArcSolver:
         self.y = self.m.addVars([(a.idx, k) for a in self.instance.free for k in self.instance.commodities])
         self.t = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities], ub=10000)
         self.T = self.m.addVars([a.idx for a in self.instance.tolls], ub=10000)
-        self.la = self.m.addVars([(i, k) for i in self.instance.npp.nodes for k in self.instance.commodities])
+        self.la = self.m.addVars([(i, k) for i in self.instance.g.nodes for k in self.instance.commodities])
         self.m.setParam("OptimalityTol", self.tol)
         self.m.setParam("FeasibilityTol", self.tol)
 
@@ -70,7 +70,7 @@ class ArcSolver:
         # 1.9b
         self.time_constr = time.time()
         for k in self.instance.commodities:
-            for i in self.instance.npp.nodes:
+            for i in self.instance.g.nodes:
                 in_tolls, out_tolls = self.incident_edges(i, self.instance.tolls)
                 in_free, out_free = self.incident_edges(i, self.instance.free)
                 b = -1 if i == k.origin else (1 if i == k.destination else 0)
@@ -80,18 +80,18 @@ class ArcSolver:
                     (quicksum([self.x[a.idx, k] for a in out_tolls])
                      + quicksum(self.y[a.idx, k] for a in out_free))  # i-
                     == b
-                )
+                    , name='flow ' + str(k) + ' ' + str(i))
         # 1.9c
         for k in self.instance.commodities:
             for a in self.instance.tolls:
                 self.m.addConstr(
                     self.la[a.idx[1], k] - self.la[a.idx[0], k] <= a.c_a + self.T[a.idx]
-                )
+                , name='lambda T c ' + str(k) + ' ' + str(a.idx))
             # 1.9d
             for a in self.instance.free:
                 self.m.addConstr(
                     self.la[a.idx[1], k] - self.la[a.idx[0], k] <= a.c_a
-                )
+                , name='lambda c ' + str(k) + ' ' + str(a.idx))
         # 1.9e
         for k in self.instance.commodities:
             self.m.addConstr(
@@ -99,7 +99,7 @@ class ArcSolver:
                           self.instance.tolls]) +
                 quicksum([a.c_a * self.y[a.idx, k] for a in self.instance.free])
                 == self.la[k.destination, k] - self.la[k.origin, k]
-            )
+            , name='lambda od ' + str(k))
 
             # self.m.addConstr(self.la[k.origin, k] == 0)
 
@@ -108,13 +108,13 @@ class ArcSolver:
             for a in self.instance.tolls:
                 self.m.addConstr(
                     self.t[a.idx, k] <= k.M_p[a.idx] * self.x[a.idx, k]
-                )
+                , name='M ' + str(k) + ' ' + str(a.idx))
                 self.m.addConstr(
                     self.T[a.idx] - self.t[a.idx, k] <= a.N_p * (1 - self.x[a.idx, k])
-                )
+                , name='Np ' + str(k) + ' ' + str(a.idx))
                 self.m.addConstr(
                     self.t[a.idx, k] <= self.T[a.idx]
-                )
+                , name='t<T ' + str(k) + ' ' + str(a.idx))
 
         self.time_constr = time.time() - self.time_constr
 
@@ -155,7 +155,7 @@ class ArcSolver:
 
         self.assign_solution()
 
-    def solve_max_price(self, sol):
+    def solve_max_price(self):
         self.time = time.time()
         self.set_obj()
         self.set_constraints()
@@ -173,13 +173,18 @@ class ArcSolver:
         # for a in sol:
         #     self.m.addConstr(self.T[a] == sol[a])
         self.m.optimize()
+        self.m.computeIIS()
+        for c in self.m.getConstrs():
+            if c.IISConstr:
+                print(f'\t{c.constrname}: {self.m.getRow(c)} {c.Sense} {c.RHS}')
+
         self.obj = self.m.objval
         self.time = time.time() - self.time
         self.assign_solution()
         self.best_bound = self.m.getAttr('ObjBound')
 
     def get_mats(self):
-        price_solution = np.zeros((len(self.instance.npp.nodes), len(self.instance.npp.nodes)))
+        price_solution = np.zeros((len(self.instance.g.nodes), len(self.instance.g.nodes)))
         for a in self.instance.tolls:
             price_solution[a.idx] = self.T[a.idx].x
         adj_solution = self.instance.get_adj() + price_solution
@@ -215,4 +220,3 @@ class ArcSolver:
                 if e in self.instance.tolls:
                     profit += self.T[e.idx].x * k.n_users
         print(profit)
-

@@ -181,7 +181,7 @@ class GridInstance(ArcInstanceOld):
     def show(self, edge_color=True, with_labels=True, edge_weight=False, width=5, file=None):
         plt.rcParams["figure.figsize"] = (15, 10)
         # plt.rcParams["font.size"] = 20
-        # pos = nx.nx_agraph.graphviz_layout(self.npp)
+        # pos = nx.nx_agraph.graphviz_layout(self.g)
 
         pos = {}
         node = 0

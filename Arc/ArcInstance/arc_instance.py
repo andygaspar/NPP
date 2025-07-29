@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.spatial import Delaunay
 from scipy.spatial import Voronoi
-
+from gurobipy import Model, GRB
 
 def get_cost(g, toll):
     return nx.dijkstra_path_length(g, toll[0], toll[1], 'cost')
@@ -62,23 +62,28 @@ class ArcInstance:
         self.n_commodities = n_commodities
         self.toll_proportion = toll_proportion
         self.n_nodes = n_nodes
-        self.n_tolls = None
+        self.n_tolls = 0
         self.commodities: List[ArcCommodity] = []
         self.arc_tolls: List[tuple] = []
         self.tolls: List[ArcToll] = []
         self.free: List[Arc] = []
         if not preset_graph:
-            self.npp = self.set_instance(g)
+            self.g = self.set_instance(g)
         else:
-            self.npp = g
-            self.load_graph(self.npp)
+            self.g = g
+            self.load_graph(self.g)
+        self.adj = nx.to_numpy_array(self.g, range(self.n_nodes))
+        self.edges = list(self.g.edges())
+        self.n_edges = len(self.edges)
         self.set_commodities_bound()
         self.set_tolls()
-        self.adj = nx.to_numpy_array(self.npp, range(self.n_nodes))
+        self.n_free = self.n_edges - self.n_tolls
+        self.arc_free: List[tuple] = [e for e in self.edges if e not in self.arc_tolls]
+        self.arc_tolls = [e for e in self.edges if e in self.arc_tolls]
 
     def load_graph(self, g: nx.Graph):
         for k in g._commodities:
-            self.commodities.append(ArcNewCommodity(*k))
+            self.commodities.append(ArcCommodity(*k))
 
         for edge in g.edges():
             if g.edges[edge]['toll']:
@@ -86,10 +91,10 @@ class ArcInstance:
         self.n_tolls = len(self.arc_tolls)
 
     def get_adj(self):
-        return nx.to_numpy_array(self.npp, nodelist=range(self.n_nodes))
+        return nx.to_numpy_array(self.g, nodelist=range(self.n_nodes))
 
     def set_commodities_bound(self):
-        g_inf = self.npp.copy()
+        g_inf = self.g.copy()
         for toll in self.arc_tolls:
             g_inf.edges[toll]['cost'] = 10 ** 5
 
@@ -97,14 +102,14 @@ class ArcInstance:
             g_inf.edges[toll]['gamma_ht'] = get_cost(g_inf, toll)
 
         for commodity in self.commodities:
-            commodity.compute_bounds(self.npp, g_inf, self.arc_tolls)
+            commodity.compute_bounds(self.g, g_inf, self.arc_tolls)
 
     def set_tolls(self):
-        for edge in self.npp.edges:
-            if self.npp.edges[edge]['toll']:
-                self.tolls.append(ArcToll(edge, self.commodities, self.npp.edges[edge]['weight']))
+        for edge in self.g.edges:
+            if self.g.edges[edge]['toll']:
+                self.tolls.append(ArcToll(edge, self.commodities, self.g.edges[edge]['weight']))
             else:
-                self.free.append(Arc(edge, self.npp.edges[edge]['weight']))
+                self.free.append(Arc(edge, self.g.edges[edge]['weight']))
 
     def set_instance(self, g):
 
@@ -146,25 +151,33 @@ class ArcInstance:
 
         idxs = np.argsort([g.edges[edge]['counter'] for edge in g.edges])[::-1]
         edges = list(g.edges)
-        remained_edges = list(g.edges)
+        remained_edges = [edges[idxs[i]] for i in idxs]
 
         self.n_tolls = int(len(g.edges) * self.toll_proportion)
 
-        for i in range(int(self.n_tolls * 2 / 3)):
-            g.edges[edges[idxs[i]]]['toll'] = True
-            self.arc_tolls.append(edges[idxs[i]])
-            self.arc_tolls.append((edges[idxs[i]][1], edges[idxs[i]][0]))
-            g.edges[edges[idxs[i]]]['weight'] /= 2
-            g.edges[edges[idxs[i]]]['color'] = 'red'
-            remained_edges.remove(edges[idxs[i]])
+        added_tolls = 0
+        while added_tolls < int(self.n_tolls * 2 / 3):
+            feasible = self.is_feasible(remained_edges[1:])
+            if feasible:
+                g.edges[remained_edges[0]]['toll'] = True
+                self.arc_tolls.append(remained_edges[0])
+                self.arc_tolls.append((remained_edges[0][1], remained_edges[0][0]))
+                g.edges[remained_edges[0]]['weight'] /= 2
+                g.edges[remained_edges[0]]['color'] = 'red'
+                added_tolls += 1
+            remained_edges.remove(remained_edges[0])
 
-        for _ in range(self.n_tolls - int(self.n_tolls * 2 / 3)):  # one third random (computed this way to avoid rounding issues)
-            e = remained_edges.pop(random.choice(range(len(remained_edges))))
-            self.arc_tolls.append(e)
-            self.arc_tolls.append((e[1], e[0]))
-            g.edges[e]['toll'] = True
-            g.edges[e]['weight'] /= 2
-            g.edges[e]['color'] = 'red'
+        while added_tolls < self.n_tolls:
+            e_idx = random.choice(range(len(remained_edges)))
+            feasible = self.is_feasible([e for i, e in enumerate(remained_edges) if i != e_idx])
+            if feasible:
+                e = remained_edges.pop(e_idx)
+                self.arc_tolls.append(e)
+                self.arc_tolls.append((e[1], e[0]))
+                g.edges[e]['toll'] = True
+                g.edges[e]['weight'] /= 2
+                g.edges[e]['color'] = 'red'
+                added_tolls += 1
 
         for e in edges:
             g.edges[e]['cost'] = g.edges[e]['weight']
@@ -187,6 +200,26 @@ class ArcInstance:
             commodity.solution_edges = [(path[0], path[1])]
             for i in range(1, len(path) - 1):
                 commodity.solution_edges.append((path[i], path[i + 1]))
+
+    def is_feasible(self, edges):
+        edges_all = edges + [(e[1], e[0]) for e in edges]
+        A = np.zeros((self.n_nodes, len(edges_all)))
+        for i, e in enumerate(edges_all):
+            A[e[0], i] = -1
+            A[e[1], i] = 1
+        b = np.zeros((self.n_commodities, self.n_nodes))
+        for i, k in enumerate(self.commodities):
+            b[i, k.origin] = -1
+            b[i, k.destination] = 1
+
+        m = Model()
+        m.setParam('OutputFlag', 0)
+        x = m.addMVar((self.n_commodities, len(edges_all)))
+
+        for k in range(self.n_commodities):
+            m.addConstr(A @ x[k] == b[k], name='feasible')
+        m.optimize()
+        return m.status == GRB.Status.OPTIMAL
 
 
     @staticmethod
@@ -236,21 +269,21 @@ class ArcInstance:
 
     def draw(self, show_cost=False):
         plt.rcParams['figure.figsize'] = (12, 8)
-        pos = {node: self.npp.nodes[node]['pos'] for node in self.npp.nodes()}
-        edge_color = [self.npp.edges[e]['color'] for e in self.npp.edges]
-        nx.draw(self.npp, pos=pos, with_labels=True, edge_color=edge_color)
+        pos = {node: self.g.nodes[node]['pos'] for node in self.g.nodes()}
+        edge_color = [self.g.edges[e]['color'] for e in self.g.edges]
+        nx.draw(self.g, pos=pos, with_labels=True, edge_color=edge_color)
         if show_cost:
-            labels = {e: "{:.2f}".format(self.npp.edges[e]['weight']) for e in self.npp.edges}
-            nx.draw_networkx_edge_labels(self.npp, pos=pos, edge_labels=labels)
+            labels = {e: "{:.2f}".format(self.g.edges[e]['weight']) for e in self.g.edges}
+            nx.draw_networkx_edge_labels(self.g, pos=pos, edge_labels=labels)
         plt.show()
 
     def save_instance(self, filename):
         commodities = [(k.origin, k.destination, k.n_users) for k in self.commodities]
-        self.npp._commodities = commodities
-        self.npp._toll_proportion = self.toll_proportion
+        self.g._commodities = commodities
+        self.g._toll_proportion = self.toll_proportion
         import pickle
         with open(filename, 'wb') as f:
-            pickle.dump(self.npp, f)
+            pickle.dump(self.g, f)
 
     def save_problem(self, pb_name):
         folder = 'Arc/Arc_GA/Problems/' + pb_name

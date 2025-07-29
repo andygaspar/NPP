@@ -50,7 +50,7 @@ class ArcSolverOld:
         self.y = self.m.addVars([(a.idx, k) for a in self.instance.free for k in self.instance.commodities])
         self.t = self.m.addVars([(a.idx, k) for a in self.instance.tolls for k in self.instance.commodities])
         self.T = self.m.addVars([a.idx for a in self.instance.tolls])
-        self.la = self.m.addVars([(i, k) for i in self.instance.npp.nodes for k in self.instance.commodities])
+        self.la = self.m.addVars([(i, k) for i in self.instance.g.nodes for k in self.instance.commodities])
         self.m.setParam("OptimalityTol", self.tol)
         self.m.setParam("FeasibilityTol", self.tol)
 
@@ -64,7 +64,7 @@ class ArcSolverOld:
     def set_constraints(self):
         # 1.9b
         for k in self.instance.commodities:
-            for j, i in enumerate(self.instance.npp.nodes):
+            for j, i in enumerate(self.instance.g.nodes):
                 exiting_toll, entering_toll = self.iterations_on_arc(i, self.instance.tolls)
                 exiting_free, entering_free = self.iterations_on_arc(i, self.instance.free)
                 self.m.addConstr(
@@ -151,10 +151,10 @@ class ArcSolverOld:
         self.adj_solution, self.mat_solution = self.get_adj_solution()
         self.solution = list(self.T[a.idx].x for a in self.instance.tolls)
         self.adj_solution, self.mat_solution = self.get_mats(self.solution)
-        self.instance.npp = nx.from_numpy_array(self.adj_solution)
+        self.instance.g = nx.from_numpy_array(self.adj_solution)
         self.gap = self.m.MIPGap
         for c in self.instance.commodities:
-            c.solution_path = nx.shortest_path(self.instance.npp, c.origin, c.destination, weight='weight')
+            c.solution_path = nx.shortest_path(self.instance.g, c.origin, c.destination, weight='weight')
             c.solution_edges = [(c.solution_path[i], c.solution_path[i + 1]) for i in range(len(c.solution_path) - 1)]
         return self.m.objval, self.best_bound
 
@@ -163,7 +163,7 @@ class ArcSolverOld:
         return tolls
 
     def get_adj_solution(self):
-        price_solution = np.zeros((len(self.instance.npp.nodes), len(self.instance.npp.nodes)))
+        price_solution = np.zeros((len(self.instance.g.nodes), len(self.instance.g.nodes)))
         for a in self.instance.tolls:
             price_solution[a.idx] = self.T[a.idx].x
         adj_solution = self.instance.get_adj() + price_solution

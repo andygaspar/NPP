@@ -101,43 +101,43 @@ class GeneticPso:
 # solutions = np.zeros((2, n_paths))
 # solver_solution = 1
 #
-# npp = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=seed)
+# g = Instance(n_paths=n_paths, n_commodities=n_commodities, seeds=seed)
 #
-# g = GeneticOld(population_size=POPULATION, pso_population=0, pso_selection=0, npp=npp, mutation_rate=MUTATION_RATE,
+# g = GeneticOld(population_size=POPULATION, pso_population=0, pso_selection=0, g=g, mutation_rate=MUTATION_RATE,
 #                                offspring_rate=0.5, n_threads=N_THREADS)
 #
 # g.init_values()
 # g.generation_es()
 #
-# solver = GlobalSolver(npp, verbose=True, time_limit=TIME_LIMIT)
+# solver = GlobalSolver(g, verbose=True, time_limit=TIME_LIMIT)
 # solver.solve()
 # solver_solution = solver.obj
 #
-# genetic = GeneticPso(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
+# genetic = GeneticPso(g, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
 #                      PSO_SELECTION, PSO_EVERY, PSO_ITERATIONS, PSO_FINAL_ITERATIONS,
 #                      NO_UPDATE_LIM, verbose=VERBOSE, n_threads=N_THREADS, seed=-1)
-# init_population = np.random.uniform(size=(POPULATION, npp.n_paths)) * npp.upper_bounds
+# init_population = np.random.uniform(size=(POPULATION, g.n_paths)) * g.upper_bounds
 #
 # genetic.run(ITERATIONS, init_population)
 # solutions[0] = genetic.final_population[0]
 # #
 # t = time.time()
 # island_size = 32
-# start = np.zeros((POPULATION, npp.n_paths))
+# start = np.zeros((POPULATION, g.n_paths))
 # vals = np.zeros(POPULATION)
 # for i in range(island_size):
-#     genetic_op = GeneticPso(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
+#     genetic_op = GeneticPso(g, POPULATION, off_size, MUTATION_RATE, recombination_size, PSO_SIZE,
 #                             PSO_SELECTION, 15000, PSO_ITERATIONS, 0,
 #                             NO_UPDATE_LIM, verbose=False, n_threads=N_THREADS, seed=-1)
 #
 #     genetic_op.run(200)
 #     print('gen pre', genetic_op.best_val)
-#     start[i] = improve_solution(npp, genetic_op.final_population[0], genetic.best_val)
+#     start[i] = improve_solution(g, genetic_op.final_population[0], genetic.best_val)
 #     vals[i] = genetic_op.best_val
 #
-# start[island_size:] = np.random.uniform(size=(POPULATION - island_size, npp.n_paths)) * npp.upper_bounds
+# start[island_size:] = np.random.uniform(size=(POPULATION - island_size, g.n_paths)) * g.upper_bounds
 #
-# genetic_op = GeneticPso(npp, start.shape[0], start.shape[0] // 2, MUTATION_RATE, recombination_size, PSO_SIZE,
+# genetic_op = GeneticPso(g, start.shape[0], start.shape[0] // 2, MUTATION_RATE, recombination_size, PSO_SIZE,
 #                         PSO_SELECTION, 15000, PSO_ITERATIONS, 0,
 #                         NO_UPDATE_LIM, verbose=True, n_threads=N_THREADS, seed=-1)
 # print('final')
@@ -157,21 +157,21 @@ class GeneticPso:
 # # sol = np.array([20.66011135, 21.84417224, 20.85962104, 16.64011465, 16.59655319, 18.58551733, 17.82162057, 21.77570462, 18.0644112 , 20.53840836, 14.99435891, 18.84067586, 18.98875125, 16.97326997, 18.04566825, 18.89767318, 21.51951767, 21.47526179, 15.68106649, 15.50911928, 20.14371097, 24.03953721, 22.64490523, 19.57367535, 16.28541261, 15.74296516, 17.42590343, 19.07841297, 20.76669389, 17.19400715, 22.00515044, 21.78049731, 17.73584207, 18.45822701, 17.90289863, 22.79013006, 18.9026711 , 17.77541157, 16.41388888, 16.45744616, 15.09697211, 20.84267093, 16.54744751, 22.98301433, 17.62772858, 21.55578872, 22.93361653, 22.79491045, 20.25835115, 19.54940771, 19.52487206, 17.53526016, 18.35639023, 20.60424729, 21.29767399, 18.608402  ])
 #
 # # sol = np.loadtxt('test_solution.csv')
-# new_sol = improve_solution(npp, solutions[0], genetic.best_val)
-# new_sol_1 = improve_solution(npp, solutions[1], genetic_op.best_val)
-# tol_new_sol = improve_solution(npp, solutions[0], genetic.best_val, tol=0)
-# tol_new_sol_1 = improve_solution(npp, solutions[1], genetic_op.best_val, tol=0)
+# new_sol = improve_solution(g, solutions[0], genetic.best_val)
+# new_sol_1 = improve_solution(g, solutions[1], genetic_op.best_val)
+# tol_new_sol = improve_solution(g, solutions[0], genetic.best_val, tol=0)
+# tol_new_sol_1 = improve_solution(g, solutions[1], genetic_op.best_val, tol=0)
 #
 # print(genetic.best_val, genetic_op.best_val)
-# print(npp.compute_solution_value(new_sol), npp.compute_solution_value(new_sol_1))
-# print(npp.compute_solution_value(tol_new_sol), npp.compute_solution_value(tol_new_sol_1))
+# print(g.compute_solution_value(new_sol), g.compute_solution_value(new_sol_1))
+# print(g.compute_solution_value(tol_new_sol), g.compute_solution_value(tol_new_sol_1))
 # print(solver_solution, solver.time, solver.status)
 #
 # #
 # # new_start = []
 # # for i, sol in enumerate(genetic.final_population):
-# #     val = npp.compute_solution_value(sol)
-# #     new_sol = improve_solution(npp, sol, val)
+# #     val = g.compute_solution_value(sol)
+# #     new_sol = improve_solution(g, sol, val)
 # #     new_start.append(new_sol)
 # #
 # # 4.492595672607422 7.581286907196045 4625.292164058913 4689.776235794727 0.013749925048372025

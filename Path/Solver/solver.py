@@ -130,8 +130,8 @@ class GlobalSolver:
 
     def print_model(self):
         # for p in self.instance.paths:
-        # self.instance.npp.edges[p]["weight"] = self.t[p].x
-        # print(p, self.instance.npp.edges[p]["weight"])
+        # self.instance.g.edges[p]["weight"] = self.t[p].x
+        # print(p, self.instance.g.edges[p]["weight"])
 
         best_val = 0
         for i, k in enumerate(self.instance.commodities):
