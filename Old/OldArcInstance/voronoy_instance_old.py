@@ -12,7 +12,7 @@ from Old.OldArcInstance.arc_instance_old import ArcInstanceOld
 from Old.OldArcInstance.arc_commodity_old import ArcCommodityOld, ArcTollOld, ArcOld
 
 
-class VoronoiInstance(ArcInstanceOld):
+class VoronoiNewInstance(ArcInstanceOld):
     def __init__(self, n_locations, n_arcs, dim_grid, toll_proportion, n_commodities, costs=(5, 35), nr_users=(1, 5),
                  seed=False):
         # costs = (2, 20)

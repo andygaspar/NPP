@@ -12,8 +12,6 @@ from Arc.ArcInstance.arc_instance import ArcInstance, ArcCommodity
 from gurobipy import Model, GRB, quicksum  # , Env
 from functools import partial
 
-from Arc.genetic_arc import GeneticArc
-
 
 class Incumbent:
     def __init__(self):

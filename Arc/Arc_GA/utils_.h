@@ -57,8 +57,8 @@ void print_vect(T* vect, int size) {
 
 template <typename T>
 void print_mat_vector(std::vector<std::vector<T>>& mat) {
-    for(int i=0; i<mat.size(); i++){
-        for(int j=0; j<mat[i].size(); j++) std::cout<<mat[i][j]<<" ";
+    for(size_t i=0; i<mat.size(); i++){
+        for(size_t j=0; j<mat[i].size(); j++) std::cout<<mat[i][j]<<" ";
         std::cout<<std::endl;
     }
 

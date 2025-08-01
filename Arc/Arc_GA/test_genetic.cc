@@ -40,7 +40,7 @@ int read_size(const std::string& filename) {
 
 
 template <typename T>
-T* readMatrixFromFile(const std::string& filename, int size) {
+T* readMatrixFromFile(const std::string& filename, int row_size, int col_size=1) {
     std::ifstream file(filename);
     if (!file) {
         throw std::runtime_error("Unable to open file");
@@ -49,13 +49,13 @@ T* readMatrixFromFile(const std::string& filename, int size) {
     // Read the number of rows and columns from the first line of the file
 
     // Allocate memory for the matrix
-    T* matrix  = new T[size*size];
+    T* matrix  = new T[row_size*col_size];
 
 
     // Read the matrix elements from the file
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            file >> matrix[i*size + j];
+    for (int i = 0; i < row_size; ++i) {
+        for (int j = 0; j < col_size; ++j) {
+            file >> matrix[i*col_size + j];
         }
     }
 
@@ -63,11 +63,11 @@ T* readMatrixFromFile(const std::string& filename, int size) {
 }
 
 template <typename T>
-void printMatrix(T* matrix, int size) {
+void printMatrix(T* matrix, int row_size, int col_size) {
     std::cout << "Matrix elements:" << std::endl;
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            std::cout << matrix[i*size + j] << " ";
+    for (int i = 0; i < row_size; ++i) {
+        for (int j = 0; j < col_size; ++j) {
+            std::cout << matrix[i*col_size + j] << " ";
         }
         std::cout << std::endl;
     }
@@ -79,27 +79,28 @@ int main(){
     using namespace std::chrono;
 
 
-    std::string file_name = "debug_test";
+    std::string file_name = "test_dijkstra";
     short n_commodities = read_size("Problems/" + file_name + "/n_com.csv");;
     short n_tolls = read_size("Problems/" + file_name + "/n_tolls.csv");;
     int adj_size = read_size("Problems/" + file_name + "/adj_size.csv");
-    double*  adj = readMatrixFromFile<double> ("Problems/" + file_name + "/adj.csv", adj_size);
+    double*  adj = readMatrixFromFile<double> ("Problems/" + file_name + "/adj.csv", adj_size, adj_size);
     double* upper_bounds = readMatrixFromFile<double> ("Problems/" + file_name + "/ub.csv", n_tolls);
     int* toll_idxs= readMatrixFromFile<int> ("Problems/" + file_name + "/toll_idxs.csv", 2*n_tolls);
     int* origins = readMatrixFromFile<int> ("Problems/" + file_name + "/origins.csv", n_commodities);
     int* destinations = readMatrixFromFile<int> ("Problems/" + file_name + "/destinations.csv", n_commodities);
     int* n_users = readMatrixFromFile<int> ("Problems/" + file_name + "/n_users.csv", n_commodities);
     // for(short i=0; i < n_tolls; i++) upper_bounds[i] *= 2;
+    printMatrix(upper_bounds, 1, n_tolls);
 
-    short pop_size = 64;
+    short pop_size = 5;
     short off_size = pop_size/2;
-    int iterations = 50;
+    int iterations = 1000;
     int heuristic_every = 2000;
     short recombination_size = n_tolls/2;
     double mutation_rate = 0.2;
 
 
-    short num_threads = 16;
+    short num_threads = 1;
 
     bool verbose = true;
 
@@ -115,7 +116,8 @@ int main(){
  
     //fr.print_problem();
 
-    double* population = get_random_population(upper_bounds, pop_size, n_tolls);
+    // double* population = get_random_population(upper_bounds, pop_size, n_tolls);
+    double* population = readMatrixFromFile<double> ("Problems/" + file_name + "/population.csv", pop_size, n_tolls);
 
 
     // ArcGenetic g(upper_bounds, lower_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,

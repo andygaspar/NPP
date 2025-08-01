@@ -72,10 +72,12 @@ class ArcInstance:
         else:
             self.g = g
             self.load_graph(self.g)
-        self.adj = nx.to_numpy_array(self.g, range(self.n_nodes))
+        self.adj = nx.to_numpy_array(self.g, nodelist=range(self.n_nodes))
         self.edges = list(self.g.edges())
         self.n_edges = len(self.edges)
+        t = time.time()
         self.set_commodities_bound()
+        print('time comm bounds', time.time() - t)
         self.set_tolls()
         self.n_free = self.n_edges - self.n_tolls
         self.arc_free: List[tuple] = [e for e in self.edges if e not in self.arc_tolls]
@@ -93,6 +95,14 @@ class ArcInstance:
     def get_adj(self):
         return nx.to_numpy_array(self.g, nodelist=range(self.n_nodes))
 
+    def get_mats_from_prices(self, solution: dict):
+        prices = np.zeros_like(self.adj)
+        for e in solution:
+            prices[e] = solution[e]
+        adj = self.adj + prices
+
+        return adj, prices
+
     def set_commodities_bound(self):
         g_inf = self.g.copy()
         for toll in self.arc_tolls:
@@ -105,7 +115,7 @@ class ArcInstance:
             commodity.compute_bounds(self.g, g_inf, self.arc_tolls)
 
     def set_tolls(self):
-        for edge in self.g.edges:
+        for edge in self.edges:
             if self.g.edges[edge]['toll']:
                 self.tolls.append(ArcToll(edge, self.commodities, self.g.edges[edge]['weight']))
             else:
@@ -154,7 +164,6 @@ class ArcInstance:
         remained_edges = [edges[idxs[i]] for i in idxs]
 
         self.n_tolls = int(len(g.edges) * self.toll_proportion)
-
         added_tolls = 0
         while added_tolls < int(self.n_tolls * 2 / 3):
             feasible = self.is_feasible(remained_edges[1:])
@@ -285,7 +294,7 @@ class ArcInstance:
         with open(filename, 'wb') as f:
             pickle.dump(self.g, f)
 
-    def save_problem(self, pb_name):
+    def save_cpp_problem(self, pb_name):
         folder = 'Arc/Arc_GA/Problems/' + pb_name
         os.mkdir(folder)
         np.savetxt(folder + '/ub.csv', np.array([p.N_p for p in self.tolls]), fmt='%.18f')
@@ -331,10 +340,10 @@ class DelaunayInstance(ArcInstance):
         g.add_edges_from(edges)
         for node in g.nodes:
             g.nodes[node]['pos'] = self.points[node]
-        super().__init__(n_commodities, toll_proportion, n_nodes, g)
+        super().__init__(n_commodities, toll_proportion, len(g.nodes), g)
 
 
-class VoronoiNewInstance(ArcInstance):
+class VoronoiInstance(ArcInstance):
     def __init__(self, n_commodities, toll_proportion, n_nodes):
         points = np.random.uniform(0, 1, size=(n_nodes, 2))
         vor = Voronoi(points)
@@ -351,7 +360,7 @@ class VoronoiNewInstance(ArcInstance):
         g.add_edges_from(edges)
         for node in g.nodes:
             g.nodes[node]['pos'] = self.vertices[node]
-        super().__init__(n_commodities, toll_proportion, n_nodes, g)
+        super().__init__(n_commodities, toll_proportion, len(g.nodes), g)
 
 
 def instance_from_graph(g: nx.Graph):
