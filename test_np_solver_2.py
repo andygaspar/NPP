@@ -12,6 +12,12 @@ from gurobipy import Model, GRB
 from Arc.ArcSolver.arc_solver_np import ArcSolverNp
 from Arc.genetic_arc import GeneticArc
 
+def check(obj_, objs_):
+    for o in objs_:
+        if o - 1e-9 <= obj_ <= o + 1e-9:
+            return True
+    else:
+        return False
 
 def get_path(xx, yy, arc_tolls, arc_free):
     return [arc_tolls[i] for i in np.nonzero(xx)[0]] + [arc_free[i] for i in np.nonzero(yy)[0]]
@@ -36,10 +42,10 @@ print('instance time', time.time() - tt)
 
 # grid.save_cpp_problem('test_dijkstra')
 
-ITERATIONS = 20
-POP_SIZE = 128
+ITERATIONS = 400
+POP_SIZE = 1024
 g2 = GeneticArc(POP_SIZE, grid, mutation_rate=0.02)
-g2.run_cpp_heuristic(ITERATIONS // 2, dijkstra_every=100, verbose=True, n_threads=16, seed=0)
+g2.run_cpp_heuristic(ITERATIONS // 4, dijkstra_every=100, verbose=True, n_threads=16, seed=0)
 
 partial = ArcSolverNp(grid)
 # for i in range(5):
@@ -50,35 +56,43 @@ partial = ArcSolverNp(grid)
 toll_idx = dict(zip(grid.arc_tolls, range(len(grid.arc_tolls))))
 free_idx = dict(zip(grid.arc_free, range(len(grid.arc_free))))
 
+def get_x_y(instance, T, toll_idx_, free_idx_):
+    solution = dict(zip(instance.arc_tolls, T))
+    com_path_1 = {k: instance.dijkstra(*instance.get_mats_from_prices(solution), k)[3] for k in instance.commodities}
+
+    x = np.zeros((instance.n_commodities, instance.n_tolls))
+    y = np.zeros((instance.n_commodities, instance.n_free))
+    for j, k in enumerate(instance.commodities):
+        for p in range(len(com_path_1[k]) - 1):
+            e = (com_path_1[k][p], com_path_1[k][p + 1])
+            if e in instance.arc_tolls:
+                x[j, toll_idx_[e]] = 1
+            else:
+                y[j, free_idx_[e]] = 1
+    return x, y
+
+
 best = 0
-for _ in range(3):
+for _ in range(8):
+    print('iter', _)
     # idxs = np.random.choice(range(POP_SIZE), 5, replace=False).tolist() + list(range(5))
-    idxs = range(POP_SIZE)
+    idxs = range(20)
+    objs = []
     for i in idxs:
-        # x, y = partial.solve_x(g2.population[i])
-        sol = dict(zip(grid.arc_tolls, g2.population[i]))
-        test_1 = grid.compute_obj(*grid.get_mats_from_prices(sol))
+        x, y = get_x_y(grid, g2.population[i], toll_idx, free_idx)
 
-        # com_path_2 = {k: get_path(x[i], y[i], grid.arc_tolls, grid.arc_free) for i, k in enumerate(grid.commodities)}
-
-        com_path_1 = {k: grid.dijkstra(*grid.get_mats_from_prices(sol), k)[3] for k in grid.commodities}
-
-        x = np.zeros((grid.n_commodities, grid.n_tolls))
-        y = np.zeros((grid.n_commodities, grid.n_free))
-        for j, k in enumerate(grid.commodities):
-            for p in range(len(com_path_1[k]) - 1):
-                e = (com_path_1[k][p], com_path_1[k][p + 1])
-                if e in grid.arc_tolls:
-                    x[j, toll_idx[e]] = 1
-                else:
-                    y[j, free_idx[e]] = 1
-
-        t = time.time()
         g2.population[i], obj = partial.solve_max_price_2(x, y)
-        t1 = time.time() - t
-        # t = time.time()
-        # _, obj_2 = partial.solve_max_price_2(x, y)
-        # t2 = time.time() - t
+
+        if check(obj, objs):
+            # print(np.nonzero(x))
+            idx = random.choice(np.nonzero(x.sum(axis=0))[0])
+            x, y = get_x_y(grid, g2.population[i], toll_idx, free_idx)
+            _, obj_2 = partial.solve_max_price_2(x, y)
+            g2.population[i][idx] -= 1
+            x, y = get_x_y(grid, g2.population[i], toll_idx, free_idx)
+            _, obj_3 = partial.solve_max_price_2(x, y)
+            print('improve', obj, obj_2, obj_3)
+        objs.append(obj)
         if best < obj:
             best = obj
             print(obj, g2.vals[i])

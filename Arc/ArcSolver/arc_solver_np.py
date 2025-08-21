@@ -189,8 +189,42 @@ class ArcSolverNp:
             m_max_price.addConstr(t[k] <= T)
 
         m_max_price.setObjective((self.n_k * t).sum(), sense=GRB.MAXIMIZE)
-        t = time.time()
         m_max_price.optimize()
-        # print('opt time', time.time() - t)
         return T.x, m_max_price.objval
+
+    def solve_max_price_x(self, x):
+
+        N = np.array([toll.N_p for toll in self.instance.tolls])
+        m_max_price = Model(name='MaxPrice')
+        m_max_price.setParam("OutputFlag", 0)
+
+        la = m_max_price.addMVar((self.instance.n_commodities, self.instance.n_nodes), lb=-1e5)
+        eps = m_max_price.addMVar((1,))
+        T = m_max_price.addMVar(self.instance.n_tolls)
+        t = m_max_price.addMVar((self.instance.n_commodities, self.instance.n_tolls))
+        y = m_max_price.addMVar((self.instance.n_commodities, self.instance.n_free))
+
+        for k, comm in enumerate(self.instance.commodities):
+            m_max_price.addConstr(-self.A_1_bool @ x[k] - self.A_2_bool @ y[k] == self.b[k])
+            m_max_price.addConstr(self.A_1_bool.T @ la[k] <= self.c_at + T)
+            m_max_price.addConstr(self.A_2_bool.T @ la[k] <= self.c_af)
+            #
+            m_max_price.addConstr((self.c_at * x[k]).sum() + t[k].sum() + (self.c_af * y[k]).sum()
+                             >= la[k, comm.origin] - la[k, comm.destination] - eps)
+            m_max_price.addConstr((self.c_at * x[k]).sum() + t[k].sum() + (self.c_af * y[k]).sum()
+                                  <= la[k, comm.origin] - la[k, comm.destination] + eps)
+            #
+            M = np.array([comm.M_p[e] for e in self.instance.edges if e in self.instance.arc_tolls])
+            m_max_price.addConstr(t[k] <= M * x[k])
+            m_max_price.addConstr(T - t[k] <= N * (1 - x[k]))
+            m_max_price.addConstr(t[k] <= T)
+
+        m_max_price.setObjective((self.n_k * t).sum() - 10000*eps, sense=GRB.MAXIMIZE)
+        m_max_price.optimize()
+        if m_max_price.status == GRB.Status.OPTIMAL:
+            return T.x, m_max_price.objval
+        else:
+            return np.zeros(self.instance.n_tolls), 0
+
+
 

@@ -295,7 +295,7 @@ class ArcGeneticHeuristic {
         scale_factor = 3800;
 
         for(short i=0; i < pop_size; i++){
-            fitness[i] = 0.5 * vals[i] + 0.5 * distance[i] * scale_factor;
+            fitness[i] = 1 * vals[i] + 0.0 * distance[i] * scale_factor;
         }
     }
 
@@ -403,7 +403,7 @@ class ArcGeneticHeuristic {
  
 
 
-            argsort(fitness, indices, pop_total_size);
+            argsort(vals, indices, pop_total_size);
             // if(vals[indices[0]] > best_val) {
             //     best_val = vals[indices[0]];
             //     no_improvement = 0;
