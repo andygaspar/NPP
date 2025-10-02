@@ -1,7 +1,7 @@
 import os
 import random
 import time
-from turtledemo.chaos import coosys
+# from turtledemo.chaos import coosys
 from typing import List, Union
 
 import numpy as np
@@ -10,6 +10,9 @@ import networkx as nx
 from scipy.spatial import Delaunay
 from scipy.spatial import Voronoi
 from gurobipy import Model, GRB
+
+from Old import commodity
+
 
 def get_cost(g, od):
     return nx.dijkstra_path_length(g, od[0], od[1], 'cost')
@@ -198,6 +201,13 @@ class ArcInstance:
         self.n_tolls *= 2
 
         return g
+
+    def get_opt_path(self, T, commodity: ArcCommodity):
+        sol = dict(zip(self.arc_tolls, T))
+        adj_sol, prices = self.get_mats_from_prices(sol)
+        cost, _, profit, path = self.dijkstra(adj_sol, prices, commodity)
+        path = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+        return cost[commodity.destination], profit[commodity.destination]*commodity.n_users, path
 
     def compute_obj(self, adj_sol, prices, tol=1e-9):
         obj = 0

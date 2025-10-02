@@ -27,8 +27,8 @@ random.seed(seed)
 np.random.seed(seed)
 
 
-N = 12**2
-COMMODITIES = 30
+N = 8**2
+COMMODITIES = 10
 TOLL_PROPORTION = 0.2
 
 TIME_LIMIT = 60
