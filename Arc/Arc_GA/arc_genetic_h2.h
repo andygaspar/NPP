@@ -295,7 +295,7 @@ class ArcGeneticHeuristic {
         scale_factor = 3800;
 
         for(short i=0; i < pop_size; i++){
-            fitness[i] = 0.5 * vals[i] + 0.5 * distance[i] * scale_factor;
+            fitness[i] = 1 * vals[i] + 0.0 * distance[i] * scale_factor;
         }
     }
 

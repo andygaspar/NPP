@@ -11,8 +11,8 @@ from scipy.spatial import Delaunay
 from scipy.spatial import Voronoi
 from gurobipy import Model, GRB
 
-def get_cost(g, toll):
-    return nx.dijkstra_path_length(g, toll[0], toll[1], 'cost')
+def get_cost(g, od):
+    return nx.dijkstra_path_length(g, od[0], od[1], 'cost')
 
 
 class ArcCommodity:
