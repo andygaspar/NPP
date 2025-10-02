@@ -20,6 +20,7 @@ def get_path(xx, yy, arc_tolls, arc_free):
 os.system("Arc/Arc_GA/install_arc.sh")
 
 
+
 seed = 9
 
 random.seed(seed)
