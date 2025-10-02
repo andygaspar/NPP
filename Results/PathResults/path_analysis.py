@@ -42,8 +42,8 @@ def compare_results(dff):
     return dff
 
 
-df_exact = pd.read_csv('Results/PathResultsOld/path_results.csv')
-df = pd.read_csv('Results/PathResultsOld/path_results_128_10000_h_iterations.csv')
+df_exact = pd.read_csv('Results/PathResults/path_results.csv')
+df = pd.read_csv('Results/PathResults/path_results_128_10000_h_iterations.csv')
 
 df_0 = format_df(df, df_exact)
 df_res = compare_results(df_0)
@@ -58,17 +58,17 @@ print(df_tex.to_latex())
 print((df_0.obj_h - df_0.obj_ga <= - 1e-9).sum())
 print(((df_0.obj_h - df_0.obj_ga >= - 1e-9) * (df_0.obj_h - df_0.obj_ga <= 1e-9)).sum())
 
-df_1 = pd.read_csv('Results/PathResultsOld/path_results_128_20000_h_iterations.csv')
+df_1 = pd.read_csv('Results/PathResults/path_results_128_20000_h_iterations.csv')
 df_1 = format_df(df_1, df_exact)
 df_11 = compare_results(df_1)
 df_11.columns = [s + '1' for s in df_11.columns]
 
-df_2 = pd.read_csv('Results/PathResultsOld/path_results_256_10000_h_iterations.csv')
+df_2 = pd.read_csv('Results/PathResults/path_results_256_10000_h_iterations.csv')
 df_2 = format_df(df_2, df_exact)
 df_22 = compare_results(df_2)
 df_22.columns = [s + '2' for s in df_22.columns]
 
-df_3 = pd.read_csv('Results/PathResultsOld/path_results_256_20000_h_iterations.csv')
+df_3 = pd.read_csv('Results/PathResults/path_results_256_20000_h_iterations.csv')
 df_3 = format_df(df_3, df_exact)
 df_33 = compare_results(df_3)
 df_33.columns = [s + '3' for s in df_33.columns]
@@ -106,7 +106,7 @@ print(df_3.GAP_h.mean(), df_3.GAP_h.std())
 df_C = df_compar.copy()
 df_C['C'] = df_C['CASE'].apply(lambda x: x[1])
 
-df_C = df_C[df_C['C'] == 'C']
+df_C = df_C[df_C['C'] == 'F']
 df_C['com'] = df_C.CASE.apply(lambda x: int(x[3:5]))
 df_C['path'] = df_C.CASE.apply(lambda x: int(x[6:8]))
 

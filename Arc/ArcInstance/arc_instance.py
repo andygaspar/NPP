@@ -1,7 +1,8 @@
 import os
 import random
 import time
-from typing import List
+from turtledemo.chaos import coosys
+from typing import List, Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,6 +25,7 @@ class ArcCommodity:
 
         self.solution_edges = None
         self.solution_path = None
+        self.solution_tolls = None
 
     def compute_bounds(self, g_zero: nx.Graph, g_inf: nx.Graph, tolls):
         o, d = self.origin, self.destination
@@ -95,7 +97,9 @@ class ArcInstance:
     def get_adj(self):
         return nx.to_numpy_array(self.g, nodelist=range(self.n_nodes))
 
-    def get_mats_from_prices(self, solution: dict):
+    def get_mats_from_prices(self, solution: Union[dict, np.array]):
+        if not isinstance(solution, dict):
+            solution = {e: solution[i] for i, e in enumerate(self.arc_tolls)}
         prices = np.zeros_like(self.adj)
         for e in solution:
             prices[e] = solution[e]
@@ -202,13 +206,22 @@ class ArcInstance:
             obj += profit[commodity.destination]
         return obj
 
+    def compute_obj_from_T(self, T):
+        sol = dict(zip(self.arc_tolls, T))
+        return self.compute_obj(*self.get_mats_from_prices(sol))
+
     def assign_paths(self, adj_sol, prices, tol=1e-9):
         for commodity in self.commodities:
             _, _, profit, path = self.dijkstra(adj_sol, prices, commodity, tol=tol)
             commodity.solution_path = path
             commodity.solution_edges = [(path[0], path[1])]
+            commodity.solution_tolls = []
+            if (path[0], path[1]) in self.arc_tolls:
+                commodity.solution_tolls.append((path[0], path[1]))
             for i in range(1, len(path) - 1):
                 commodity.solution_edges.append((path[i], path[i + 1]))
+                if (path[i], path[i + 1]) in self.arc_tolls:
+                    commodity.solution_tolls.append((path[i], path[i + 1]))
 
     def is_feasible(self, edges):
         edges_all = edges + [(e[1], e[0]) for e in edges]

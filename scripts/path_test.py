@@ -20,7 +20,7 @@ columns = ['run', 'commodities', 'paths',
 
 # columns = ['run', 'commodities', 'paths', 'obj_gah', 'obj_ga', 'time_gah', 'time_ga']
 
-POPULATION = 1280
+POPULATION = 128
 off_size = int(POPULATION / 2)
 ITERATIONS = 1000
 MUTATION_RATE = 0.02

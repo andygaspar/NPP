@@ -194,3 +194,73 @@ class ArcSolverNp:
         # print('opt time', time.time() - t)
         return T.x, m_max_price.objval
 
+    def solve_single_commodity(self, k):
+        m = Model('CVRP')
+        m.setParam("OutputFlag", 0)
+        N = np.array([toll.N_p for toll in self.instance.tolls])
+
+        x = m.addMVar((self.instance.n_commodities, self.instance.n_tolls), vtype=GRB.BINARY)
+        y = m.addMVar((self.instance.n_commodities, self.instance.n_free), vtype=GRB.BINARY)
+        la = m.addMVar((self.instance.n_commodities, self.instance.n_nodes), lb=-1e5)
+        T = m.addMVar(self.instance.n_tolls)
+        t = m.addMVar((self.instance.n_commodities, self.instance.n_tolls))
+
+        comm = self.instance.commodities[k]
+        m.addConstr(-self.A_1_bool @ x[k] - self.A_2_bool @ y[k] == self.b[k])
+        m.addConstr(self.A_1_bool.T @ la[k] <= self.c_at + T)
+        m.addConstr(self.A_2_bool.T @ la[k] <= self.c_af)
+
+        m.addConstr((self.c_at * x[k]).sum() + t[k].sum() + (self.c_af * y[k]).sum()
+                         == la[k, comm.origin] - la[k, comm.destination])
+
+        M = np.array([comm.M_p[e] for e in self.instance.edges if e in self.instance.arc_tolls])
+        m.addConstr(t[k] <= M * x[k])
+        m.addConstr(T - t[k] <= N * (1 - x[k]))
+        m.addConstr(t[k] <= T)
+        for kk in range(self.instance.n_commodities):
+            if kk != k:
+                m.addConstr(t[kk] == 0)
+        m.setObjective((self.n_k * t).sum(), sense=GRB.MAXIMIZE)
+        m.optimize()
+        return m.objval, t.x[k]
+
+    def solve_sub_problem(self, T_init):
+        m = Model('CVRP')
+        # m.setParam("OutputFlag", 0)
+
+        x = m.addMVar((self.instance.n_commodities, self.instance.n_tolls), vtype=GRB.BINARY)
+        y = m.addMVar((self.instance.n_commodities, self.instance.n_free), vtype=GRB.BINARY)
+        la = m.addMVar((self.instance.n_commodities, self.instance.n_nodes), lb=-1e5)
+        T = m.addMVar(self.instance.n_tolls)
+        t = m.addMVar((self.instance.n_commodities, self.instance.n_tolls))
+
+        N = np.array([toll.N_p for toll in self.instance.tolls])
+
+        for i in range(T_init.shape[0]):
+            if T_init[i] == 10000:
+                # for k in range(self.instance.n_commodities):
+                #     m.addConstr(t[k] == 0)
+                m.addConstr(T[i] == N[i])
+            else:
+                m.addConstr(T[i] >= T_init[i])
+        # m.addConstr(x == 0)
+
+        for k, comm in enumerate(self.instance.commodities):
+            m.addConstr(-self.A_1_bool @ x[k] - self.A_2_bool @ y[k] == self.b[k])
+            m.addConstr(self.A_1_bool.T @ la[k] <= self.c_at + T)
+            m.addConstr(self.A_2_bool.T @ la[k] <= self.c_af)
+
+            m.addConstr((self.c_at * x[k]).sum() + t[k].sum() + (self.c_af * y[k]).sum()
+                             == la[k, comm.origin] - la[k, comm.destination])
+
+            M = np.array([comm.M_p[e] for e in self.instance.edges if e in self.instance.arc_tolls])
+            m.addConstr(t[k] <= M * x[k])
+            m.addConstr(T - t[k] <= N * (1 - x[k]))
+            m.addConstr(t[k] <= T)
+
+
+        m.setObjective((self.n_k * t).sum(), sense=GRB.MAXIMIZE)
+        m.optimize()
+        print(m.objval)
+        pass
+

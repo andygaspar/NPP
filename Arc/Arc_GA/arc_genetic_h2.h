@@ -403,7 +403,7 @@ class ArcGeneticHeuristic {
  
 
 
-            argsort(fitness, indices, pop_total_size);
+            argsort(vals, indices, pop_total_size);
             // if(vals[indices[0]] > best_val) {
             //     best_val = vals[indices[0]];
             //     no_improvement = 0;
