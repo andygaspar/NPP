@@ -1,4 +1,4 @@
-g++  -g -fopenmp -W -fPIC -o test_file  test_genetic.cc  -ljsoncpp
+g++  -Ofast -fopenmp -W -fPIC -fPIC -I$GUROBI_HOME/include -o test_file  test_genetic.cc  -ljsoncpp -L$GUROBI_HOME/lib -lgurobi_c++ -lgurobi120 -ljsoncpp -lm
 # g++  -Ofast -mtune=native -march=native -fopenmp -W -fPIC -o test_file  test_genetic.cc  -ljsoncpp
 ./test_file
 

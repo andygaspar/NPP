@@ -6,6 +6,8 @@
 #include <random>
 #include <map>
 #include <iostream>
+#include <gurobi_c++.h>
+#include <numeric>
 #include "path.h"
 
 
@@ -289,4 +291,129 @@ class Commodity{
         return current_run_val*n_users;
     }
 
+
+    void set_cost(std::vector<double>& p){
+        for(size_t i=0; i<toll_idxs.size(); i++){
+            adj_sol[toll_idxs[i][0]][toll_idxs[i][1]] = init_adj[toll_idxs[i][0]][toll_idxs[i][1]] + p[i];
+            prices[toll_idxs[i][0]][toll_idxs[i][1]] = p[i];
+        }
+        for(auto & path : paths) path->update(prices);
+    }
+
 };
+
+
+
+void solveModel(std::vector<Commodity>& commodities, int n_tolls, std::vector<double>& p, std::vector<double>& ub, double val, GRBEnv & env) {
+    try {
+        // GRBEnv env;
+        env.set(GRB_IntParam_OutputFlag, 0);
+        env.set(GRB_IntParam_Threads, 1);
+        // env.set(GRB_IntParam_ConcurrentJobs, 1);  
+        env.set(GRB_IntParam_Presolve, 0);   
+        GRBModel model = GRBModel(env);
+        model.set(GRB_IntParam_Threads, 1);
+
+        // std::cout<<" val "<<val<<std::endl;
+        
+
+
+        // Creazione delle variabili T_var
+        GRBVar* T_var = model.addVars(n_tolls, GRB_CONTINUOUS);
+        for (int k = 0; k < n_tolls; ++k) {
+            T_var[k].set(GRB_DoubleAttr_UB, ub[k]);
+        }
+
+        // Vettore per total_bool
+        std::vector<int> total_bool(n_tolls, 0);
+        std::list<Path*>::iterator first_element;
+        std::list<Path*>::iterator it;
+
+        for (auto& commodity : commodities) {
+            commodity.set_cost(p);
+            commodity.paths.sort(compare_paths_pointers);
+            
+            // Aggiorna total_bool con il primo path
+            first_element = commodity.paths.begin();
+            it = commodity.paths.begin();
+            if(not (*first_element)->is_toll_free) {
+
+                for (int k = 0; k < n_tolls; ++k) {
+                    total_bool[k] += (*first_element)->toll_bool[k];
+                }
+
+                
+                // Aggiungi i vincoli per gli altri paths
+                for (size_t j = 1; j < commodity.paths.size(); j++) {
+
+                    std::advance(it, 1);
+
+                    GRBLinExpr lhs = (*first_element)->toll_free_cost;
+                    GRBLinExpr rhs = (*it)->toll_free_cost;
+                    
+                    // Calcola (T_var * commodity.paths[0].toll_bool).sum()
+                    for (int k = 0; k < n_tolls; ++k) {
+                        if ((*first_element)->toll_bool[k] != 0) {
+                            lhs += T_var[k];
+                        }
+                    }
+                    
+                    // Calcola (T_var * commodity.paths[j].toll_bool).sum()
+                    for (int k = 0; k < n_tolls; ++k) {
+                        if ((*it)->toll_bool[k] != 0) {
+                            rhs += T_var[k];
+                        }
+                    }
+                    
+                    model.addConstr(lhs <= rhs);
+                    
+                    // Aggiorna total_bool con il path corrente
+                    for (int k = 0; k < n_tolls; ++k) {
+                        total_bool[k] += (*it)->toll_bool[k];
+                    }
+                }
+            }
+        }
+
+        // Imposta la funzione obiettivo
+        GRBLinExpr objective = 0;
+        for (auto& commodity : commodities) {
+            first_element = commodity.paths.begin();
+            for (int k = 0; k < n_tolls; ++k) {
+                if ((*first_element)->toll_bool[k] != 0) {
+                    objective += T_var[k] * commodity.n_users;
+                }
+            }
+        }
+
+
+        
+        model.setObjective(objective, GRB_MAXIMIZE);
+
+        // Risolvi il modello
+        model.optimize();
+
+        for (int k = 0; k < n_tolls; ++k) {
+            if(total_bool[k] >0 ) p[k] = T_var[k].get(GRB_DoubleAttr_X);
+            // std::cout << total_bool[k]<<" "<< p[k] <<" "<< value << std::endl;
+        }   
+
+        // if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL) {
+        //     double objVal = model.get(GRB_DoubleAttr_ObjVal);
+        //     std::cout << "Optimal objective value: " << objVal << std::endl;
+        // } else {
+        //     std::cout << "Model did not solve to optimality. Status: "<< model.get(GRB_IntAttr_Status) << std::endl;
+        
+        // }
+              
+
+        // Pulizia della memoria
+        delete[] T_var;
+
+    } catch (GRBException& e) {
+        std::cout << "Error code = " << e.getErrorCode() << std::endl;
+        std::cout << e.getMessage() << std::endl;
+    } catch (...) {
+        std::cout << "Exception during optimization" << std::endl;
+    }
+}

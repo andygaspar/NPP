@@ -66,7 +66,7 @@ class Instance(nx.Graph):
         self.paths: List[Path]
         self.users = []
         self.partial = partial
-        self.cr_free = (20, 30) if partial else (20, 30)
+        self.cr_free = (10, 30) if partial else (20, 30)
         self.cr_transfer = cr_transfer
         self.nr_users = nr_users
 

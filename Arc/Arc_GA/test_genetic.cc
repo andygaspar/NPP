@@ -79,7 +79,7 @@ int main(){
     using namespace std::chrono;
 
 
-    std::string file_name = "test_dijkstra";
+    std::string file_name = "new_test";
     short n_commodities = read_size("Problems/" + file_name + "/n_com.csv");;
     short n_tolls = read_size("Problems/" + file_name + "/n_tolls.csv");;
     int adj_size = read_size("Problems/" + file_name + "/adj_size.csv");
@@ -92,12 +92,12 @@ int main(){
     // for(short i=0; i < n_tolls; i++) upper_bounds[i] *= 2;
     printMatrix(upper_bounds, 1, n_tolls);
 
-    short pop_size = 5;
+    short pop_size = 256;
     short off_size = pop_size/2;
-    int iterations = 1000;
-    int heuristic_every = 2000;
+    int iterations = 10000;
+    int heuristic_every = 100;
     short recombination_size = n_tolls/2;
-    double mutation_rate = 0.2;
+    double mutation_rate = 0.02;
 
 
     short num_threads = 1;
@@ -113,11 +113,22 @@ int main(){
     for(int p=0; p < n_tolls; p++) lower_bounds[p] = 0;
 
 
- 
+
+    std::mt19937 r;
+    std::default_random_engine engine= std::default_random_engine(r());
     //fr.print_problem();
 
-    // double* population = get_random_population(upper_bounds, pop_size, n_tolls);
-    double* population = readMatrixFromFile<double> ("Problems/" + file_name + "/population.csv", pop_size, n_tolls);
+    double* population = get_random_population(upper_bounds, pop_size, n_tolls);
+    // double* population = readMatrixFromFile<double> ("Problems/" + file_name + "/population.csv", pop_size, n_tolls);
+    // double* population = new double(pop_size * n_tolls);
+    // for(int p=0; p < pop_size; p++) {
+    //     for(int t=0; t<n_tolls; t++){
+    //         std::uniform_real_distribution<double> distribution_(lower_bounds[t], upper_bounds[t]);
+    //         population[p * n_tolls + t] = distribution_(engine);
+    //         if(p* n_tolls + t >= pop_size * n_tolls) std::cout<<"te son mona"<<std::endl;
+    //     }
+
+    // }
 
 
     // ArcGenetic g(upper_bounds, lower_bounds, comm_tax_free, n_usr, trans_costs, n_commodities, n_paths,

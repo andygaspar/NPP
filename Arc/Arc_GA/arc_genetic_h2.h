@@ -6,6 +6,7 @@
 #include <string>
 #include <omp.h>
 #include <cstdlib>
+//#include <gurobi_c++.h>
 #include "utils_.h"
 #include "Path/commodity2.h"
 
@@ -26,7 +27,6 @@ class ArcGeneticHeuristic {
 
     std::vector<std::vector<double>> population;
     std::vector<double> vals;
-    std::vector<double> fitness;
   
     std::vector<int> a_combs;
     std::vector<int> b_combs;
@@ -59,6 +59,7 @@ class ArcGeneticHeuristic {
     std::vector<std::vector<bool>> visited;
     std::vector<std::vector<double>> profit;
     std::vector<std::vector<Commodity>> commodities;
+    
     short dijkstra_every;
 
     std::vector<std::map<std::vector<std::vector<int>>, Path>> path_dicts;
@@ -73,9 +74,7 @@ class ArcGeneticHeuristic {
     std::vector<double> best_sol;
 
     int no_improvement;
-
-    std::vector<std::vector<double>> distance_mat;
-    std::vector<double> distance;
+    std::vector<std::unique_ptr<GRBEnv>> envs;
 
 
     ArcGeneticHeuristic(double* upper_bounds_, double* lower_bounds_, double* adj_, int adj_size_, int* tolls_idxs_, int* n_usr, int* origins_, int* destinations_, short n_commodities_, short n_tolls_, 
@@ -91,6 +90,7 @@ class ArcGeneticHeuristic {
 
     no_improvement = 0;
     best_val = 0;
+    std::cout<<n_tolls<<std::endl;
     best_sol = std::vector<double> (n_tolls, 0);
     tolerance = pow(10, -9);
     scale_factor = 0;
@@ -116,16 +116,11 @@ class ArcGeneticHeuristic {
 
     population = std::vector<std::vector<double>> (pop_total_size, std::vector<double>(n_tolls, 0));
     vals = std::vector<double> (pop_total_size, 0);
-    fitness = std::vector<double> (pop_total_size, 0);
-
-    distance_mat = std::vector<std::vector<double>> (pop_total_size, std::vector<double>(pop_total_size, 0));
-    distance = std::vector<double> (pop_total_size, 0);
 
     n_commodities = n_commodities_;
     init_commodity_val = init_commodity_val=pow(10, 5);
     
     indices = std::vector<int> (pop_total_size);
-    std::iota(indices.begin(), indices.begin() + pop_total_size, 0);
 
 
     adj = std::vector<std::vector<std::vector<double>>> (n_threads, std::vector<std::vector<double>> (adj_size, std::vector<double> (adj_size, 0)));
@@ -211,6 +206,20 @@ class ArcGeneticHeuristic {
     path_dicts = std::vector<std::map<std::vector<std::vector<int>>, Path>>  (n_commodities);
 
 
+    envs.reserve(omp_get_num_threads());
+
+    for (int i = 0; i < omp_get_num_threads(); i++) {
+        try {
+            envs.push_back(std::make_unique<GRBEnv>());
+            envs.back()->set(GRB_IntParam_OutputFlag, 0);
+        } catch (GRBException& e) {
+            std::cout << "Error creating environment " << i 
+                        << ": " << e.getMessage() << std::endl;
+            envs.push_back(nullptr);
+        }
+    }
+
+
     }
 
     ~ArcGeneticHeuristic(){
@@ -254,55 +263,42 @@ class ArcGeneticHeuristic {
 
         return sum;
     }
-        
-    void compute_distances(){
-        for(short i=0; i < pop_total_size; i++) {
-            #pragma omp parallel for num_threads(n_threads) shared(i)
-            for(short j=i+1; j < pop_total_size; j++) {
-                distance_mat[i][j] = get_distance(population[i].data(), population[j].data(), n_tolls);
-                distance_mat[j][i] = distance_mat[i][j];
-            }
-        }
-        #pragma omp parallel for num_threads(n_threads)
-        for(short j=0; j < pop_total_size; j++) {
-            distance[j] = std::accumulate(distance_mat[j].begin(), distance_mat[j].end(), 0.0);
-        }
-        
-        double max_val =  *std::max_element(distance.begin(), distance.end());
-        for(short j=0; j < pop_total_size; j++) distance[j] /= max_val;
-    }
 
-    void compute_fitness(){
-
-    }
    
 
     void init_population(double* init_pop){
+
+        std::iota(indices.begin(), indices.begin() + pop_total_size, 0); // reset indexes
+
         short th;
         // #pragma omp parallel for num_threads(n_threads) schedule(static) private(th) shared(population, init_pop)
         for(short i=0; i < pop_size; i++){
             th = omp_get_thread_num();
             for(short j=0; j < n_tolls; j++) population[i][j] = init_pop[i*n_tolls + j];
 
-            vals[i] = eval(population[i], n_users[th], adj[th], adj_solution[th], tolls_idxs[th], prices_mat[th], dist[th], profit[th], 
-                                                    visited[th], origins[th], destinations[th], n_commodities, n_tolls, START_VAL, tolerance);
         }
-        double maxval = 0;
-        for(short i=0; i < pop_size; i++) if(vals[i] > maxval) {maxval = vals[i];}
-
-        compute_distances();
-
-        scale_factor = 3800;
-
-        for(short i=0; i < pop_size; i++){
-            fitness[i] = 1 * vals[i] + 0.0 * distance[i] * scale_factor;
+        // init dijkstra
+        double val;  int c;
+        #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
+        for(short i=0; i < pop_size; i++) {
+            val = 0;
+            th = omp_get_thread_num();
+            for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
+            vals[i] = val;
         }
+
+        update_paths_among_threads();
+        argsort(vals, indices, pop_total_size);
+        best_val = vals[indices[0]];
+        std::cout<<"****************** "<<best_val<<std::endl;
+        for(short i=0; i < n_tolls; i++) best_sol[i] = population[indices[0]][i];
     }
 
 
     void generate(const std::vector<double> &a_parent, const std::vector<double> &b_parent, std::vector<double> &child, 
                     std::vector<double> & u_bounds, std::vector<double> & l_bounds,
-                    std::vector<int> &element_order, double m_rate, short num_paths, short recomb_size, std::default_random_engine gen){
+                    std::vector<int> &element_order, double m_rate, short num_paths, short recomb_size, std::default_random_engine gen,
+                double val_a, double val_b){
             int i,iter, idx;
             short r_size = recomb_size;
 
@@ -313,8 +309,9 @@ class ArcGeneticHeuristic {
                 child[element_order[i]] = b_parent[element_order[i]];
 
             }
+            
             int th = omp_get_thread_num();
-            std::uniform_real_distribution<double> distribution_;
+            // std::uniform_real_distribution<double> distribution_;
             std::uniform_real_distribution<double> distribution_mutation(0., 1.);
             for(i=0; i<num_paths; i++) {
                 if(u_bounds[i] > 0){
@@ -325,10 +322,31 @@ class ArcGeneticHeuristic {
                 }
             }
 
-            // for(i=0; i<n_tolls; i++) {if(get_rand(0., 1.) < mutation_rate) child[i] = get_rand(0., u_bounds[i]);}
-            // print_vect(child, n_tolls);
+            double val=0;
+            for(int c = 0; c<n_commodities; c++) val += commodities[th][c].eval(population[indices[pop_size + i]]);
+
+            if((val_a - tolerance < val and val < val_a + tolerance) or (val_b - tolerance < val and val < val_b + tolerance)){
+                for(i=0; i<num_paths; i++) {
+                    if(u_bounds[i] > 0){
+                        if(distribution_mutation(generators[th]) < m_rate) {
+                            // std::cout<<"add mutation"<<std::endl;
+                            std::uniform_real_distribution<double> distribution_(l_bounds[i], u_bounds[i]);
+                            child[i] = distribution_(generators[th]);
+                            }
+                    }
+                }
+
+                val = 0;
+                for(int c = 0; c<n_commodities; c++) val += commodities[th][c].eval(population[indices[pop_size + i]]);
+                
+
+            }
+            vals[indices[pop_size + i]] = val;
+
+
 
         }
+
 
 
 
@@ -344,18 +362,6 @@ class ArcGeneticHeuristic {
         double val;
         int c;
 
-
-
-        // init dijkstra
-        #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
-        for(short i=0; i < pop_size; i++) {
-            val = 0;
-            th = omp_get_thread_num();
-            for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
-            vals[i] = val;
-        }
-
-        update_paths();
         
         double m_rate = mutation_rate;
 
@@ -370,65 +376,81 @@ class ArcGeneticHeuristic {
                 generate(population[indices[a_combs[random_order[i]]]], 
                         population[indices[b_combs[random_order[i]]]], 
                         population[indices[pop_size + i]], 
-                        upper_bounds[th], lower_bounds[th], random_element_order[th], mutation_rate, n_tolls, recombination_size, generators[th]);
-                    val=0;
-                    for(c = 0; c<n_commodities; c++) val += commodities[th][c].eval(population[indices[pop_size + i]]);
-                    vals[indices[pop_size + i]] = val;
+                        upper_bounds[th], lower_bounds[th], random_element_order[th], mutation_rate, n_tolls, recombination_size, generators[th], 
+                        vals[indices[a_combs[random_order[i]]]], vals[indices[b_combs[random_order[i]]]]);
+                    // val=0;
+                    // for(c = 0; c<n_commodities; c++) val += commodities[th][c].eval(population[indices[pop_size + i]]);
+                    // vals[indices[pop_size + i]] = val;
                 }
+            // print_pop();
+
+            if(iter % 250 == 0) {
+                                for(short i=0; i < off_size; i++) {
+                    th = omp_get_thread_num();
+                    solveModel(commodities[th], n_tolls, population[indices[i + pop_size]], upper_bounds[th], vals[indices[i + pop_size]], *envs[th]);
+                }
+            }
             
-            if((iter>20)  and (iter % dijkstra_every == 0)) {
+            if((iter<20)  or (iter % dijkstra_every == 0)) {
+                // #pragma omp parallel for num_threads(n_threads) private(th) shared(n_tolls)
+
                 #pragma omp parallel for num_threads(n_threads) private(th, val, c) 
                 for(short i=0; i < pop_total_size; i++) {
                     val = 0;
                     th = omp_get_thread_num();
                     for(c = 0; c<n_commodities; c++) val += commodities[th][c].run_dijkstra(population[i]);
                     vals[i] = val;
-                }
-                update_paths();
 
-    
+                    
+                }
+                update_paths_among_threads();
+
+                argsort(vals, indices, pop_total_size);
+                if(vals[indices[0]] > best_val) {
+                    best_val = vals[indices[0]];
+                    for(short i=0; i < n_tolls; i++) best_sol[i] = population[indices[0]][i];
+                    no_improvement = 0;
+                }
+                else {no_improvement ++;
+                    if(vals[indices[0]] < best_val) { //reinsert best verified individual
+                        vals[indices[pop_size -1]] = best_val;
+                        for(short i=0; i < n_tolls; i++) best_sol[i] = population[indices[pop_size -1]][i];
+                        no_improvement += 1;
+                    }
+                }    
+            }
+
+            else{
+                argsort(vals, indices, pop_total_size);
+                if(vals[indices[0]] > best_val) {
+                    no_improvement = 0;
+                }
+                no_improvement += 1;
+
             }
             
-            compute_distances();
-
-            val = *std::max_element(vals.begin(),  vals.end());
-            if(val > best_val) {
-                best_val = val;
-                no_improvement = 0;
-            }
-            else no_improvement ++;
-
-            // fitness
-            for(short i=0; i < off_size; i++) fitness[indices[pop_size + i]] = 1. * vals[indices[pop_size + i]] + 0.0 * distance[indices[pop_size + i]] * scale_factor;
- 
 
 
-            argsort(vals, indices, pop_total_size);
-            // if(vals[indices[0]] > best_val) {
-            //     best_val = vals[indices[0]];
-            //     no_improvement = 0;
-            // }
-            // else no_improvement ++;
-
-
-
-            if(no_improvement >= 500) {
+            if(no_improvement >= 50000) {
                 restart_population();
                 //std::cout<<"restarted"<<std::endl;
                 
                 no_improvement = 0;
             }
+            
 
             if(iter% 100 == 0){
                 std = get_std(vals, indices, pop_size);
                 // double mean = get_mean(vals, indices, pop_size);
                 if(verbose and  iter%100 == 0) {
+                    int n_paths_ = 0;
+                    for(c = 0; c<n_commodities; c++) n_paths_ += commodities[0][c].path_dict.size();
                     auto stop = std::chrono::high_resolution_clock::now();
                     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-                    std::cout<<"iteration "<< iter<<"    "<<best_val<<"   fitness "<<fitness[0]<<"   mean " 
-                    <<get_mean(vals, indices, pop_size)<<"   std " <<std<<"   no impr: " <<no_improvement<<"  time:"<<duration.count()/1000.<<std::endl;
+                    std::cout<<"iteration "<< iter<<"   vals[0] "<<vals[indices[0]]<<"   best "<<best_val<<"   mean " 
+                    <<get_mean(vals, indices, pop_size)<<"   std " <<std<<"   no impr: " <<no_improvement<<"   n paths "<<n_paths_<<"  time:"<<duration.count()/1000.<<std::endl;
                 }
-                if(std < 0.01) {restart_population();} //; std::cout<< " restarted "<<std<<std::endl;
+                // if(std < 0.01 and iter % 1000 == 0) {restart_population();} //; std::cout<< " restarted "<<std<<std::endl;
                 // for(short i=0; i < pop_total_size; i++) heuristic.run(population[indices[i]], &vals[indices[i]]);
                 //}
                 // if(verbose and  iter%300 == 0) {
@@ -449,14 +471,13 @@ class ArcGeneticHeuristic {
         }
 
         argsort(vals, indices, pop_total_size);
-        if(vals[indices[0]] > best_val) {
-            best_val = vals[indices[0]];
-            no_improvement = 0;
-        }
 
         // print_vector(population[indices[12]]);
         
-        best_val = vals[indices[0]];
+        if(vals[indices[0]] > best_val) {
+                best_val = vals[indices[0]];
+                for(short i=0; i < n_tolls; i++) best_sol[i] = population[indices[0]][i];
+            }
         if(verbose) std::cout<<"final iteration "<<best_val<<std::endl;
         
         // print_pop();
@@ -465,7 +486,7 @@ class ArcGeneticHeuristic {
     }
 
 
-    void update_paths(){
+    void update_paths_among_threads(){
 
         for(int j=0; j<n_commodities; j++) {
             for(int i=0; i< n_threads; i++) {

@@ -133,6 +133,19 @@ class GeneticArc:
         self.npp.assign_paths(self.adj_solution, self.prices)
         self.time = time.time() - self.time
 
+    def re_run_h(self, initial_position, iterations):
+        self.time = time.time()
+        self.best_val = self.genetic_cpp.run(initial_position, iterations)
+        self.population, self.vals = self.genetic_cpp.get_results()
+        self.solution = self.population[0]
+        self.adj_solution, self.prices = self.get_mats(self.solution)
+        self.solution = dict(zip(self.npp.arc_tolls, self.population[0]))
+        for toll in self.npp.arc_tolls:
+            self.npp.g.edges[toll]['price'] = self.solution[toll]
+            self.npp.g.edges[toll]['cost'] = self.npp.g.edges[toll]['weight'] + self.solution[toll]
+        self.npp.assign_paths(self.adj_solution, self.prices)
+        self.time = time.time() - self.time
+
     def run_cpp_heuristic(self, iterations, dijkstra_every, verbose, n_threads, seed=None, initial_position=None):
         self.time = time.time()
 

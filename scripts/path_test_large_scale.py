@@ -14,15 +14,15 @@ from Path.Solver.solver import GlobalSolver
 # os.system("Path/CPP/install.sh")
 
 columns = ['run', 'commodities', 'paths',
-           'obj_exact', 'obj_h',
-           'GAP_h', 'mip_GAP', 'status',
-           'time_exact', 'time_h', 'h_iter', 'partial']
+           'obj_exact', 'obj_h', 'obj_ga',
+           'GAP_h', 'GAP_ga', 'mip_GAP', 'status',
+           'time_exact', 'time_h', 'time_ga', 'h_iter', 'partial']
 
 # columns = ['run', 'commodities', 'paths', 'obj_gah', 'obj_ga', 'time_gah', 'time_ga']
 
-POPULATION = 256
+POPULATION = 128
 off_size = int(POPULATION / 2)
-ITERATIONS = 20000
+ITERATIONS = 10000
 MUTATION_RATE = 0.02
 
 H_EVERY = 100
@@ -33,10 +33,10 @@ N_THREADS = None
 row = 0
 run = 0
 
-n_commodities = 180
-n_paths = 180
+n_commodities = 360
+n_paths = 360
 
-file_name = 'Results/PathResults/path_results_large.csv'
+file_name = 'Results/PathResults/path_results_large_360.csv'
 
 df = pd.DataFrame(columns=columns)
 for partial in [True, False]:
@@ -61,19 +61,23 @@ for partial in [True, False]:
 
         genetic_h.run(ITERATIONS)
         print(genetic_h.time)
-        # g = Genetic(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, verbose=VERBOSE, n_threads=N_THREADS, seed=run)
-        #
-        # g.run(ITERATIONS)
+        g = Genetic(npp, POPULATION, off_size, MUTATION_RATE, recombination_size, verbose=VERBOSE, n_threads=N_THREADS, seed=run)
+
+        g.run(ITERATIONS)
         # print(g.time, g.best_val)
 
         gap_g_h = 1 - genetic_h.best_val / solver.obj
-        # gap_g = 1 - g.best_val / solver.obj
+        gap_g = 1 - g.best_val / solver.obj
         print(partial, n_commodities, n_paths, run, genetic_h.heuristic_iterations)
         print(genetic_h.time, solver.time, genetic_h.best_val, solver.obj, 1 - genetic_h.best_val / solver.obj, '\n')
+        # df.loc[row] = [run, n_commodities, n_paths,
+        #                solver.obj, genetic_h.best_val,
+        #                gap_g_h, solver.final_gap, solver.m.status,
+        #                solver.time, genetic_h.time,  genetic_h.heuristic_iterations, partial]
         df.loc[row] = [run, n_commodities, n_paths,
-                       solver.obj, genetic_h.best_val,
-                       gap_g_h, solver.final_gap, solver.m.status,
-                       solver.time, genetic_h.time,  genetic_h.heuristic_iterations, partial]
+                       solver.obj, genetic_h.best_val, g.best_val,
+                       gap_g_h, gap_g, solver.final_gap, solver.m.status,
+                       solver.time, genetic_h.time, g.time, genetic_h.heuristic_iterations, partial]
 
         # print(genetic_h.time, g.time, genetic_h.best_val, g.best_val)
         #

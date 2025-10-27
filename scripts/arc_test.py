@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 # from Arc.ArcInstance.del_test import DelaunayInstanceTest
-from Arc.ArcInstance.delunay_instance import DelaunayInstance
-from Arc.ArcInstance.grid_instance import GridInstance
+from Arc.ArcInstance.arc_instance import DelaunayInstance
+from Arc.ArcInstance.arc_instance import GridInstance
 from Arc.ArcSolver.arc_solver import ArcSolver
 from Arc.Arc_GA.arc_genetic_cpp import ArcGeneticCpp
 from Arc.Heuristic.arc_heuristic import run_arc_heuristic
@@ -17,29 +17,23 @@ from Arc.genetic_arc import GeneticArc
 random.seed(0)
 np.random.seed(0)
 
-os.system("Arc/Arc_GA/install_arc.sh")
-# 5*12*2
-n_arcs = 104
-# dim_grid = (5, 12)
-dim_grid = (10, 12)
-# 5 *12
-# dim_grid = (3, 4)
-n_locations = (dim_grid[0] - 1) * (dim_grid[1] - 2)
-# toll_proportion = 10
-toll_proportion = [10, 20]#[10, 15, 20] #
-# n_commodities = 10
+# os.system("Arc/Arc_GA/install_arc.sh")
+
+
+toll_proportion = [0.1, 0.2]#[10, 15, 20] #
+
 n_commodities = [40, 80]#[40, 60, 80]
+n_nodes = 12 ** 2
 graphs = [DelaunayInstance, GridInstance]
 
-free_path_distribution = []
-TIMELIMIT = 3600
+TIMELIMIT = 60#3600
 
 ITERATIONS = 10000
 POPULATION_SIZE = 128
 DIJKSTRA_EVERY = 100
 
 OFFSPRING_RATE = 0.5
-MUTATION_RATE = 0.1
+MUTATION_RATE = 0.02
 
 # instance = DelaunayInstance(n_locations, n_arcs, dim_grid, toll_proportion[0], n_commodities[0])
 # instance = GridInstance(n_locations, n_arcs, dim_grid, toll_proportion[2], n_commodities[2])
@@ -55,20 +49,20 @@ for graph in graphs:
             for run in range(10):
                 random.seed(run)
                 np.random.seed(run)
-                instance = graph(n_locations, n_arcs, dim_grid, t_p, n_c, seed=run)
+                instance = graph(n_c, t_p, n_nodes, seed=run)
                 print("\nProblem ", instance.name, n_c, t_p, run, len(instance.g.edges))
                 # instance.show()
 
                 solver = ArcSolver(instance=instance, symmetric_costs=False)
-                solver.solve(time_limit=TIMELIMIT, verbose=False)  # int(pso.time))
+                solver.solve(time_limit=TIMELIMIT, verbose=True)  # int(pso.time))
                 # solver.obj = 1
                 print(solver.time)
 
                 g = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=OFFSPRING_RATE, mutation_rate=MUTATION_RATE)
-                g.run_cpp(ITERATIONS, verbose=False, n_threads=16, seed=run)
+                g.run_cpp(ITERATIONS, verbose=True, n_threads=16, seed=run)
 
                 gh = GeneticArc(population_size=POPULATION_SIZE, npp=instance, offspring_rate=OFFSPRING_RATE, mutation_rate=MUTATION_RATE)
-                gh.run_cpp_heuristic(ITERATIONS, DIJKSTRA_EVERY, verbose=False, n_threads=16, seed=run)
+                gh.run_cpp_heuristic(ITERATIONS, DIJKSTRA_EVERY, verbose=True, n_threads=16, seed=run)
 
                 print(g.time, gh.time, solver.time, g.best_val, gh.best_val, solver.obj, (1 - g.best_val / gh.best_val) * 100)
 

@@ -14,9 +14,11 @@ class Path{
     std::vector<std::vector<int>> path;
     double toll_free_cost;
     std::vector<std::vector<int>> tolls;
+    std::vector<bool> toll_bool;
     double current_cost;
     double profit;
-    double tolerance = std::pow(10, -16);;
+    double tolerance = std::pow(10, -9);
+    bool is_toll_free;
     
     Path() {}
 
@@ -24,6 +26,8 @@ class Path{
             const std::vector<std::vector<double>> &prices, const std::vector<std::vector<int>> &toll_idxs) {
         // path = std::move(p);
         path = p;
+
+        toll_bool = std::vector<bool> (toll_idxs.size(), false);
 
         toll_free_cost = 0;
         current_cost = 0;
@@ -43,6 +47,8 @@ class Path{
             }
         }
 
+        if(toll_count == 0) is_toll_free = true;
+        else is_toll_free = false;
 
         tolls = std::vector(toll_count, std::vector<int>(2, 0));
         int t = 0;
@@ -54,6 +60,7 @@ class Path{
                     tolls[t][0] = path[i][0];
                     tolls[t][1] = path[i][1];
                     profit += prices[path[i][0]][path[i][1]];
+                    toll_bool[k] = true;
                     k += toll_idxs.size();
                     t += 1;
                 }

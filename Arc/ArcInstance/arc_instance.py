@@ -1,21 +1,37 @@
 import os
 import random
 import time
+from functools import partial
 # from turtledemo.chaos import coosys
 from typing import List, Union
-
+from itertools import combinations
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
+from numpy.core.defchararray import replace
 from scipy.spatial import Delaunay
 from scipy.spatial import Voronoi
 from gurobipy import Model, GRB
+import multiprocessing as mp
 
 from Old import commodity
 
 
 def get_cost(g, od):
     return nx.dijkstra_path_length(g, od[0], od[1], 'cost')
+
+def compute_bounds(od, g_zero: nx.Graph, g_inf: nx.Graph, tolls):
+    M_p = dict()
+    o, d = od[0], od[1]
+    for toll in tolls:
+        c_a = g_inf.edges[toll]['weight']
+        t, h = toll
+        b1 = g_inf.edges[toll]['gamma_ht'] - c_a
+        b2 = get_cost(g_inf, (o, h)) - get_cost(g_zero, (o, t)) - c_a
+        b3 = get_cost(g_inf, (o, d)) - get_cost(g_zero, (o, t)) - c_a - get_cost(g_zero, (h, d))
+        b4 = get_cost(g_inf, (t, d)) - get_cost(g_zero, (h, d)) - c_a
+        M_p[toll] = max(0, min(b1, b2, b3, b4))
+    return M_p
 
 
 class ArcCommodity:
@@ -64,6 +80,7 @@ class ArcToll(Arc):
 class ArcInstance:
 
     def __init__(self, n_commodities, toll_proportion, n_nodes, g: nx.Graph, preset_graph=False):
+
         self.n_commodities = n_commodities
         self.toll_proportion = toll_proportion
         self.n_nodes = n_nodes
@@ -72,8 +89,11 @@ class ArcInstance:
         self.arc_tolls: List[tuple] = []
         self.tolls: List[ArcToll] = []
         self.free: List[Arc] = []
+
+
         if not preset_graph:
-            self.g = self.set_instance(g)
+            self.g = self.set_instance_2(g)
+            # self.g = self.set_instance(g)
         else:
             self.g = g
             self.load_graph(self.g)
@@ -111,6 +131,7 @@ class ArcInstance:
         return adj, prices
 
     def set_commodities_bound(self):
+        t = time.time()
         g_inf = self.g.copy()
         for toll in self.arc_tolls:
             g_inf.edges[toll]['cost'] = 10 ** 5
@@ -118,8 +139,21 @@ class ArcInstance:
         for toll in self.arc_tolls:
             g_inf.edges[toll]['gamma_ht'] = get_cost(g_inf, toll)
 
-        for commodity in self.commodities:
-            commodity.compute_bounds(self.g, g_inf, self.arc_tolls)
+        # for commodity in self.commodities:
+        #     commodity.compute_bounds(self.g, g_inf, self.arc_tolls)
+
+        num_processes = mp.cpu_count()
+
+        worker_func = partial(compute_bounds, g_inf=g_inf, g_zero=self.g,tolls = self.arc_tolls)
+
+        od = [(commodity.origin, commodity.destination) for commodity in self.commodities]
+
+        with mp.Pool(processes=num_processes) as pool:
+            results = pool.map(worker_func, od)
+
+        for i, commodity in enumerate(self.commodities):
+            commodity.M_p = results[i]
+
 
     def set_tolls(self):
         for edge in self.edges:
@@ -147,14 +181,10 @@ class ArcInstance:
             g.edges[e]['price'] = 0
 
         shortest_paths = []
+        o_d_list = list(combinations(list(g.nodes), 2))
 
         for com in range(self.n_commodities):
-            o, d = random.choice(list(g.nodes)), None
-            found_destination = False
-            while not found_destination:
-                d = random.choice(list(g.nodes))
-                if o != d:
-                    found_destination = True
+            o, d = o_d_list.pop(random.choice(range(len(o_d_list))))
             self.commodities.append(ArcCommodity(o, d, random.choice(range(1, 5))))
             node_path = nx.dijkstra_path(g, o, d)
             edge_path = []
@@ -202,12 +232,100 @@ class ArcInstance:
 
         return g
 
-    def get_opt_path(self, T, commodity: ArcCommodity):
+
+
+    def set_instance_2(self, g):
+
+        edges = list(g.edges)
+        remained_edges = list(g.edges)
+        for _ in range(int(len(edges) * 0.2)):
+            e = remained_edges.pop(random.choice(range(len(remained_edges))))
+            g.edges[e]['weight'] = 35
+            g.edges[e]['toll'] = False
+
+        for e in remained_edges:
+            g.edges[e]['weight'] = np.random.uniform(5, 35)
+            g.edges[e]['toll'] = False
+
+        for e in edges:
+            g.edges[e]['counter'] = 0
+            g.edges[e]['color'] = 'blue'
+            g.edges[e]['price'] = 0
+
+        shortest_paths = []
+        o_d_list = list(combinations(list(g.nodes), 2))
+
+        for com in range(self.n_commodities):
+            o, d = o_d_list.pop(random.choice(range(len(o_d_list))))
+            self.commodities.append(ArcCommodity(o, d, random.choice(range(1, 5))))
+            node_path = nx.dijkstra_path(g, o, d)
+            edge_path = []
+            for i in range(len(node_path) - 1):
+                edge_path.append((node_path[i], node_path[i + 1]))
+            shortest_paths.append(edge_path)
+
+        for path in shortest_paths:
+            for edge in path:
+                g.edges[edge]['counter'] += 1
+
+        self.n_tolls = (int(len(g.edges) * self.toll_proportion) // 2 ) * 2
+
+        counter =  np.array([g.edges[edge]['counter'] for edge in g.edges])
+        edges = list(g.edges)
+
+        edges_all = edges + [(e[1], e[0]) for e in edges]
+        A = np.zeros((self.n_nodes, len(edges_all)))
+        for i, e in enumerate(edges_all):
+            A[e[0], i] = -1
+            A[e[1], i] = 1
+        b = np.zeros((self.n_commodities, self.n_nodes))
+        for i, k in enumerate(self.commodities):
+            b[i, k.origin] = -1
+            b[i, k.destination] = 1
+
+        m = Model()
+        m.setParam('OutputFlag', 0)
+        x = m.addMVar((self.n_commodities, len(edges_all)))
+        y = m.addMVar((len(edges),), vtype=GRB.BINARY)
+        for k in range(self.n_commodities):
+            m.addConstr(A @ x[k] == b[k], name='feasible')
+        m.addConstr(
+            x[:, :len(edges)].sum(axis=0) + x[:, len(edges):].sum(axis=0) <= self.n_commodities * (1 - y),
+        )
+        m.addConstr(y.sum() >= self.n_tolls)
+        m.setObjective((y * counter).sum(), GRB.MAXIMIZE)
+        m.optimize()
+
+        idxs = np.argsort(counter)[::-1]
+        tolls = [edges[i] for i in idxs if y.x[i] > 0.5]
+        self.arc_tolls = tolls[: int(self.n_tolls)]
+        self.arc_tolls += [tolls[i] for i in np.random.choice(range(int(self.n_tolls * 2/ 3), self.n_tolls), size=self.n_tolls - len(self.arc_tolls), replace=False)]
+
+        for toll in self.arc_tolls:
+            g.edges[toll]['toll'] = True
+            g.edges[toll]['weight'] /= 2
+            g.edges[toll]['color'] = 'red'
+
+        for e in edges:
+            g.edges[e]['cost'] = g.edges[e]['weight']
+        g = nx.to_directed(g)
+        self.arc_tolls += [(e[1], e[0]) for e in self.arc_tolls]
+        self.n_tolls *= 2
+
+        return g
+
+    @staticmethod
+    def set_seed(seed):
+        if seed is not None:
+            np.random.seed(seed)
+            random.seed(seed)
+
+    def get_opt_path(self, T, commodity: ArcCommodity, tol=1e-9):
         sol = dict(zip(self.arc_tolls, T))
         adj_sol, prices = self.get_mats_from_prices(sol)
-        cost, _, profit, path = self.dijkstra(adj_sol, prices, commodity)
+        cost, _, profit, path = self.dijkstra(adj_sol, prices, commodity, tol=tol)
         path = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        return cost[commodity.destination], profit[commodity.destination]*commodity.n_users, path
+        return cost[commodity.destination], profit[commodity.destination], path
 
     def compute_obj(self, adj_sol, prices, tol=1e-9):
         obj = 0
@@ -317,6 +435,7 @@ class ArcInstance:
         with open(filename, 'wb') as f:
             pickle.dump(self.g, f)
 
+
     def save_cpp_problem(self, pb_name):
         folder = 'Arc/Arc_GA/Problems/' + pb_name
         os.mkdir(folder)
@@ -335,7 +454,9 @@ class ArcInstance:
 
 class GridInstance(ArcInstance):
 
-    def __init__(self, n_commodities, toll_proportion, n_nodes):
+    def __init__(self, n_commodities, toll_proportion, n_nodes, seed=None):
+        self.set_seed(seed)
+        self.name = 'GRID'
         n = int(np.sqrt(n_nodes))
         n_nodes = n ** 2
         g = nx.grid_2d_graph(n, n)
@@ -349,7 +470,9 @@ class GridInstance(ArcInstance):
 
 class DelaunayInstance(ArcInstance):
 
-    def __init__(self, n_commodities, toll_proportion, n_nodes):
+    def __init__(self, n_commodities, toll_proportion, n_nodes, seed=None):
+        self.set_seed(seed)
+        self.name = 'DELAUNAY'
         self.points = np.random.uniform(0, 1, size=(n_nodes, 2))
         tri = Delaunay(self.points)
         neighbours = tri.vertex_neighbor_vertices
@@ -367,7 +490,9 @@ class DelaunayInstance(ArcInstance):
 
 
 class VoronoiInstance(ArcInstance):
-    def __init__(self, n_commodities, toll_proportion, n_nodes):
+    def __init__(self, n_commodities, toll_proportion, n_nodes, seed=None):
+        self.set_seed(seed)
+        self.name = 'VORONOY'
         points = np.random.uniform(0, 1, size=(n_nodes, 2))
         vor = Voronoi(points)
 

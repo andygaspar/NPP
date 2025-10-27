@@ -14,18 +14,21 @@ def format_df(dff, df_with_MIP=None):
         dff.obj_exact = df_with_MIP.obj_exact
         dff.mip_GAP = df_with_MIP.mip_GAP * 100
         dff.time_exact = df_with_MIP.time_exact
-        dff['GAP_h'] = (1 - dff.obj_h / dff.obj_exact) * 100
-        dff['GAP_ga'] = (1 - dff.obj_ga / dff.obj_exact) * 100
+        if 'GAP_ga' in dff.columns:
+            dff['GAP_h'] = (1 - dff.obj_h / dff.obj_exact) * 100
+            dff['GAP_ga'] = (1 - dff.obj_ga / dff.obj_exact) * 100
         dff.status = df_with_MIP.status
     else:
         dff.GAP_h = dff.GAP_h * 100
-        dff.GAP_ga = dff.GAP_ga * 100
+        if 'GAP_ga' in dff.columns:
+            dff.GAP_ga = dff.GAP_ga * 100
         dff.mip_GAP = dff.mip_GAP * 100
-    dff.status = df_with_MIP.status.apply(lambda x: 1 if x == 2 else 0)
+    dff.status = dff.status.apply(lambda x: 1 if x == 2 else 0)
     dff['gah_improvement'] = (dff.GAP_h <= - 1e-9).astype(int)
     dff['gah_opt'] = (dff.GAP_h <= 1e-9).astype(int) * (dff.GAP_h >= - 1e-9).astype(int)
-    dff['ga_improvement'] = (dff.GAP_ga <= - 1e-9).astype(int)
-    dff['ga_opt'] = (dff.GAP_ga <= 1e-9).astype(int) * (dff.GAP_ga >= - 1e-9).astype(int)
+    if 'GAP_ga' in dff.columns:
+        dff['ga_improvement'] = (dff.GAP_ga <= - 1e-9).astype(int)
+        dff['ga_opt'] = (dff.GAP_ga <= 1e-9).astype(int) * (dff.GAP_ga >= - 1e-9).astype(int)
     dff['h_iter'] = dff['h_iter']/1000
     return dff
 
@@ -41,8 +44,17 @@ def compare_results(dff):
                    'gah improvement', 'ga opt', 'ga improvement', 'h_iter mean', 'h_iter std']
     return dff
 
+def compare_results_no_ga(dff):
+    dff = dff.groupby('case', as_index=False).agg(
+        {'time_h': ['mean', 'std'], 'time_exact': ['mean', 'std'], 'GAP_h': ['mean', 'std'],
+         'mip_GAP': ['mean', 'std'], 'status': ['sum'], 'gah_opt': ['sum'], 'gah_improvement': ['sum'], 'h_iter': ['mean', 'std']})
+    dff.columns = ['CASE', 'GAH t mean', 'GAH t std', 'Exact t mean', 'Exact t std', 'GAH/Exact GAP mean',
+                   'GAH/Exact GAP std', 'MIP gap mean', 'MIP gap  std', 'mip opt', 'gah opt',
+                   'gah improvement', 'h_iter mean', 'h_iter std']
+    return dff
 
-df_exact = pd.read_csv('Results/PathResults/path_results.csv')
+
+df_exact = pd.read_csv('Results/PathResults/path_results_exact.csv')
 df = pd.read_csv('Results/PathResults/path_results_128_10000_h_iterations.csv')
 
 df_0 = format_df(df, df_exact)
@@ -102,11 +114,33 @@ print(df_1.GAP_h.mean(), df_1.GAP_h.std())
 print(df_2.GAP_h.mean(), df_2.GAP_h.std())
 print(df_3.GAP_h.mean(), df_3.GAP_h.std())
 
+df_comparison.columns
+df_PS = df_comparison[df_comparison.columns[:9]]
+df_PS = df_PS[df_PS.CASE.isin([' C 20 90', ' P 20 90'])]
+df_tex = df_PS.style.format(decimal=',', thousands='.', precision=3).hide(axis="index")
+print(df_tex.to_latex())
+
+
+df_PS_time = df_time_comparison[df_time_comparison.columns[:9]]
+df_PS_time = df_PS_time[df_PS_time.CASE.isin([' C 20 90', ' P 20 90'])]
+df_tex = df_PS_time.style.format(decimal=',', thousands='.', precision=3).hide(axis="index")
+print(df_tex.to_latex())
+
+
+df_large = pd.read_csv('Results/PathResults/path_results_large.csv')
+df_l = format_df(df_large)
+df_res_large = compare_results_no_ga(df_l)
+df_tex = df_res_large[df_res_large.columns[:-2]].style.format(decimal=',', thousands='.', precision=3).hide(axis="index")
+print(df_tex.to_latex())
+
+
+
+
 # exectution time analysis
 df_C = df_compar.copy()
 df_C['C'] = df_C['CASE'].apply(lambda x: x[1])
 
-df_C = df_C[df_C['C'] == 'F']
+df_C = df_C[df_C['C'] == 'C']
 df_C['com'] = df_C.CASE.apply(lambda x: int(x[3:5]))
 df_C['path'] = df_C.CASE.apply(lambda x: int(x[6:8]))
 
@@ -137,3 +171,39 @@ plt.show()
 
 plt.plot([1,2,3], [1, 2,3])
 plt.show()
+
+
+import pandas as pd
+df_exact = pd.read_csv('Results/PathResults/path_results_exact.csv')
+df_1 = pd.read_csv('Results/PathResults/path_results_128_10000_h_iterations.csv')
+df_1.obj_exact = df_exact.obj_exact
+df_1.mip_GAP = df_exact.mip_GAP
+df_1.time_exact = df_exact.time_exact
+df_1.status = df_exact.status
+df_1['GAP_h'] = (1 - df_1.obj_h / df_1.obj_exact)
+df_1['GAP_ga'] = (1 - df_1.obj_ga / df_1.obj_exact)
+df_exact_180 = pd.read_csv('Results/PathResults/path_results_large_180_exact.csv')
+df_2 = pd.read_csv('Results/PathResults/path_results_large_180.csv')
+df_2.obj_exact = df_exact_180.obj_exact
+df_2.mip_GAP = df_exact_180.mip_GAP
+df_2.time_exact = df_exact_180.time_exact
+df_2.status = df_exact_180.status
+df_2['GAP_h'] = (1 - df_2.obj_h / df_2.obj_exact)
+df_2['GAP_ga'] = (1 - df_2.obj_ga / df_2.obj_exact)
+
+df_3 = pd.read_csv('Results/PathResults/path_results_large_360.csv')
+
+df = pd.concat([df_1, df_2, df_3])
+case_num_dict = {' C 360 360': 10, ' P 360 360': 21, ' C 180 180': 9, ' P 180 180': 20,
+                 ' C 90 90': 8, ' C 90 56': 7, ' C 90 20': 6, ' C 56 90': 5, ' C 56 56': 4,
+                 ' C 56 20': 3, ' C 20 90': 2, ' C 20 56': 1, ' C 20 20': 0, ' P 90 90': 19,
+                 ' P 90 56': 18, ' P 90 20': 17, ' P 56 90': 16, ' P 56 56': 15, ' P 56 20': 14,
+                 ' P 20 90': 13, ' P 20 56': 12, ' P 20 20': 11}
+
+def case_fun(row):
+    net_type = ' P' if row.partial else ' C'
+    return case_num_dict[net_type + ' ' + str(row.commodities) + ' ' + str(row.paths)]
+
+df['case_num'] = df.apply(case_fun, axis=1)
+
+df.to_csv('Results/PathResults/path_results.csv', index=False)
