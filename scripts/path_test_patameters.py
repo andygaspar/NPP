@@ -33,23 +33,25 @@ run = 0
 
 file_name = 'Results/path_results_parameters.csv'
 
-cases = [(20, 56), (20, 90), (180, 180)]
+cases = [(i, j) for i in [20, 56, 90] for j in [20, 56, 90]] + [(180, 180), (360, 360)]
 parameters = [('PS2', 128, 20_000), ('PS3', 256, 10_000), ('PS4', 256, 20_000)]
 
 df = pd.DataFrame(columns=columns)
-for partial in [True]:
+for partial in [False, True]:
     for case in cases:
         n_commodities, n_paths = case
-        for params in parameters:
-            param_case, POPULATION, ITERATIONS = params
-            off_size = int(POPULATION / 2)
-            for run in range(10):
-                print("\nProblem ", n_commodities, n_paths, param_case, run)
-                random.seed(run)
-                np.random.seed(run)
+        for run in range(10):
+            random.seed(run)
+            np.random.seed(run)
 
-                npp = Instance(n_paths=n_paths, n_commodities=n_commodities, partial=partial, seed=run)
-                solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
+            npp = Instance(n_paths=n_paths, n_commodities=n_commodities, partial=partial, seed=run)
+            solver = GlobalSolver(npp, verbose=VERBOSE, time_limit=TIME_LIMIT)
+            for params in parameters:
+                param_case, POPULATION, ITERATIONS = params
+                print("\nProblem ", n_commodities, n_paths, param_case, run)
+
+                off_size = int(POPULATION / 2)
+
                 solver.time = 0
                 solver.status = 2
                 solver.obj = 1

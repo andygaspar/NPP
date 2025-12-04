@@ -1,5 +1,7 @@
 import pandas as pd
 
+from Results.PathResults.old.path_analysis import compare_results_no_ga
+
 
 def format_df(dff, df_with_MIP=None):
     dff = dff.astype({'run': int, 'commodities': int, 'paths': int})
